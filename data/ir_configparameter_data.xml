@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <!-- Access tokens time to live: -->
+        <record id="rest_api_access_token_expires_in" model="ir.config_parameter">
+            <field name="key">rest_api.access_token_expires_in</field>
+            <field name="value">600</field>
+        </record>
+        <record id="rest_api_refresh_token_expires_in" model="ir.config_parameter">
+            <field name="key">rest_api.refresh_token_expires_in</field>
+            <field name="value">7200</field>
+        </record>
+
+        <!-- Redis server settings: -->
+        <record id="rest_api_use_redis_token_store" model="ir.config_parameter">
+            <field name="key">rest_api.use_redis_token_store</field>
+            <field name="value">False</field>
+        </record>
+        <record id="rest_api_redis_host" model="ir.config_parameter">
+            <field name="key">rest_api.redis_host</field>
+            <field name="value">localhost</field>
+        </record>
+        <record id="rest_api_redis_port" model="ir.config_parameter">
+            <field name="key">rest_api.redis_port</field>
+            <field name="value">6379</field>
+        </record>
+        <record id="rest_api_redis_db" model="ir.config_parameter">
+            <field name="key">rest_api.redis_db</field>
+            <field name="value">0</field>
+        </record>
+        <record id="rest_api_redis_password" model="ir.config_parameter">
+            <field name="key">rest_api.redis_password</field>
+            <field name="value">None</field>
+        </record>
+
+        <record id="rest_api_cors_parameter_value_in_all_routes" model="ir.config_parameter">
+            <field name="key">rest_api.cors_parameter_value_in_all_routes</field>
+            <field name="value">null</field>
+        </record>
+        <record id="rest_api_u_escape_characters_for_unicode_in_responses" model="ir.config_parameter">
+            <field name="key">rest_api.u_escape_characters_for_unicode_in_responses</field>
+            <field name="value">False</field>
+        </record>
+
+    </data>
+</odoo>

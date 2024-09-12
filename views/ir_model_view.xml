@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <record id="view_model_tree_inherit" model="ir.ui.view">
+            <field name="model">ir.model</field>
+            <field name="inherit_id" ref="base.view_model_tree" />
+            <field name="type">tree</field>
+            <field name="arch" type="xml">
+                <field name="transient" position="after">
+                    <field name="rest_api__used" string="REST API" groups="base.group_erp_manager" />
+                </field>
+            </field>
+        </record>
+
+        <record id="view_model_form_inherit" model="ir.ui.view">
+            <field name="model">ir.model</field>
+            <field name="inherit_id" ref="base.view_model_form" />
+            <field name="type">form</field>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='field_id']/tree[1]/field[@name='ttype']"
+                    position="after">
+                    <field name="relation" />
+                </xpath>
+                <xpath expr="//notebook" position="inside">
+                    <page string="REST API" groups="base.group_erp_manager">
+                        <group colspan="4" col="2">
+                            <field name="rest_api__used" />
+                        </group>
+                        <group colspan="4" col="4"
+                            attrs="{'invisible': [('rest_api__used', '!=', True)]}">
+                            <field name="rest_api__read_all__schema" widget="ace"
+                                options="{'mode': 'python'}" colspan="2" />
+                            <field name="rest_api__read_one__schema" widget="ace"
+                                options="{'mode': 'python'}" colspan="2" />
+                        </group>
+                        <group colspan="4" col="4"
+                            attrs="{'invisible': [('rest_api__used', '!=', True)]}">
+                            <field name="rest_api__create_one__schema" widget="ace"
+                                options="{'mode': 'python'}" colspan="2" />
+                            <field name="rest_api__create_one__defaults" widget="ace"
+                                options="{'mode': 'python'}" colspan="2" />
+                        </group>
+                    </page>
+                </xpath>
+            </field>
+        </record>
+
+    </data>
+</odoo>
