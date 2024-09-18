@@ -29,6 +29,7 @@
         'data/ir_cron_data.xml',
         'security/ir.model.access.csv',
         'views/ir_model_view.xml',
+        'views/product_template_view.xml',
     ],
     'images': [
         'static/description/banner.png',

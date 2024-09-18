@@ -19,6 +19,7 @@ class CommandeREST(http.Controller):
                     order_data.append({
                         'id': o.id,
                         'type_sale':  o.type_sale,
+                        'payment_mode': o.payment_mode,
                         'date_order': o.date_order.isoformat() if o.date_order else None,
                         'name': o.name,
                         'partner_id': o.partner_id.id or None,
@@ -106,6 +107,7 @@ class CommandeREST(http.Controller):
         if order:
             order_data = {
                 'id': order.id,
+                'payment_mode': order.payment_mode,
                 'type_sale':  order.type_sale,
                 'date_order': order.date_order.isoformat() if order.date_order else None,
                 'name': order.name,
@@ -175,6 +177,7 @@ class CommandeREST(http.Controller):
         partner_id = int( data.get('partner_id'))
         order_lines = data.get('order_lines')
         state = data.get('state')
+        payment_mode = data.get('payment_mode')
 
         if not request.env.user or request.env.user._is_public():
             admin_user = request.env.ref('base.user_admin')
@@ -195,6 +198,7 @@ class CommandeREST(http.Controller):
                 'currency_id' : company.currency_id.id,
                 'company_id' : company.id,
                 'commitment_date': datetime.datetime.now() + datetime.timedelta(days=30),
+                'payment_mode': payment_mode,
                 # 'state': 'sale'
             })
 
@@ -226,6 +230,7 @@ class CommandeREST(http.Controller):
             response=json.dumps({
                 'id': order.id,
                 'name': order.name,
+                'payment_mode': order.payment_mode,
                 'partner_id': order.partner_id.id,
                 'type_sale': order.type_sale,
                 'currency_id': order.currency_id.id,
@@ -266,6 +271,7 @@ class CommandeREST(http.Controller):
             order_data = {
                 'id': order.id,
                 'type_sale':  order.type_sale,
+                'payment_mode': order.payment_mode,
                 'date_order': order.date_order.isoformat() if order.date_order else None,
                 'name': order.name,
                 'partner_id': order.partner_id.id or None,
@@ -374,6 +380,7 @@ class CommandeREST(http.Controller):
                 order_data = {
                 'id': order.id,
                 'type_sale':  order.type_sale,
+                'payment_mode': order.payment_mode,
                 'date_order': order.date_order.isoformat() if order.date_order else None,
                 'name': order.name,
                 'partner_id': order.partner_id.id or None,

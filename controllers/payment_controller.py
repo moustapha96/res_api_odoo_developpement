@@ -821,28 +821,34 @@ class PaymentREST(http.Controller):
             partner = order.partner_id
             company = partner.company_id
 
-            _logger.info(f'Partner: {partner.email}, Company: {company.name}')
+            if order.payment_mode == "online":
 
-            journal = request.env['account.journal'].sudo().search([('code', '=', 'CSH1'), ('company_id', '=', company.id)], limit=1)
-            payment_method = request.env['account.payment.method'].sudo().search([('payment_type', '=', 'inbound')], limit=1)
-            payment_method_line = request.env['account.payment.method.line'].sudo().search([('payment_method_id', '=', payment_method.id), ('journal_id', '=', journal.id)], limit=1)
+                _logger.info(f'Partner: {partner.email}, Company: {company.name}')
 
-            _logger.info(f'Journal: {journal.id}')
+                journal = request.env['account.journal'].sudo().search([('code', '=', 'CSH1'), ('company_id', '=', company.id)], limit=1)
+                payment_method = request.env['account.payment.method'].sudo().search([('payment_type', '=', 'inbound')], limit=1)
+                payment_method_line = request.env['account.payment.method.line'].sudo().search([('payment_method_id', '=', payment_method.id), ('journal_id', '=', journal.id)], limit=1)
 
-            payment_details = request.env['payment.details'].search([('order_id', '=', order.id)], limit=1)
-            _logger.info(f'payment : {payment_details.payment_state, payment_details.token_status }')
-            if payment_details and payment_details.token_status == False and payment_details.payment_state == "completed":
-                payment_details.write({'token_status': True})
-                if order.advance_payment_status == 'paid':
-                    return self._make_response(self._order_to_dict(order), 200)
+                _logger.info(f'Journal: {journal.id}')
+
+                payment_details = request.env['payment.details'].search([('order_id', '=', order.id)], limit=1)
+                _logger.info(f'payment : {payment_details.payment_state, payment_details.token_status }')
+                if payment_details and payment_details.token_status == False and payment_details.payment_state == "completed":
+                    payment_details.write({'token_status': True})
+                    if order.advance_payment_status == 'paid':
+                        return self._make_response(self._order_to_dict(order), 200)
+                    else:
+                        return self._create_payment_and_confirm_order(order, partner, journal, payment_method, payment_method_line)
+
+                elif payment_details and payment_details.token_status == True:
+                    return self._make_response({'message': 'Payment deja valide'}, 200)
+
                 else:
-                    return self._create_payment_and_confirm_order(order, partner, journal, payment_method, payment_method_line)
+                    return self._make_response({'message': 'Payment non valide'}, 200)
+            else :
+                order.action_confirm()
+                return self._make_response(self._order_to_dict(order), 200)
 
-            elif payment_details and payment_details.token_status == True:
-                return self._make_response({'message': 'Payment deja valide'}, 200)
-
-            else:
-                return self._make_response({'message': 'Payment non valide'}, 200)
 
         except ValueError as e:
             return self._make_response({'status': 'error', 'message': str(e)}, 400)
@@ -896,16 +902,18 @@ class PaymentREST(http.Controller):
         customer_name  = data.get('customer_name') , 
         customer_email = data.get('customer_email'),
         customer_phone = data.get('customer_phone'),
-        token_status = data.get('token_status')
+       
         payment_date = datetime.datetime.now()
         payment_state = data.get('payment_state')
+
+       
+
 
         user = request.env['res.users'].sudo().browse(request.env.uid)
         if not user or user._is_public():
             admin_user = request.env.ref('base.user_admin')
             request.env = request.env(user=admin_user.id)
 
-        
         payment_details = request.env['payment.details'].sudo().search([('payment_token', '=', token)], limit=1)
         if payment_details:
             total_amount = payment_details.amount
@@ -916,7 +924,6 @@ class PaymentREST(http.Controller):
                 company = partner.company_id
                 if payment_details.token_status == False and payment_state == "completed":
                     facture = f"https://paydunya.com/checkout/receipt/{token}"
-                    url_facture = facture
 
                     if order.type_sale == "order" :
                         journal = request.env['account.journal'].sudo().search([('code', '=', 'CSH1'), ('company_id', '=', company.id)], limit=1)
@@ -958,7 +965,6 @@ class PaymentREST(http.Controller):
                             })
                             if order.state == "draft":
                                 order.action_confirm()
-
 
                             payment_details.write({
                                 'token_status': True,
