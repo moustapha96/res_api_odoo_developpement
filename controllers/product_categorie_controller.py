@@ -47,6 +47,11 @@ class ProductCategorieControllerREST(http.Controller):
                 image_1024_url = f"{base_url}/web/image/product.product/{p.id}/image_1024"
                 image_512_url = f"{base_url}/web/image/product.product/{p.id}/image_512"
                 image_256_url = f"{base_url}/web/image/product.product/{p.id}/image_256"
+
+                image_1 = f"{base_url}/web/image/product.template/{p.product_tmpl_id.id}/image_1"
+                image_2 = f"{base_url}/web/image/product.template/{p.product_tmpl_id.id}/image_2"
+                image_3 = f"{base_url}/web/image/product.template/{p.product_tmpl_id.id}/image_3"
+
                 product_data.append({
                 'id': p.id,
                 'name': p.name,
@@ -71,9 +76,9 @@ class ProductCategorieControllerREST(http.Controller):
                 'categ_id': p.categ_id.name,
                 'type': p.type,
                 'description': p.product_tmpl_id.description,
-                'image_1': p.product_tmpl_id.image_1,
-                'image_2': p.product_tmpl_id.image_2,
-                'image_3': p.product_tmpl_id.image_3,
+                'image_1': image_1,
+                'image_2': image_2,
+                'image_3': image_3,
                 'en_promo' : p.product_tmpl_id.en_promo,
                 'list_price': p.list_price,
                 'volume': p.volume,
@@ -114,6 +119,11 @@ class ProductCategorieControllerREST(http.Controller):
                 image_1024_url = f"{base_url}/web/image/product.product/{p.id}/image_1024"
                 image_512_url = f"{base_url}/web/image/product.product/{p.id}/image_512"
                 image_256_url = f"{base_url}/web/image/product.product/{p.id}/image_256"
+
+                image_1 = f"{base_url}/web/image/product.template/{p.product_tmpl_id.id}/image_1"
+                image_2 = f"{base_url}/web/image/product.template/{p.product_tmpl_id.id}/image_2"
+                image_3 = f"{base_url}/web/image/product.template/{p.product_tmpl_id.id}/image_3"
+
                 _logger.info(image_1920_url)
                 _logger.info(image_128_url)
 
@@ -137,9 +147,9 @@ class ProductCategorieControllerREST(http.Controller):
                 'image_1024': image_1024_url,
                 'image_512': image_512_url,
                 'image_256': image_256_url,
-                'image_1': p.product_tmpl_id.image_1,
-                'image_2': p.product_tmpl_id.image_2,
-                'image_3': p.product_tmpl_id.image_3,
+                'image_1': image_1,
+                'image_2': image_2,
+                'image_3': image_3,
 
                 'categ_id': p.categ_id.name,
                 'type': p.type,
@@ -185,6 +195,11 @@ class ProductCategorieControllerREST(http.Controller):
             image_1024_url = f"{base_url}/web/image/product.product/{p.id}/image_1024"
             image_512_url = f"{base_url}/web/image/product.product/{p.id}/image_512"
             image_256_url = f"{base_url}/web/image/product.product/{p.id}/image_256"
+
+            image_1 = f"{base_url}/web/image/product.template/{p.product_tmpl_id.id}/image_1"
+            image_2 = f"{base_url}/web/image/product.template/{p.product_tmpl_id.id}/image_2"
+            image_3 = f"{base_url}/web/image/product.template/{p.product_tmpl_id.id}/image_3"
+            
             produit_data = {
                 'id': p.id,
                 'name': p.name,
@@ -200,9 +215,9 @@ class ProductCategorieControllerREST(http.Controller):
                 'image_1024': image_1024_url,
                 'image_512': image_512_url,
                 'image_256': image_256_url,
-                'image_1': p.product_tmpl_id.image_1,
-                'image_2': p.product_tmpl_id.image_2,
-                'image_3': p.product_tmpl_id.image_3,
+                'image_1': image_1,
+                'image_2': image_2,
+                'image_3': image_3,
                 'categ_id': p.categ_id.name,
                 'type': p.type,
                 'description': p.description,
@@ -251,6 +266,10 @@ class ProductCategorieControllerREST(http.Controller):
                 image_1024_url = f"{base_url}/web/image/product.product/{p.id}/image_1024"
                 image_512_url = f"{base_url}/web/image/product.product/{p.id}/image_512"
                 image_256_url = f"{base_url}/web/image/product.product/{p.id}/image_256"
+
+                image_1 = f"{base_url}/web/image/product.template/{p.product_tmpl_id.id}/image_1"
+                image_2 = f"{base_url}/web/image/product.template/{p.product_tmpl_id.id}/image_2"
+                image_3 = f"{base_url}/web/image/product.template/{p.product_tmpl_id.id}/image_3"
                 _logger.info(image_1920_url)
                 _logger.info(image_128_url)
                 
@@ -269,9 +288,9 @@ class ProductCategorieControllerREST(http.Controller):
                 'image_1024': image_1024_url,
                 'image_512': image_512_url,
                 'image_256': image_256_url,
-                'image_1': p.product_tmpl_id.image_1,
-                'image_2': p.product_tmpl_id.image_2,
-                'image_3': p.product_tmpl_id.image_3,
+                'image_1': image_1,
+                'image_2': image_2,
+                'image_3': image_3,
                 # 'image_1920': p.image_1920,
                 # 'image_128' : p.image_128,
                 # 'image_1024': p.image_1024,
