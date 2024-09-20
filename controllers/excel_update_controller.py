@@ -91,7 +91,7 @@ class ExcelUpdateController(http.Controller):
                 'email_from': lead['email'], 
                 'phone': lead.get('phone'), 
                 'user_id': request.env.user.id, 
-                'description':f"Date: {lead['date']}, User: {lead['user']}, Type: {lead['type']}, IP: {user_ip}, Location: {location_info.get('city', '')}, {location_info.get('region', '')}, {location_info.get('country', '')}",
+                'description':  f"Date: {lead['date']}, User: {lead['user']}, Type: {lead['type']}, location : {lead['location']}",
                 'date_deadline': date_deadline, 
                 'partner_id': partner_id,
                 'expected_revenue': lead['price'],
