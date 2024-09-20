@@ -34,17 +34,26 @@ class ExcelUpdateController(http.Controller):
             admin_user = request.env.ref('base.user_admin')
             request.env = request.env(user=admin_user.id)
 
-
         user_ip = request.httprequest.remote_addr
+        referer = request.httprequest.headers.get('Referer', 'Inconnu')  # Récupérer l'en-tête Referer
         _logger.info(f"User IP: {user_ip}")
-        
+        _logger.info(f"Referer: {referer}")
+
+        location_info = {}
+        try:
+            response = request.get(f'https://ipinfo.io/{user_ip}/json?token=a7bca817c4bc37')  # Remplacez YOUR_API_KEY par votre clé API
+            if response.status_code == 200:
+                location_info = response.json()
+                _logger.info(f"Location Info: {location_info}")
+            else:
+                    _logger.warning(f"Failed to get location info: {response.status_code}")
+        except Exception as e:
+            _logger.error(f"Error retrieving location info: {e}")
+                
 
         Lead = request.env['crm.lead'].sudo()
         Partner = request.env['res.partner'].sudo()  # Modèle des partenaires
         created_leads = []
-        
-        # Récupérer les emails existants pour éviter les doublons
-        # existing_emails = Lead.search([('email_from', 'in', [lead.get('email') for lead in leads_data])])
        
         tag_produit = request.env['crm.tag'].sudo().search([('name', '=', 'Produit')], limit=1)
     
@@ -85,13 +94,13 @@ class ExcelUpdateController(http.Controller):
                 'email_from': lead['email'],  # Email du lead
                 'phone': lead.get('phone'),  # Téléphone (optionnel)
                 'user_id': request.env.user.id,  # Assigner à l'utilisateur courant
-                'description': f"Date: {lead['date']}, User: {lead['user']}, Type: {lead['type']}",  # Description optionnelle
+                # 'description': f"Date: {lead['date']}, User: {lead['user']}, Type: {lead['type']}",
+                'description': f"Date: {lead['date']}, User: {lead['user']}, Type: {lead['type']}, IP: {user_ip}, Location: {location_info.get('city', '')}, {location_info.get('region', '')}, {location_info.get('country', '')}",
                 'date_deadline': date_deadline,  # Date limite en fonction du type
                 'partner_id': partner_id,
                 'expected_revenue': lead['price'],
                 'tag_ids': [(6, 0, [tag_produit.id])] if tag_produit else [],
-                'location': user_ip 
-                # lead.get('adresse'),
+                'x_location': f"IP: {user_ip}, Location: {location_info.get('city', '')}, {location_info.get('region', '')}, {location_info.get('country', '')}"
             })
             created_leads.append(new_lead.id)
 
