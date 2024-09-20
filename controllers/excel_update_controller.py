@@ -95,12 +95,12 @@ class ExcelUpdateController(http.Controller):
                 'phone': lead.get('phone'),  # Téléphone (optionnel)
                 'user_id': request.env.user.id,  # Assigner à l'utilisateur courant
                 # 'description': f"Date: {lead['date']}, User: {lead['user']}, Type: {lead['type']}",
-                'description': f"Date: {lead['date']}, User: {lead['user']}, Type: {lead['type']}, IP: {user_ip}, Location: {lead['location'] }",
+                'description':f"Date: {lead['date']}, User: {lead['user']}, Type: {lead['type']}, IP: {user_ip}, Location: {location_info.get('city', '')}, {location_info.get('region', '')}, {location_info.get('country', '')}",
                 'date_deadline': date_deadline,  # Date limite en fonction du type
                 'partner_id': partner_id,
                 'expected_revenue': lead['price'],
                 'tag_ids': [(6, 0, [tag_produit.id])] if tag_produit else [],
-                'location': lead['location']
+                'location': f"IP: {user_ip}, Location: {location_info.get('city', '')}, {location_info.get('region', '')}, {location_info.get('country', '')}",
             })
             created_leads.append(new_lead.id)
 
