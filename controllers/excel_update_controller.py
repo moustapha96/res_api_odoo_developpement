@@ -35,7 +35,8 @@ class ExcelUpdateController(http.Controller):
             request.env = request.env(user=admin_user.id)
 
 
-      
+        user_ip = request.httprequest.remote_addr
+        _logger.info(f"User IP: {user_ip}")
         
 
         Lead = request.env['crm.lead'].sudo()
@@ -89,7 +90,8 @@ class ExcelUpdateController(http.Controller):
                 'partner_id': partner_id,
                 'expected_revenue': lead['price'],
                 'tag_ids': [(6, 0, [tag_produit.id])] if tag_produit else [],
-                'location': lead.get('adresse'),
+                'location': user_ip 
+                # lead.get('adresse'),
             })
             created_leads.append(new_lead.id)
 
