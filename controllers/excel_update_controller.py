@@ -100,7 +100,7 @@ class ExcelUpdateController(http.Controller):
                 'partner_id': partner_id,
                 'expected_revenue': lead['price'],
                 'tag_ids': [(6, 0, [tag_produit.id])] if tag_produit else [],
-                'x_location': f"IP: {user_ip}, Location: {location_info.get('city', '')}, {location_info.get('region', '')}, {location_info.get('country', '')}"
+                'location': f"IP: {user_ip}, Location: {location_info.get('city', '')}, {location_info.get('region', '')}, {location_info.get('country', '')}"
             })
             created_leads.append(new_lead.id)
 
