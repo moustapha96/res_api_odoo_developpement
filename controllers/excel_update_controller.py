@@ -35,9 +35,8 @@ class ExcelUpdateController(http.Controller):
             request.env = request.env(user=admin_user.id)
 
         user_ip = request.httprequest.remote_addr
-        referer = request.httprequest.headers.get('Referer', 'Inconnu')  # Récupérer l'en-tête Referer
         _logger.info(f"User IP: {user_ip}")
-        _logger.info(f"Referer: {referer}")
+       
 
         location_info = {}
         try:
@@ -67,11 +66,10 @@ class ExcelUpdateController(http.Controller):
             existing_lead = Lead.search([
                 ('email_from', '=', lead['email']),
                 ('name', '=', lead['productName']),
-                ('date_deadline', '>=', datetime.now().date()),  # Vérifie que la date est aujourd'hui ou plus tard
-                ('date_deadline', '<=', datetime.now().date())   # Vérifie que la date est aujourd'hui
+                ('date_deadline', '>=', datetime.now().date()),  
+                ('date_deadline', '<=', datetime.now().date())
             ], limit=1)
 
-            # Vérifier si un lead avec le même email existe déjà
             if existing_lead:
                 _logger.info(f"Lead with product '{lead['productName']}', email '{lead['email']}' and today's date already exists. Skipping.")
                 continue 
@@ -98,7 +96,7 @@ class ExcelUpdateController(http.Controller):
                 'partner_id': partner_id,
                 'expected_revenue': lead['price'],
                 'tag_ids': [(6, 0, [tag_produit.id])] if tag_produit else [],
-                'location': f"IP: {user_ip}, Location: {location_info.get('city')}, {location_info.get('region')}, {location_info.get('country')}",
+                'location': lead['location']
             })
             created_leads.append(new_lead.id)
 
