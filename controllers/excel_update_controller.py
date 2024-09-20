@@ -78,25 +78,23 @@ class ExcelUpdateController(http.Controller):
 
             # Vérifier si un partenaire existe avec le même email
             partner = Partner.search([('email', '=', lead['email'])], limit=1)
-            partner_id = partner.id if partner else False  # Lier le partenaire si trouvé
+            partner_id = partner.id if partner else False 
 
-            # Définir la date limite en fonction du type de lead
+           
             if lead['type'] == 'order':
-                date_deadline = datetime.now() + timedelta(days=7)  # 7 jours pour les commandes
+                date_deadline = datetime.now() + timedelta(days=7) 
             elif lead['type'] == 'preorder':
-                date_deadline = datetime.now() + timedelta(days=60)  # 60 jours pour les précommandes
+                date_deadline = datetime.now() + timedelta(days=60) 
             else:
-                date_deadline = None  # Pas de date limite pour les autres types
+                date_deadline = None  
 
-            # Création du lead
             new_lead = Lead.create({
-                'name': lead['productName'],  # Nom du lead (utilisation de productName)
-                'email_from': lead['email'],  # Email du lead
-                'phone': lead.get('phone'),  # Téléphone (optionnel)
-                'user_id': request.env.user.id,  # Assigner à l'utilisateur courant
-                # 'description': f"Date: {lead['date']}, User: {lead['user']}, Type: {lead['type']}",
+                'name': lead['productName'], 
+                'email_from': lead['email'], 
+                'phone': lead.get('phone'), 
+                'user_id': request.env.user.id, 
                 'description':f"Date: {lead['date']}, User: {lead['user']}, Type: {lead['type']}, IP: {user_ip}, Location: {location_info.get('city', '')}, {location_info.get('region', '')}, {location_info.get('country', '')}",
-                'date_deadline': date_deadline,  # Date limite en fonction du type
+                'date_deadline': date_deadline, 
                 'partner_id': partner_id,
                 'expected_revenue': lead['price'],
                 'tag_ids': [(6, 0, [tag_produit.id])] if tag_produit else [],
