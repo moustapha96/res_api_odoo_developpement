@@ -225,10 +225,9 @@ class PreCommandeREST(http.Controller):
             data = json.loads(request.httprequest.data)
             partner_id = int(data.get('partner_id'))
             order_lines = data.get('order_lines')
-
             if not partner_id or not order_lines:
                 raise ValueError('Invalid données pre-commande')
-
+            
             partner = request.env['res.partner'].sudo().search([('id', '=', partner_id)], limit=1)
 
             if not request.env.user or request.env.user._is_public():
@@ -245,6 +244,7 @@ class PreCommandeREST(http.Controller):
                         'currency_id': company.currency_id.id,
                         'company_id': company.id,
                         'commitment_date': datetime.datetime.now() + datetime.timedelta(days=60),
+                        'payment_mode': 'domicile'
                         # 'state': 'sale'
                     })
                     # order.action_confirm()
@@ -266,7 +266,8 @@ class PreCommandeREST(http.Controller):
                             # 'type_sale': 'preorder',
                             'invoice_status': 'to invoice'
                         })
-                    # order.action_confirm()
+                    if order:
+                        order.action_confirm()
             else:
                 raise ValueError('Company not found')
 
@@ -284,19 +285,15 @@ class PreCommandeREST(http.Controller):
                     'company_id': order.company_id.id,
                     'commitment_date': order.commitment_date.isoformat(),
                     'state': order.state,
-
                     'first_payment_date': order.first_payment_date.isoformat() if order.first_payment_date else None,
                     'second_payment_date': order.second_payment_date.isoformat() if order.second_payment_date else None,
                     'third_payment_date': order.third_payment_date.isoformat() if order.third_payment_date else None,
-
                     'first_payment_amount': order.first_payment_amount,
                     'second_payment_amount': order.second_payment_amount,
                     'third_payment_amount': order.third_payment_amount,
-
                     'first_payment_state': order.first_payment_state,
                     'second_payment_state': order.second_payment_state,
                     'third_payment_state': order.third_payment_state,
-                    
                     'amount_residual': order.amount_residual,
                     'amount_total' : order.amount_total,
                     'amount_tax': order.amount_tax,

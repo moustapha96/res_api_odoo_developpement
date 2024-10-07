@@ -1,0 +1,83 @@
+Certainement ! Je vais vous fournir des exemples d'appels pour toutes les fonctions de notre API WhatsApp intégrée à Odoo, en utilisant des données d'exemple. Je vais utiliser Python avec la bibliothèque `requests` pour simuler ces appels API.
+
+Voici des exemples d'appels pour chaque fonction de notre API WhatsApp :
+
+```python project="WhatsAppOdooIntegration" file="whatsapp_api_examples.py"
+...
+```
+
+Ces exemples montrent comment utiliser chacune des fonctions de notre API WhatsApp intégrée à Odoo :
+
+1. Envoi d'un message texte simple
+2. Envoi d'un message avec une image
+3. Envoi d'un message avec un document
+4. Envoi d'un message utilisant un modèle prédéfini
+5. Envoi d'un message interactif avec des boutons
+
+
+De plus, j'ai inclus un exemple de données que le webhook pourrait recevoir lorsqu'un utilisateur répond à un message interactif.
+
+Pour utiliser ces exemples dans votre environnement Odoo :
+
+1. Remplacez `"http://your_odoo_server"` par l'URL réelle de votre serveur Odoo.
+2. Assurez-vous que votre serveur Odoo est configuré pour accepter les requêtes API et que l'authentification appropriée est en place (vous devrez probablement ajouter des en-têtes d'authentification aux requêtes).
+3. Remplacez les numéros de téléphone d'exemple (`"33612345678"`, `"33687654321"`) par de vrais numéros de téléphone WhatsApp.
+4. Remplacez les URLs d'exemple pour les images et les documents par des URLs valides pointant vers vos propres ressources.
+5. Assurez-vous que les modèles de message que vous utilisez (comme `"welcome_message"`) sont effectivement configurés dans votre compte WhatsApp Business.
+
+
+Ces exemples vous permettront de tester et d'utiliser toutes les fonctionnalités de l'API WhatsApp que nous avons intégrée à Odoo. N'oubliez pas de gérer les erreurs et les réponses de l'API dans votre code de production pour assurer une expérience utilisateur robuste.
+
+
+Certainement ! Je vais vous fournir plusieurs exemples de messages interactifs WhatsApp, comment les envoyer, et comment récupérer les informations sélectionnées par l'utilisateur. Je vais vous montrer différents types de messages interactifs et comment traiter leurs réponses.
+
+Voici 4 exemples de messages interactifs WhatsApp, comment les envoyer et traiter les réponses :
+
+### Exemple 1 : Enquête de satisfaction client
+
+```python project="WhatsAppOdooIntegration" file="satisfaction_survey.py"
+...
+```
+
+### Exemple 2 : Menu de commande rapide pour un restaurant
+
+```python project="WhatsAppOdooIntegration" file="restaurant_order.py"
+...
+```
+
+### Exemple 3 : Prise de rendez-vous
+
+```python project="WhatsAppOdooIntegration" file="appointment_booking.py"
+...
+```
+
+### Exemple 4 : Support client avec catégories de problèmes
+
+```python project="WhatsAppOdooIntegration" file="customer_support.py"
+...
+```
+
+Ces exemples montrent comment utiliser les messages interactifs WhatsApp pour différents scénarios :
+
+1. Une enquête de satisfaction client
+2. Un menu de commande rapide pour un restaurant
+3. Un système de prise de rendez-vous
+4. Un système de support client avec catégories de problèmes
+
+
+Dans chaque exemple,
+
+
+
+
+ID du numero de téléphone :457607047429432
+
+
+Token : EAB6ggRjDQpsBO97Hduv9Imf8TjbO8tzPDiW7tSb0O6s5CpqYlUhcLxpON7u0cc8EBmL8mjeWWVnn6DmEcsIlg4AZBE8jk2ZCoph3lyth94f4QtSELZAZCLJGGh1dfZBL4oGuoXFdj3eL3jBDCP7ZAWZBer6WZBxhPrjZAduhHZBVKDC70yjm6KSW8joX6IN3DsuJFSRbo3EnXAWDtVnZBW5LUIW3z99g8YZD
+
+
+id d'app = 8620725627994779
+
+
+
+ 376923278848154

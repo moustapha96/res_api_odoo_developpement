@@ -130,95 +130,6 @@ class PaymentREST(http.Controller):
 
 
     
-    @http.route('/api/commandes', methods=['POST'], type='http', cors="*", auth='none', csrf=False)
-    def api_create_order(self, **kwargs):
-        data = json.loads(request.httprequest.data)
-        partner_id = int( data.get('partner_id'))
-        order_lines = data.get('order_lines')
-        state = data.get('state')
-
-        if not request.env.user or request.env.user._is_public():
-            admin_user = request.env.ref('base.user_admin')
-            request.env = request.env(user=admin_user.id)
-
-        if not partner_id or not order_lines:
-            return request.make_response(
-                json.dumps({'status': 'error', 'message': 'Invalid order data'}),
-                headers={'Content-Type': 'application/json'}
-            )
-
-        partner = request.env['res.partner'].sudo().search([('id', '=', partner_id)], limit=1)
-        company = request.env['res.company'].sudo().search([('id', '=', partner.company_id.id)], limit=1)
-
-        order = request.env['sale.order'].sudo().create({
-                'partner_id': partner_id,
-                'type_sale': 'order',
-                'currency_id' : company.currency_id.id,
-                'company_id' : company.id,
-                'commitment_date': datetime.datetime.now() + datetime.timedelta(days=30),
-                # 'state': 'sale'
-            })
-
-        for item in order_lines:
-            product_id = item.get('id')
-            product_uom_qty = item.get('quantity')
-            price_unit = item.get('list_price')
-
-            if not product_id or not product_uom_qty or not price_unit:
-                return request.make_response(
-                    json.dumps({'status': 'error', 'message': 'Missing product data'}),
-                    headers={'Content-Type': 'application/json'}
-                )
-
-            request.env['sale.order.line'].sudo().create({
-                'order_id': order.id,
-                'product_id': product_id,
-                'product_uom_qty': product_uom_qty,
-                'price_unit': price_unit,
-                'state': 'sale'
-            })
-
-        # if order:
-            # order.action_confirm()
-        resp = werkzeug.wrappers.Response(
-            status=201,
-            content_type='application/json; charset=utf-8',
-            headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
-            response=json.dumps({
-                'id': order.id,
-                'name': order.name,
-                'partner_id': order.partner_id.id,
-                'type_sale': order.type_sale,
-                'currency_id': order.currency_id.id,
-                'company_id': order.company_id.id,
-                'commitment_date': order.commitment_date.isoformat(),
-                'state': order.state,
-                'amount_residual': order.amount_residual,
-                'amount_total': order.amount_total,
-                'amount_tax': order.amount_tax,
-                'amount_untaxed': order.amount_untaxed,
-                'advance_payment_status': order.advance_payment_status,
-                'order_lines': [
-                    {
-                        'id': order_line.id,
-                        'quantity': order_line.product_uom_qty,
-                        'list_price': order_line.price_unit,
-                        'name': order_line.product_id.name,
-                        'image_1920': order_line.product_id.image_1920,
-                        'image_128' : order_line.product_id.image_128,
-                        'image_1024': order_line.product_id.image_1024,
-                        'image_512': order_line.product_id.image_512,
-                        'image_256': order_line.product_id.image_256,
-                        'categ_id': order_line.product_id.categ_id.name,
-                        'type': order_line.product_id.type,
-                        'description': order_line.product_id.description,
-                        'price_total': order_line.price_total,
-                    } for order_line in order.order_line
-                ],
-            })
-        )
-        return resp
- 
     # methode qu'on utilise
     @http.route('/api/precommande/<id>/payment/<amount>/<token>', methods=['GET'], type='http', cors="*", auth='none', csrf=False)
     def api_create_payment_rang_preorder(self, id , amount , token):
@@ -821,34 +732,28 @@ class PaymentREST(http.Controller):
             partner = order.partner_id
             company = partner.company_id
 
-            if order.payment_mode == "online":
+            _logger.info(f'Partner: {partner.email}, Company: {company.name}')
 
-                _logger.info(f'Partner: {partner.email}, Company: {company.name}')
+            journal = request.env['account.journal'].sudo().search([('code', '=', 'CSH1'), ('company_id', '=', company.id)], limit=1)
+            payment_method = request.env['account.payment.method'].sudo().search([('payment_type', '=', 'inbound')], limit=1)
+            payment_method_line = request.env['account.payment.method.line'].sudo().search([('payment_method_id', '=', payment_method.id), ('journal_id', '=', journal.id)], limit=1)
 
-                journal = request.env['account.journal'].sudo().search([('code', '=', 'CSH1'), ('company_id', '=', company.id)], limit=1)
-                payment_method = request.env['account.payment.method'].sudo().search([('payment_type', '=', 'inbound')], limit=1)
-                payment_method_line = request.env['account.payment.method.line'].sudo().search([('payment_method_id', '=', payment_method.id), ('journal_id', '=', journal.id)], limit=1)
+            _logger.info(f'Journal: {journal.id}')
 
-                _logger.info(f'Journal: {journal.id}')
-
-                payment_details = request.env['payment.details'].search([('order_id', '=', order.id)], limit=1)
-                _logger.info(f'payment : {payment_details.payment_state, payment_details.token_status }')
-                if payment_details and payment_details.token_status == False and payment_details.payment_state == "completed":
-                    payment_details.write({'token_status': True})
-                    if order.advance_payment_status == 'paid':
-                        return self._make_response(self._order_to_dict(order), 200)
-                    else:
-                        return self._create_payment_and_confirm_order(order, partner, journal, payment_method, payment_method_line)
-
-                elif payment_details and payment_details.token_status == True:
-                    return self._make_response({'message': 'Payment deja valide'}, 200)
-
+            payment_details = request.env['payment.details'].search([('order_id', '=', order.id)], limit=1)
+            _logger.info(f'payment : {payment_details.payment_state, payment_details.token_status }')
+            if payment_details and payment_details.token_status == False and payment_details.payment_state == "completed":
+                payment_details.write({'token_status': True})
+                if order.advance_payment_status == 'paid':
+                    return self._make_response(self._order_to_dict(order), 200)
                 else:
-                    return self._make_response({'message': 'Payment non valide'}, 200)
-            else :
-                order.action_confirm()
-                return self._make_response(self._order_to_dict(order), 200)
+                    return self._create_payment_and_confirm_order(order, partner, journal, payment_method, payment_method_line)
 
+            elif payment_details and payment_details.token_status == True:
+                return self._make_response({'message': 'Payment deja valide'}, 200)
+
+            else:
+                return self._make_response({'message': 'Payment non valide'}, 200)
 
         except ValueError as e:
             return self._make_response({'status': 'error', 'message': str(e)}, 400)
@@ -902,18 +807,16 @@ class PaymentREST(http.Controller):
         customer_name  = data.get('customer_name') , 
         customer_email = data.get('customer_email'),
         customer_phone = data.get('customer_phone'),
-       
+        token_status = data.get('token_status')
         payment_date = datetime.datetime.now()
         payment_state = data.get('payment_state')
-
-       
-
 
         user = request.env['res.users'].sudo().browse(request.env.uid)
         if not user or user._is_public():
             admin_user = request.env.ref('base.user_admin')
             request.env = request.env(user=admin_user.id)
 
+        
         payment_details = request.env['payment.details'].sudo().search([('payment_token', '=', token)], limit=1)
         if payment_details:
             total_amount = payment_details.amount
@@ -924,6 +827,7 @@ class PaymentREST(http.Controller):
                 company = partner.company_id
                 if payment_details.token_status == False and payment_state == "completed":
                     facture = f"https://paydunya.com/checkout/receipt/{token}"
+                    url_facture = facture
 
                     if order.type_sale == "order" :
                         journal = request.env['account.journal'].sudo().search([('code', '=', 'CSH1'), ('company_id', '=', company.id)], limit=1)
@@ -965,6 +869,7 @@ class PaymentREST(http.Controller):
                             })
                             if order.state == "draft":
                                 order.action_confirm()
+
 
                             payment_details.write({
                                 'token_status': True,

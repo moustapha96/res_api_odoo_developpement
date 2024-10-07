@@ -107,21 +107,18 @@ class ControllerREST(http.Controller):
     # Login in Odoo database and get access tokens:
     @http.route('/api/auth/get_tokens', methods=['GET', 'POST'], type='http', auth='none', cors="*", csrf=False)
     def api_auth_gettokens(self, **kw):
-        # Get request parameters from url
         args = request.httprequest.args.to_dict()
-        # Get request parameters from body
         try:
             body = json.loads(request.httprequest.data)
         except:
             body = {}
-        # Merge all parameters with body priority
+      
         jdata = args.copy()
         jdata.update(body)
         
         username = jdata.get('username')
         password = jdata.get('password')
         
-        # Empty 'username' or 'password:
         if not username or not password:
             error_descrip = "Empty value of 'username' or 'password'!"
             error = 'empty_username_or_password'
@@ -132,105 +129,119 @@ class ControllerREST(http.Controller):
         if not request.env.user or request.env.user._is_public():
             admin_user = request.env.ref('base.user_admin')
             request.env = request.env(user=admin_user.id)
-
-        # Vérifier si l'identifiant est un email ou un numéro de téléphone
-        if '@' in username:
-            # C'est un email
-            user = request.env['res.users'].search([('login', '=', username)], limit=1)
-        else:
-            # C'est un numéro de téléphone
-            user = request.env['res.partner'].search([('phone', '=', username)], limit=1)
-        if user:
-            user = request.env['res.users'].search([('partner_id', '=', user.id)], limit=1)
-
-        new_username = user.login if user else username
-        # Login in Odoo database:
-        try:
-            request.session.authenticate(db_name, new_username, password)
-        except:
-            # In Odoo v12 was changed the Odoo authentication exception,
-            # therefore the 'invalid_database' error response was removed!
-            pass
         
-        uid = request.session.uid
-       
-        
-        # Odoo login failed:
-        if not uid:
-            error_descrip = "Odoo User authentication failed!"
-            error = 'odoo_user_authentication_failed'
+
+        email_admin = 'ccbmtech@ccbm.sn'
+        password_admin = 'ccbmE@987'
+
+        if username  and password:
+            try:
+                request.session.authenticate(db_name, username, password)
+            except:
+                pass
+            uid = request.session.uid
+            if uid:
+                partner_hold = request.env['res.partner'].sudo().search([('email', '=', username)], limit=1)
+                if partner_hold:
+                    partner_hold.write({'password': password , 'is_verified': True})
+
+
+        user_partner = request.env['res.partner'].sudo().search([('email', '=', username), ('password' , '=', password)], limit=1)
+        if not user_partner:
+            error_descrip = "Email ou mot de passe incorrecte!"
+            error = 'empty_username_or_password'
             _logger.error(error_descrip)
-            return error_response(401, error, error_descrip)
+            return error_resp(400, error_descrip)
+
+        if user_partner and user_partner.is_verified == False:
+            error_descrip = "Email non verifié!"
+            error = 'email_not_verified'
+            _logger.error(error_descrip)
+            return error_resp(400, error_descrip)
         
-         # Generate tokens
-        access_token = generate_token()
-        expires_in = 3600  # 10 minutes
-        refresh_token = generate_token()
-        refresh_expires_in = 7200  # 1 heure
+        if user_partner and user_partner.is_verified == True:
+            try:
+                request.session.authenticate(db_name, email_admin, password_admin)
+            except:
+                pass
+            
+            uid = request.session.uid
         
-        # Generate tokens
-        # access_token = generate_token()
-        # expires_in = self.define_token_expires_in('access', jdata)
-        # refresh_token = generate_token()
-        # refresh_expires_in = self.define_token_expires_in('refresh', jdata)
-        # prevent undeletable access token
-        if refresh_expires_in < expires_in:
-            refresh_expires_in = expires_in
-        
-        # Save all tokens in store
-        _logger.info("Save OAuth2 tokens of user in Token Store...")
-        token_store.save_all_tokens(
-            request.env,
-            access_token = access_token,
-            expires_in = expires_in,
-            refresh_token = refresh_token,
-            refresh_expires_in = refresh_expires_in,
-            user_id = uid)
-        
-        user_context = request.session.context if uid else {}
-        company_id = request.env.user.company_id.id if uid else 'null'
-        user_info = request.env.user if uid else {}
-        # Get user information
-        user_data = {
-            'id': uid,
-            'name': user_info.name,
-            'email': user_info.email,
-            'company_id': company_id,
-            'partner_id': user_info.partner_id.id,
-            'company_id': user_info.company_id.id,
-            'company_name': user_info.company_id.name,
-            'partner_city': user_info.partner_id.city,
-            'partner_phone': user_info.partner_id.phone,
-            'country_id': user_info.partner_id.country_id.id,
-            'country_name': user_info.partner_id.country_id.name,
-            'country_code': user_info.partner_id.country_id.code,
-            'country_phone_code': user_info.partner_id.country_id.phone_code,
-            'is_verified' : self.get_verification_status(user_info.email) or None,
-            'avatar': self.get_user_avatar(user_info.email) or None
-        }
-        # Logout from Odoo and close current 'login' session:
-        request.session.logout()
-        
-        # Successful response:
-        resp = werkzeug.wrappers.Response(
-            status = OUT__auth_gettokens__SUCCESS_CODE,
-            content_type = 'application/json; charset=utf-8',
-            headers = [ ('Cache-Control', 'no-store'),
-                        ('Pragma', 'no-cache')  ],
-            response = json.dumps({
-                'uid':                  uid,
-                'user_context':         user_context,
-                'company_id':           company_id,
-                'access_token':         access_token,
-                'expires_in':           expires_in,
-                'refresh_token':        refresh_token,
-                'refresh_expires_in':   refresh_expires_in,
-                'user_info':            user_data,
-                'is_verified' :         self.get_verification_status(user_info.email) or None
-               }),
-        )
-        # Remove cookie session
-        resp.set_cookie = lambda *args, **kwargs: None
+            # Odoo login failed:
+            if not uid:
+                error_descrip = "Odoo User authentication failed!"
+                error = 'odoo_user_authentication_failed'
+                _logger.error(error_descrip)
+                return error_response(401, error, error_descrip)
+            
+            # Generate tokens
+            access_token = generate_token()
+            expires_in = 3600  # 10 minutes
+            refresh_token = generate_token()
+            refresh_expires_in = 7200  # 1 heure
+            
+            if refresh_expires_in < expires_in:
+                refresh_expires_in = expires_in
+            
+            # Save all tokens in store
+            _logger.info("Save OAuth2 tokens of user in Token Store...")
+            token_store.save_all_tokens(
+                request.env,
+                access_token = access_token,
+                expires_in = expires_in,
+                refresh_token = refresh_token,
+                refresh_expires_in = refresh_expires_in,
+                user_id = uid)
+            
+            user_context = request.session.context if uid else {}
+            company_id = request.env.user.company_id.id if uid else 'null'
+         
+            user_data = {
+                'id': uid,
+                'name': user_partner.name,
+                'email': user_partner.email,
+                'company_id': user_partner.company_id.id,
+                'partner_id':user_partner.id,
+                'company_id': user_partner.company_id.id,
+                'company_name': user_partner.company_id.name,
+                'partner_city':user_partner.city,
+                'partner_phone':user_partner.phone,
+                'country_id':user_partner.country_id.id,
+                'country_name':user_partner.country_id.name,
+                'country_code':user_partner.country_id.code,
+                'country_phone_code':user_partner.country_id.phone_code,
+                'is_verified' : user_partner.is_verified,
+                'avatar': user_partner.avatar
+            }
+            # Logout from Odoo and close current 'login' session:
+            # request.session.logout()
+            
+            # Successful response:
+            resp = werkzeug.wrappers.Response(
+                status = OUT__auth_gettokens__SUCCESS_CODE,
+                content_type = 'application/json; charset=utf-8',
+                headers = [ ('Cache-Control', 'no-store'),
+                            ('Pragma', 'no-cache')  ],
+                response = json.dumps({
+                    'uid':                  uid,
+                    'user_context':         user_context,
+                    'company_id':           company_id,
+                    'access_token':         access_token,
+                    'expires_in':           expires_in,
+                    'refresh_token':        refresh_token,
+                    'refresh_expires_in':   refresh_expires_in,
+                    'user_info':            user_data,
+                    'is_verified' :         user_partner.is_verified
+                }),
+            )
+            # Remove cookie session
+            resp.set_cookie = lambda *args, **kwargs: None
+        else:
+            resp =  werkzeug.wrappers.Response(
+                status = 401,
+                content_type = 'application/json; charset=utf-8',
+                response = json.dumps({ 'error': 'Email ou mot de passe incorrecte' })
+                )
         return resp
     
     # Refresh access token:

@@ -529,7 +529,7 @@ def check_permissions(func):
     def wrapper(self, *args, **kwargs):
         _logger.info("Check permissions...")
         
-        exempt_routes = ['/api/facture/paydunya']
+        exempt_routes = ['/api/facture/paydunya', '/api/commande-sans-partner']
 
         if request.httprequest.path in exempt_routes:
             return func(self, *args, **kwargs)
@@ -583,6 +583,19 @@ def error_response(status, error, error_descrip):
         response = json.dumps({
             'error':         error,
             'error_descrip': error_descrip,
+        }, ensure_ascii=u_escape_characters_for_unicode_in_responses),
+    )
+    # Remove cookie session
+    resp.set_cookie = lambda *args, **kwargs: None
+    return resp
+
+def error_resp(status,  error_descrip):
+    resp = werkzeug.wrappers.Response(
+        status = status,
+        content_type = 'application/json; charset=utf-8',
+        #headers = None,
+        response = json.dumps({
+            'error': error_descrip,
         }, ensure_ascii=u_escape_characters_for_unicode_in_responses),
     )
     # Remove cookie session
@@ -736,3 +749,4 @@ else:
         from . import contact_controller
         from . import product_categorie_controller
         from . import excel_update_controller
+        from . import whatsapp_api

@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 {
-    'name': 'Odoo REST API DEVELOPMENT',
+    'name': 'Odoo REST API DEV',
     'version': '16.0.1.14.8',
     'category': 'Extra Tools',
-    'author': "AVS-KHOUMA-DEV'",
+    'author': "AVS'",
     'support': 'avs3.help@gmail.com',
     'license': 'OPL-1',
     'website': 'https://app.swaggerhub.com/apis-docs/avs3/odoo_rest_api/1',
@@ -30,6 +30,7 @@
         'security/ir.model.access.csv',
         'views/ir_model_view.xml',
         'views/product_template_view.xml',
+        'views/res_partner_view.xml'
     ],
     'images': [
         'static/description/banner.png',

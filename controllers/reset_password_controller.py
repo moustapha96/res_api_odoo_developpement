@@ -154,58 +154,37 @@ class ResetPasswordREST(http.Controller):
             )
 
         try:
-            user = request.env['res.users'].sudo().search([('email', '=', email)], limit=1)
-            partner = request.env['res.partner'].sudo().search([('signup_token', '=', token)], limit=1)
+            user = request.env['res.users'].sudo().search([('id', '=', request.env.uid)], limit=1)
+            if not user or user._is_public():
+                admin_user = request.env.ref('base.user_admin')
+                request.env = request.env(user=admin_user.id)
 
-            if not user:
-                _logger.error(f"User not found for email: {email}")
+            partner = request.env['res.partner'].sudo().search([('signup_token', '=', token),('email', '=', email)], limit=1)
+            _logger.info(f"Partner: {partner}")
+            if partner  and partner.signup_token == token  and partner.email == email and partner.signup_expiration >= datetime.datetime.now():
+                partner.write({
+                    'signup_type': None,
+                    'signup_token': None,
+                    'signup_expiration': None,
+                    'password': password
+                })
+
+                _logger.info(f"Password reset for email: {email}")
+                return werkzeug.wrappers.Response(
+                    status=200,
+                    content_type='application/json; charset=utf-8',
+                    headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                    response=json.dumps({'status': 'success', 'message': 'Le mot de passe a été réinitialisé avec succès'})
+                )
+            else:
+                _logger.error(f"Token not found for email: {email}")
                 return werkzeug.wrappers.Response(
                     status=400,
                     content_type='application/json; charset=utf-8',
                     headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
-                    response=json.dumps({'status': 'error', 'message': 'User not found'})
+                    response=json.dumps({'status': 'error', 'message': 'Token non trouvé'})
                 )
-
-            if not partner:
-                _logger.error(f"Partner not found for token: {token}")
-                return werkzeug.wrappers.Response(
-                    status=400,
-                    content_type='application/json; charset=utf-8',
-                    headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
-                    response=json.dumps({'status': 'error', 'message': 'Invalid token'})
-                )
-
-            # if partner.signup_expiration <= datetime.datetime.now():
-            #     _logger.error(f"Token expired for partner: {partner.id}")
-            #     return werkzeug.wrappers.Response(
-            #         status=400,
-            #         content_type='application/json; charset=utf-8',
-            #         headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
-            #         response=json.dumps({'status': 'error', 'message': 'Token expired'})
-            #     )
-
-            partner.write({
-                'signup_type': '',
-                'signup_token': '',
-                'signup_expiration': '',
-            })
-
-            admin_user = request.env.ref('base.user_admin')
-            request.env = request.env(user=admin_user.id)
-            # Utiliser le wizard pour changer le mot de passe
-            wizard = request.env['change.password.wizard'].create({
-                'user_ids': [(0, 0, {'user_id': user.id, 'user_login': user.login, 'new_passwd': password})]
-            })
-            wizard.change_password_button()
-           
-
-            _logger.info(f"Password changed successfully for user: {user.id}")
-            return werkzeug.wrappers.Response(
-                status=200,
-                content_type='application/json; charset=utf-8',
-                headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
-                response=json.dumps({'status': 'success', 'message': 'Le mot de passe a été réinitialisé avec succès'})
-            )
+            
 
         except Exception as e:
             _logger.error(f'Erreur lors de la réinitialisation du mot de passe: {str(e)}')
@@ -229,148 +208,154 @@ class ResetPasswordREST(http.Controller):
                 response=json.dumps({'status': 'error', 'message': f'email non valide '})
             )
 
-        user = request.env['res.users'].sudo().search([('email', '=', email)], limit=1)
-        partner = request.env['res.partner'].sudo().search([ ('id' , '=' , user.partner_id.id ) ], limit=1)
-        if not user:
+        user = request.env['res.users'].sudo().search([('id', '=', request.env.uid)], limit=1)
+        if not user or user._is_public():
+            admin_user = request.env.ref('base.user_admin')
+            request.env = request.env(user=admin_user.id)
+
+
+        partner = request.env['res.partner'].sudo().search([ ('email', '=', email) ], limit=1)
+        company = partner.company_id
+
+        if partner:
+            # Générer un token de réinitialisation de mot de passe
+            token = self.generate_token(email)
+            # Construire le contenu de l'e-mail
+            subject = 'Réinitialiser votre mot de passe'
+            reset_url = f'https://ccbme.sn/new-password?mail={partner.email}&token={token}'
+            # reset_url = f'https://localhost:5173/new-password?mail={partner.email}&token={token}'
+            body_html = f'''
+            <table border="0" cellpadding="0" cellspacing="0" style="padding-top: 16px; background-color: #FFFFFF; font-family:Verdana, Arial,sans-serif; color: #454748; width: 100%; border-collapse:separate;">
+                <tr>
+                    <td align="center">
+                        <table border="0" cellpadding="0" cellspacing="0" width="590" style="padding: 16px; background-color: #FFFFFF; color: #454748; border-collapse:separate;">
+                            <tbody>
+                                <tr>
+                                    <td align="center" style="min-width: 590px;">
+                                        <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;">
+                                            <tr>
+                                                <td valign="middle">
+                                                    <span style="font-size: 10px;">Réinitialisation de mot de passe</span><br/>
+                                                    <span style="font-size: 20px; font-weight: bold;">
+                                                        {partner.name}
+                                                    </span>
+                                                </td>
+                                                <td valign="middle" align="right">
+                                                    <img style="padding: 0px; margin: 0px; height: auto; width: 80px;" src="https://ccbme.sn/logo.png" alt="logo CCBM SHOP"/>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td colspan="2" style="text-align:center;">
+                                                    <hr width="100%" style="background-color:rgb(204,204,204);border:medium none;clear:both;display:block;font-size:0px;min-height:1px;line-height:0; margin: 16px 0px 16px 0px;"/>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td align="center" style="min-width: 590px;">
+                                        <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;">
+                                            <tr>
+                                                <td valign="top" style="font-size: 13px;">
+                                                    <div>
+                                                        Cher {partner.name},<br/><br/>
+                                                        Vous avez demandé une réinitialisation de votre mot de passe.<br/>
+                                                        Pour réinitialiser votre mot de passe, cliquez sur le lien suivant :
+                                                        <div style="margin: 16px 0px 16px 0px;">
+                                                            <a style="background-color: #875A7B; padding: 8px 16px 8px 16px; text-decoration: none; color: #fff; border-radius: 5px; font-size:13px;" href="{reset_url}">
+                                                                Réinitialiser le mot de passe
+                                                            </a>
+                                                        </div>
+                                                        Merci,<br/>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="text-align:center;">
+                                                    <hr width="100%" style="background-color:rgb(204,204,204);border:medium none;clear:both;display:block;font-size:0px;min-height:1px;line-height:0; margin: 16px 0px 16px 0px;"/>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td align="center" style="min-width: 590px;">
+                                        <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; font-size: 11px; padding: 0px 8px 0px 8px; border-collapse:separate;">
+                                            <tr>
+                                                <td valign="middle" align="left">
+                                                {company.name}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td valign="middle" align="left" style="opacity: 0.7;">
+                                                {company.phone}
+                                                    | <a style="text-decoration:none; color: #2D7DBA;" href="mailto:{company.email}">{company.email}</a>
+                                                    |
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="center" style="min-width: 590px;">
+                        <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: #F1F1F1; color: #454748; padding: 8px; border-collapse:separate;">
+                            <tr>
+                                <td style="text-align: center; font-size: 13px;">
+                                    Généré par <a target="_blank" href="https://ccbme.sn" style="color: #2D7DBA;">CCBM Shop</a>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+            '''
+
+            mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
+            email_from = mail_server.smtp_user
+            additional_email = 'shop@ccbm.sn'
+            email_to = f'{email}, {additional_email}'
+
+            email_values = {
+                'email_from': email_from,
+                'email_to': email_to,
+                'subject': subject,
+                'body_html': body_html,
+                'state': 'outgoing',
+            }
+            mail_mail = request.env['mail.mail'].sudo().create(email_values)
+
+            try:
+                mail_mail.send()
+                # Enregistrer le token
+                partner.write({
+                    'signup_type' : 'reset',
+                    'signup_token': token,
+                    'signup_expiration': datetime.datetime.now() + datetime.timedelta(days=1),
+                })
+
+                return werkzeug.wrappers.Response(
+                        status=200,
+                        content_type='application/json; charset=utf-8',
+                        headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                        response=json.dumps({'status': 'success', 'message': f'Un lien de réinitialisation du mot de passe a été envoyé à votre adresse e-mail'})
+                    )
+
+            except Exception as e:
+                _logger.error(f'Error sending email: {str(e)}')
+                return werkzeug.wrappers.Response(
+                        status=200,
+                        content_type='application/json; charset=utf-8',
+                        headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                        response=json.dumps({'status': 'error', 'message': str(e)})
+                    )
+        else:
             return werkzeug.wrappers.Response(
                 status=400,
                 content_type='application/json; charset=utf-8',
                 headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
-                response=json.dumps({'status': 'error', 'message': f'Utilisateur non valide '})
+                response=json.dumps({'status': 'error', 'message': 'Adresse e-mail non valide'})
             )
-
-        # Générer un token de réinitialisation de mot de passe
-        token = self.generate_token(email)
-
-        # Construire le contenu de l'e-mail
-        subject = 'Réinitialiser votre mot de passe'
-        reset_url = f'https://ccbme.sn/new-password?mail={user.email}&token={token}'
-        body_html = f'''
-        <table border="0" cellpadding="0" cellspacing="0" style="padding-top: 16px; background-color: #FFFFFF; font-family:Verdana, Arial,sans-serif; color: #454748; width: 100%; border-collapse:separate;">
-            <tr>
-                <td align="center">
-                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="padding: 16px; background-color: #FFFFFF; color: #454748; border-collapse:separate;">
-                        <tbody>
-                            <tr>
-                                <td align="center" style="min-width: 590px;">
-                                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;">
-                                        <tr>
-                                            <td valign="middle">
-                                                <span style="font-size: 10px;">Réinitialisation de mot de passe</span><br/>
-                                                <span style="font-size: 20px; font-weight: bold;">
-                                                    {user.name}
-                                                </span>
-                                            </td>
-                                            <td valign="middle" align="right">
-                                                <img style="padding: 0px; margin: 0px; height: auto; width: 80px;" src="https://ccbme.sn/logo.png" alt="logo CCBM SHOP"/>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td colspan="2" style="text-align:center;">
-                                                <hr width="100%" style="background-color:rgb(204,204,204);border:medium none;clear:both;display:block;font-size:0px;min-height:1px;line-height:0; margin: 16px 0px 16px 0px;"/>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td align="center" style="min-width: 590px;">
-                                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;">
-                                        <tr>
-                                            <td valign="top" style="font-size: 13px;">
-                                                <div>
-                                                    Cher {user.name},<br/><br/>
-                                                    Vous avez demandé une réinitialisation de votre mot de passe.<br/>
-                                                    Pour réinitialiser votre mot de passe, cliquez sur le lien suivant :
-                                                    <div style="margin: 16px 0px 16px 0px;">
-                                                        <a style="background-color: #875A7B; padding: 8px 16px 8px 16px; text-decoration: none; color: #fff; border-radius: 5px; font-size:13px;" href="{reset_url}">
-                                                            Réinitialiser le mot de passe
-                                                        </a>
-                                                    </div>
-                                                    Merci,<br/>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td style="text-align:center;">
-                                                <hr width="100%" style="background-color:rgb(204,204,204);border:medium none;clear:both;display:block;font-size:0px;min-height:1px;line-height:0; margin: 16px 0px 16px 0px;"/>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td align="center" style="min-width: 590px;">
-                                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; font-size: 11px; padding: 0px 8px 0px 8px; border-collapse:separate;">
-                                        <tr>
-                                            <td valign="middle" align="left">
-                                               {user.company_id.name}
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td valign="middle" align="left" style="opacity: 0.7;">
-                                               {user.company_id.phone}
-                                                | <a style="text-decoration:none; color: #454748;" href="mailto:{user.company_id.email}">{user.company_id.email}</a>
-                                                |
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </td>
-            </tr>
-            <tr>
-                <td align="center" style="min-width: 590px;">
-                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: #F1F1F1; color: #454748; padding: 8px; border-collapse:separate;">
-                        <tr>
-                            <td style="text-align: center; font-size: 13px;">
-                                Généré par <a target="_blank" href="https://ccbme.sn" style="color: #875A7B;">CCBM Shop</a>
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-        </table>
-        '''
-
-        mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
-        email_from = mail_server.smtp_user
-        # email_to = email
-        additional_email = 'shop@ccbm.sn'
-        email_to = f'{email}, {additional_email}'
-
-        email_values = {
-            'email_from': email_from,
-            'email_to': email_to,
-            'subject': subject,
-            'body_html': body_html,
-            'state': 'outgoing',
-        }
-
-        mail_mail = request.env['mail.mail'].sudo().create(email_values)
-
-        try:
-            mail_mail.send()
-            # Enregistrer le token
-            partner.write({
-                'signup_type' : 'reset',
-                'signup_token': token,
-                'signup_expiration': datetime.datetime.now() + datetime.timedelta(days=1),
-            })
-
-            return werkzeug.wrappers.Response(
-                    status=200,
-                    content_type='application/json; charset=utf-8',
-                    headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
-                    response=json.dumps({'status': 'success', 'message': f'Un lien de réinitialisation du mot de passe a été envoyé à votre adresse e-mail'})
-                )
-        except Exception as e:
-            _logger.error(f'Error sending email: {str(e)}')
-            return werkzeug.wrappers.Response(
-                    status=200,
-                    content_type='application/json; charset=utf-8',
-                    headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
-                    response=json.dumps({'status': 'error', 'message': str(e)})
-                )

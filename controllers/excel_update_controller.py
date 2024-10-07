@@ -38,16 +38,16 @@ class ExcelUpdateController(http.Controller):
         _logger.info(f"User IP: {user_ip}")
        
 
-        location_info = {}
-        try:
-            response = request.get(f'https://ipinfo.io/{user_ip}/json?token=a7bca817c4bc37')  # Remplacez YOUR_API_KEY par votre clé API
-            if response.status_code == 200:
-                location_info = response.json()
-                _logger.info(f"Location Info: {location_info}")
-            else:
-                    _logger.warning(f"Failed to get location info: {response.status_code}")
-        except Exception as e:
-            _logger.error(f"Error retrieving location info: {e}")
+        # location_info = {}
+        # try:
+        #     response = request.get(f'https://ipinfo.io/{user_ip}/json?token=a7bca817c4bc37')  # Remplacez YOUR_API_KEY par votre clé API
+        #     if response.status_code == 200:
+        #         location_info = response.json()
+        #         _logger.info(f"Location Info: {location_info}")
+        #     else:
+        #             _logger.warning(f"Failed to get location info: {response.status_code}")
+        # except Exception as e:
+        #     _logger.error(f"Error retrieving location info: {e}")
                 
 
         Lead = request.env['crm.lead'].sudo()
@@ -58,6 +58,7 @@ class ExcelUpdateController(http.Controller):
     
 
         for lead in leads_data:
+            _logger.info(f"Processing lead: {lead}")
             # Vérification des champs obligatoires
             if 'productName' not in lead or 'email' not in lead or 'type' not in lead:
                 _logger.info("Missing required fields in lead data")
@@ -96,7 +97,7 @@ class ExcelUpdateController(http.Controller):
                 'partner_id': partner_id,
                 'expected_revenue': lead['price'],
                 'tag_ids': [(6, 0, [tag_produit.id])] if tag_produit else [],
-                'location': lead['location']
+                # 'location': lead['location']
             })
             created_leads.append(new_lead.id)
 

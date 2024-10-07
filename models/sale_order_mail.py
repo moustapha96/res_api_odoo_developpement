@@ -10,21 +10,38 @@ _logger = logging.getLogger(__name__)
 class SaleOrderMail(models.Model):
     _inherit = 'sale.order'
 
+    
     def send_order_confirmation_mail(self):
         # Récupérer ou créer une instance de IrMailServer
         mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
-       
+        
         # Récupérer le partenaire associé à la commande
         partner = self.partner_id
         if not partner:
             return {'status': 'error', 'message': 'Partner not found for the given order'}
-        # Construire le contenu de l'e-mail
+        
+        # Construire le sujet et les dates de livraison
         subject = 'Confirmation de votre commande'
-
         commitment_date = datetime.now() + timedelta(days=7)
         commitment_date_str = commitment_date.strftime('%Y-%m-%d')
 
-
+        # Vérifier si le partenaire a déjà un mot de passe
+        create_account_section = ""
+        if not partner.password:
+            # Générer le lien pour créer un compte
+            # create_account_link = f"https://ccbme.sn/mail={partner.email}?create-compte"
+            # create_account_link = f"http://localhost:5173/create-compte?mail={partner.email}"
+            create_account_link = f"https://ccbme.sn/create-compte?mail={partner.email}"
+            create_account_section = f'''
+                <tr>
+                    <td align="center" style="min-width: 590px; padding-top: 20px;">
+                        <span style="font-size: 14px;">Cliquez sur le lien suivant pour créer un compte et suivre votre commande :</span><br/>
+                        <a href="{create_account_link}" style="font-size: 16px; font-weight: bold;">Créer un compte</a>
+                    </td>
+                </tr>
+            '''
+        
+        # Construire le contenu de l'e-mail
         body_html = f'''
         <table border="0" cellpadding="0" cellspacing="0" style="padding-top: 16px; background-color: #FFFFFF; font-family:Verdana, Arial,sans-serif; color: #454748; width: 100%; border-collapse:separate;">
             <tr>
@@ -74,13 +91,11 @@ class SaleOrderMail(models.Model):
                                                 </span>
                                             </td>
                                             <td valign="middle" align="right" style="width: 50%;">
-                                               
                                                 {partner.city}
                                             </td>
                                         </tr>
-                                        <br />
                                         <tr>
-                                             <td valign="middle" style="width: 50%;">
+                                            <td valign="middle" style="width: 50%;">
                                                 <span style="font-size: 15px; font-weight: bold;">
                                                     Date de livraison estimée
                                                 </span>
@@ -89,7 +104,6 @@ class SaleOrderMail(models.Model):
                                                 Entre le {commitment_date_str} et {(commitment_date + timedelta(days=3)).strftime('%d-%b-%Y')}
                                             </td>
                                         </tr>
-                                        <br />
                                         <tr>
                                             <td valign="middle" style="width: 50%;">
                                                 <span style="font-size: 15px; font-weight: bold;">
@@ -97,14 +111,12 @@ class SaleOrderMail(models.Model):
                                                 </span>
                                             </td>
                                             <td valign="middle" align="right" style="width: 50%;">
-                                                Paiement en ligne
+                                                Paiement à la livraison
                                             </td>
                                         </tr>
                                     </table>
                                 </td>
                             </tr>
-                            <br />
-                            <br />
                             <tr>
                                 <td align="center" style="min-width: 590px;">
                                     <table border="1" cellpadding="5" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:collapse;">
@@ -122,6 +134,7 @@ class SaleOrderMail(models.Model):
                                     </table>
                                 </td>
                             </tr>
+                            {create_account_section} <!-- Section ajoutée pour le lien de création de compte -->
                         </tbody>
                     </table>
                 </td>
@@ -140,13 +153,9 @@ class SaleOrderMail(models.Model):
         </table>
         '''
 
-
         email_from = mail_server.smtp_user
-        # email_to = partner.email
-        # additional_email = 'bara.mboup@ccbm.sn'
         additional_email = 'shop@ccbm.sn'
         email_to = f'{partner.email}, {additional_email}'
-       
 
         # Définir les valeurs du message e-mail
         email_values = {
@@ -156,7 +165,8 @@ class SaleOrderMail(models.Model):
             'body_html': body_html,
             'state': 'outgoing',
         }
-        # Construire le message e-mail
+
+        # Envoi de l'e-mail
         mail_mail = request.env['mail.mail'].sudo().create(email_values)
         try:
             mail_mail.send()
@@ -165,24 +175,42 @@ class SaleOrderMail(models.Model):
             _logger.error(f'Error sending email: {str(e)}')
             return {'status': 'error', 'message': str(e)}
 
-    
 
     def send_preorder_confirmation_mail(self):
-        # Récupérer ou créer une instance de IrMailServer
+    # Récupérer ou créer une instance de IrMailServer
         mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
 
         # Récupérer le partenaire associé à la commande
         partner = self.partner_id
         if not partner:
             return {'status': 'error', 'message': 'Partner not found for the given order'}
-        # Construire le contenu de l'e-mail
+        
+        # Construire le sujet de l'e-mail
         subject = 'Confirmation de votre précommande'
 
+        # Définir les dates de livraison
         commitment_date_start = datetime.now() + timedelta(days=30)
         commitment_date_end = datetime.now() + timedelta(days=60)
         commitment_date_start_str = commitment_date_start.strftime('%Y-%m-%d')
         commitment_date_end_str = commitment_date_end.strftime('%Y-%m-%d')
 
+        # Vérifier si le partenaire a déjà un mot de passe
+        create_account_section = ""
+        if not partner.password:
+            # Générer le lien pour créer un compte
+            # create_account_link = f"http://localhost:5173/create-compte?mail={partner.email}"
+            create_account_link = f"https://ccbme.sn/create-compte?mail={partner.email}"
+            # create_account_link = f"https://ccbme.sn/mail={partner.email}?create-compte"
+            create_account_section = f'''
+                <tr>
+                    <td align="center" style="min-width: 590px; padding-top: 20px;">
+                        <span style="font-size: 14px;">Cliquez sur le lien suivant pour créer un compte et suivre votre précommande :</span><br/>
+                        <a href="{create_account_link}" style="font-size: 16px; font-weight: bold;">Créer un compte</a>
+                    </td>
+                </tr>
+            '''
+
+        # Générer les informations de paiement
         payment_info = ""
         if self.first_payment_amount or self.second_payment_amount or self.third_payment_amount:
             payment_info += "<h3>Informations de paiement</h3>"
@@ -205,6 +233,7 @@ class SaleOrderMail(models.Model):
         total_amount = self.amount_total
         remaining_amount = self.amount_residual
 
+        # Construire le contenu de l'e-mail
         body_html = f'''
         <table border="0" cellpadding="0" cellspacing="0" style="padding-top: 16px; background-color: #FFFFFF; font-family:Verdana, Arial,sans-serif; color: #454748; width: 100%; border-collapse:separate;">
             <tr>
@@ -283,7 +312,6 @@ class SaleOrderMail(models.Model):
                                 </td>
                             </tr>
                             <br />
-                            <br />
                             <tr>
                                 <td align="center" style="min-width: 590px;">
                                     <table border="1" cellpadding="5" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:collapse;">
@@ -301,39 +329,11 @@ class SaleOrderMail(models.Model):
                                     </table>
                                 </td>
                             </tr>
-                            <br />
+                            {create_account_section} <!-- Section ajoutée pour le lien de création de compte -->
                             <br />
                             <tr>
                                 <td align="center" style="min-width: 590px;">
                                     {payment_info}
-                                </td>
-                            </tr>
-                            <br />
-                            <br />
-                            <tr>
-                                <td align="center" style="min-width: 590px;">
-                                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;">
-                                        <tr>
-                                            <td valign="middle" style="width: 50%;">
-                                                <span style="font-size: 15px; font-weight: bold;">
-                                                    Prix total
-                                                </span>
-                                            </td>
-                                            <td valign="middle" align="right" style="width: 50%;">
-                                                {total_amount}
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td valign="middle" style="width: 50%;">
-                                                <span style="font-size: 15px; font-weight: bold;">
-                                                    Somme restante à payer
-                                                </span>
-                                            </td>
-                                            <td valign="middle" align="right" style="width: 50%;">
-                                                {remaining_amount}
-                                            </td>
-                                        </tr>
-                                    </table>
                                 </td>
                             </tr>
                         </tbody>
@@ -355,8 +355,6 @@ class SaleOrderMail(models.Model):
         '''
 
         email_from = mail_server.smtp_user
-        # email_to = partner.email
-        # additional_email = 'bara.mboup@ccbm.sn'
         additional_email = 'shop@ccbm.sn'
         email_to = f'{partner.email}, {additional_email}'
 
@@ -368,6 +366,7 @@ class SaleOrderMail(models.Model):
             'body_html': body_html,
             'state': 'outgoing',
         }
+
         # Construire le message e-mail
         mail_mail = request.env['mail.mail'].sudo().create(email_values)
         try:
@@ -376,7 +375,7 @@ class SaleOrderMail(models.Model):
         except Exception as e:
             _logger.error(f'Error sending email: {str(e)}')
             return {'status': 'error', 'message': str(e)}
-        
+     
 
     # mail apres payment precommande
     def send_payment_status_mail(self):

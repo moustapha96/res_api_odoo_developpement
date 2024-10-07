@@ -29,13 +29,16 @@ class userREST(http.Controller):
         mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
 
         # Récupérer l'utilisateur associé à l'adresse e-mail
-        user = request.env['res.users'].sudo().search([('email', '=', email)], limit=1)
-        if not user:
+        partner = request.env['res.partner'].sudo().search([('email', '=', email)], limit=1)
+        if not partner:
             return {'status': 'error', 'message': 'User not found for the given email'}
+        company = partner.company_id
 
         # Construire le contenu de l'e-mail
         subject = 'Vérifiez votre compte'
-       
+        url = f"http://localhost:5173/login?mail={partner.email}&isVerified=1&token={partner.id}"
+        # url = f"https://ccbme.sn/login?mail={partner.email}&isVerified=1&token={partner.id}"
+
         body_html = f'''
         <table border="0" cellpadding="0" cellspacing="0" style="padding-top: 16px; background-color: #FFFFFF; font-family:Verdana, Arial,sans-serif; color: #454748; width: 100%; border-collapse:separate;">
             <tr>
@@ -49,7 +52,7 @@ class userREST(http.Controller):
                                             <td valign="middle">
                                                 <span style="font-size: 10px;">Votre compte</span><br/>
                                                 <span style="font-size: 20px; font-weight: bold;">
-                                                    {user.name}
+                                                    {partner.name}
                                                 </span>
                                             </td>
                                             <td valign="middle" align="right">
@@ -70,12 +73,12 @@ class userREST(http.Controller):
                                         <tr>
                                             <td valign="top" style="font-size: 13px;">
                                                 <div>
-                                                    Cher {user.name},<br/><br/>
+                                                    Cher {partner.name},<br/><br/>
                                                     Votre compte a été créé avec succès !<br/>
-                                                    Votre identifiant est <strong>{user.email}</strong><br/>
+                                                    Votre identifiant est <strong>{partner.email}</strong><br/>
                                                     Pour accéder à votre compte, vous pouvez utiliser le lien suivant :
                                                     <div style="margin: 16px 0px 16px 0px;">
-                                                        <a style="background-color: #875A7B; padding: 8px 16px 8px 16px; text-decoration: none; color: #fff; border-radius: 5px; font-size:13px;" href="https://ccbme.sn/login?mail={user.email}&isVerified=1&token={user.id}">
+                                                        <a style="background-color: #875A7B; padding: 8px 16px 8px 16px; text-decoration: none; color: #fff; border-radius: 5px; font-size:13px;" href="{url}">
                                                             Aller à Mon compte
                                                         </a>
                                                     </div>
@@ -96,13 +99,13 @@ class userREST(http.Controller):
                                     <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; font-size: 11px; padding: 0px 8px 0px 8px; border-collapse:separate;">
                                         <tr>
                                             <td valign="middle" align="left">
-                                               {user.company_id.name}
+                                               {company.name}
                                             </td>
                                         </tr>
                                         <tr>
                                             <td valign="middle" align="left" style="opacity: 0.7;">
-                                               {user.company_id.phone}
-                                                | <a style="text-decoration:none; color: #454748;" href="mailto:{user.company_id.email}">{user.company_id.email}</a>
+                                               {company.phone}
+                                                | <a style="text-decoration:none; color: #454748;" href="mailto:{company.email}">{company.email}</a>
                                                 | 
                                             </td>
                                         </tr>
@@ -118,7 +121,7 @@ class userREST(http.Controller):
                     <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: #F1F1F1; color: #454748; padding: 8px; border-collapse:separate;">
                         <tr>
                             <td style="text-align: center; font-size: 13px;">
-                                Généré par <a target="_blank" href="https://ccbme.sn" style="color: #875A7B;">CCBM Shop</a>
+                                Généré par <a target="_blank" href="https://ccbme.sn" style="color: #2D7DBA;">CCBM Shop</a>
                             </td>
                         </tr>
                     </table>
@@ -264,32 +267,26 @@ class userREST(http.Controller):
                     'phone': phone,
                     'country_id': country.id or None,
                 })
-                # Mise à jour de l'utilisateur associé au partenaire
-                user = request.env['res.users'].sudo().search([('partner_id', '=', partner.id)], limit=1)
-                if user:
-                    user.write({
-                        'name': name,
-                    })
 
                 resp = werkzeug.wrappers.Response(
                     status=200,
                     content_type='application/json; charset=utf-8',
                     headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
                     response=json.dumps({
-                        'id': user.id,
+                        'id': partner.id,
                         'name': partner.name,
                         'email': partner.email,
                         'partner_id': partner.id,
                         'company_id': partner.company_id.id,
-                        'company_name': user.company_id.name,
+                        'company_name': partner.company_id.name,
                         'partner_city': partner.city,
                         'partner_phone': partner.phone,
                         'country_id': partner.country_id.id or None,
                         'country_name': partner.country_id.name or None,
                         'country_code': partner.country_id.code,
                         'country_phone_code': partner.country_id.phone_code,
-                        'avatar': self.get_user_avatar(partner.email) or None,
-                        'image_1920': partner.image_1920 or None
+                        'avatar': partner.avatar or None,
+                        'is_verified' : partner.is_verified,
                     })
                 )
                 return resp
@@ -309,8 +306,8 @@ class userREST(http.Controller):
 
     @http.route('/api/users/verified/<email>', methods=['GET'], type='http', auth='none', cors="*", csrf=False)
     def api_users_verified(self, email):
-        user = request.env['res.partner'].sudo().search([('email', '=', email)], limit=1)
-        if not user:
+        partner = request.env['res.partner'].sudo().search([('email', '=', email)], limit=1)
+        if not partner:
             return werkzeug.wrappers.Response(
                 status=400,
                 content_type='application/json; charset=utf-8',
@@ -318,13 +315,7 @@ class userREST(http.Controller):
                 response=json.dumps({'status': 'error', 'message': 'Utilisateur non trouvé pour l\'e-mail donné'})
             )
 
-        # Récupérer la valeur de isVerified
-        is_verified = self.get_verification_status(email)
-
-        if not is_verified:
-            self.set_verification_status(email, '0')
-
-        if is_verified == '1':
+        if partner.is_verified == True:
             return werkzeug.wrappers.Response(
                 status=200,
                 content_type='application/json; charset=utf-8',
@@ -332,14 +323,20 @@ class userREST(http.Controller):
                 response=json.dumps({'status': 'success', 'message': 'Utilisateur déjà vérifié'})
             )
 
-        # Mettre à jour la valeur de isVerified
-        self.set_verification_status(email, '1')
+        if partner.is_verified == False:
+            partner.write({'is_verified': True})
+            return werkzeug.wrappers.Response(
+                status=200,
+                content_type='application/json; charset=utf-8',
+                headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                response=json.dumps({'status': 'success', 'message': f'Utilisateur verifié avec succès '})
+            )
 
         return werkzeug.wrappers.Response(
-            status=200,
+            status=400,
             content_type='application/json; charset=utf-8',
             headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
-            response=json.dumps({'status': 'success', 'message': f'Utilisateur verifié avec succès '})
+            response=json.dumps({'status': 'error', 'message': 'Utilisateur non trouvé pour l\'e-mail donné'})
         )
     
 
@@ -348,8 +345,8 @@ class userREST(http.Controller):
         data = json.loads(request.httprequest.data)
         avatar_url = data.get('avatar')
 
-        user = request.env['res.partner'].sudo().search([('id', '=', id)], limit=1)
-        if not user:
+        partner = request.env['res.partner'].sudo().search([('id', '=', id)], limit=1)
+        if not partner:
             return werkzeug.wrappers.Response(
                 status=400,
                 content_type='application/json; charset=utf-8',
@@ -357,16 +354,32 @@ class userREST(http.Controller):
                 response=json.dumps({'status': 'error', 'message': 'Utilisateur non trouvé pour l\'e-mail donné'})
             )
 
-        if avatar_url is not None :
-            # user.write({
-            #     'image_1920': avatar_url,
-            # })
-            self.set_user_avatar(user.email,avatar_url)
+        if avatar_url and partner:
+            partner.write({
+               'avatar': avatar_url
+            })
+            user_data = {
+                'id': partner.id,
+                'name': partner.name,
+                'email': partner.email,
+                'company_id': partner.company_id.id,
+                'partner_id':partner.id,
+                'company_id': partner.company_id.id,
+                'company_name': partner.company_id.name,
+                'partner_city':partner.city,
+                'partner_phone':partner.phone,
+                'country_id':partner.country_id.id,
+                'country_name':partner.country_id.name,
+                'country_code':partner.country_id.code,
+                'country_phone_code':partner.country_id.phone_code,
+                'is_verified' : partner.is_verified,
+                'avatar': partner.avatar
+            }
             return werkzeug.wrappers.Response(
                 status=200,
                 content_type='application/json; charset=utf-8',
                 headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
-                response=json.dumps({'status': 'success', 'message': f'Profil Mise a jour avec succès'})
+                response=json.dumps(user_data)
             )
 
 
@@ -378,7 +391,7 @@ class userREST(http.Controller):
                 status=400,
                 content_type='application/json; charset=utf-8',
                 headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
-                response=json.dumps("Données manquantes")
+                response=json.dumps("Données invalides")
             )
 
         name = data.get('name')
@@ -389,7 +402,6 @@ class userREST(http.Controller):
 
         company = request.env['res.company'].sudo().search([('id', '=', 1)], limit=1)
         country = request.env['res.country'].sudo().search([('id', '=', 204)], limit=1)
-
         partner_email = request.env['res.partner'].sudo().search([('email', '=', email)], limit=1)
 
         if partner_email:
@@ -399,14 +411,7 @@ class userREST(http.Controller):
                 headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
                 response=json.dumps("Utilisateur avec cet adresse mail existe déjà")
             )
-        # partner_phone = request.env['res.partner'].sudo().search([('phone', '=', phone)], limit=1)
-        # if partner_phone:
-        #     return werkzeug.wrappers.Response(
-        #         status=400,
-        #         content_type='application/json; charset=utf-8',
-        #         headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
-        #         response=json.dumps("Utilisateur avec ce numero téléphone existe déjà")
-        #     )
+
         if not partner_email :
             user = request.env['res.users'].sudo().search([('id', '=', request.env.uid)], limit=1)
             if not user or user._is_public():
@@ -425,44 +430,32 @@ class userREST(http.Controller):
                 'type': 'contact',
                 'company_name': company.name,
                 'country_id': country.id or None,
+                'password': password,
+                'is_verified': False
             })
             if partner:
-                # Création de l'utilisateur
-                userc = request.env['res.users'].sudo().create({
-                    'login': email,
-                    'password': password,
-                    'partner_id': partner.id,
-                    'active': True,
-                    'notification_type': 'email',
-                    'company_id': partner.company_id.id,
-                    'company_ids': [partner.company_id.id],
-                })
-                if userc:
-                    partner.write({
-                        'user_id': userc.id
+                self.send_verification_mail(partner.email)
+                return werkzeug.wrappers.Response(
+                    status=201,
+                    content_type='application/json; charset=utf-8',
+                    headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                    response=json.dumps({
+                        'id': partner.id,
+                        'name': partner.name,
+                        'email': partner.email,
+                        'partner_id':partner.id,
+                        'company_id': partner.company_id.id,
+                        'company_name': partner.company_id.name,
+                        'partner_city': partner.city,
+                        'partner_phone': partner.phone,
+                        'country_id': partner.country_id.id or None,
+                        'country_name': partner.country_id.name or None,
+                        'country_code': partner.country_id.code,
+                        'country_phone_code': partner.country_id.phone_code,
+                        'is_verified': partner.is_verified,
+                        'avatar': partner.avatar or None,
+                        'image_1920': partner.image_1920 or None
                     })
-                    self.send_verification_mail(userc.email)
-                    return werkzeug.wrappers.Response(
-                        status=201,
-                        content_type='application/json; charset=utf-8',
-                        headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
-                        response=json.dumps({
-                            'id': userc.id,
-                            'name': userc.name,
-                            'email': userc.email,
-                            'partner_id': userc.partner_id.id,
-                            'company_id': userc.company_id.id,
-                            'company_name': userc.company_id.name,
-                            'partner_city': userc.partner_id.city,
-                            'partner_phone': userc.partner_id.phone,
-                            'country_id': userc.partner_id.country_id.id or None,
-                            'country_name': userc.partner_id.country_id.name or None,
-                            'country_code': userc.partner_id.country_id.code,
-                            'country_phone_code': userc.partner_id.country_id.phone_code,
-                            'is_verified': self.get_verification_status(email) or None,
-                            'avatar': self.get_user_avatar(email) or None,
-                            'image_1920': userc.partner_id.image_1920 or None
-                        })
                     )
 
         return werkzeug.wrappers.Response(
@@ -471,3 +464,81 @@ class userREST(http.Controller):
             headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
             response=json.dumps("Compte client non créer, veuillez reessayer")
         )
+
+    # reccuperer un partner a travers son id
+    @http.route('/api/partnerByEmail/<email>', methods=['GET'], type='http', auth='none', cors="*")
+    def api_partner_get_by_email(self, email):
+        partner = request.env['res.partner'].sudo().search([('email', '=', email)], limit=1)
+        if partner:
+            return werkzeug.wrappers.Response(
+                status=200,
+                content_type='application/json; charset=utf-8',
+                headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                response=json.dumps({
+                    'id': partner.id,
+                    'name': partner.name,
+                    'email': partner.email,
+                    'partner_id':partner.id,
+                    'company_id': partner.company_id.id,
+                    'company_name': partner.company_id.name,
+                    'partner_city': partner.city,
+                    'partner_phone': partner.phone,
+                    'country_id': partner.country_id.id or None,
+                    'country_name': partner.country_id.name or None,
+                    'country_code': partner.country_id.code,
+                    'country_phone_code': partner.country_id.phone_code,
+                    'is_verified': partner.is_verified,
+                    'avatar': partner.avatar or None,
+                    'image_1920': partner.image_1920 or None,
+                    'password': partner.password
+                })
+            )
+
+        return werkzeug.wrappers.Response(
+            status=400,
+            content_type='application/json; charset=utf-8',
+            headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+            response=json.dumps("Compte client non trouvé, veuillez reessayer")
+        )
+        
+    # create password and update info for partner
+    @http.route('/api/partner-create/<email>/update', methods=['POST'], type='http', auth='none', cors="*",csrf=False)
+    def api_partner_create_update(self, email, **kw):
+        data = json.loads(request.httprequest.data)
+        telephone = data.get('telephone')
+        password = data.get('password')
+        city = data.get('adresse')
+        name = data.get('name')
+
+        partner = request.env['res.partner'].sudo().search([('email', '=', email)], limit=1)
+        if not partner:
+            return werkzeug.wrappers.Response(
+                status=400,
+                content_type='application/json; charset=utf-8',
+                headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                response=json.dumps("Compte client non è, veuillez reessayer")
+            )
+        if partner:
+            partner.write({
+                'name': name,
+                'city': city,
+                'phone': telephone,
+                'password': password,
+                'is_verified': False
+            })
+            self.send_verification_mail(partner.email)
+
+            return werkzeug.wrappers.Response(
+                status=200,
+                content_type='application/json; charset=utf-8',
+                headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                response=json.dumps("Compte client creer avec succes , veuillez consulter votre email pour la verification")
+            )
+
+        return werkzeug.wrappers.Response(
+            status=400,
+            content_type='application/json; charset=utf-8',
+            headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+            response=json.dumps("Compte client non créé, veuillez reessayer")
+        )
+    
