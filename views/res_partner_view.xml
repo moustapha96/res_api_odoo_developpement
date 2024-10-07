@@ -11,7 +11,7 @@
             </field>
         </record>
 
-        <record id="view_partner_form_inherit_role" model="ir.ui.view">
+        <!-- <record id="view_partner_form_inherit_role" model="ir.ui.view">
             <field name="name">res.partner.form.inherit.role</field>
             <field name="model">res.partner</field>
             <field name="inherit_id" ref="base.view_partner_form" />
@@ -31,7 +31,7 @@
                     <field name="password" widget="password" />
                 </xpath>
             </field>
-        </record>
+        </record> -->
 
     </data>
 </odoo>
