@@ -159,13 +159,11 @@ class ControllerREST(http.Controller):
         if not user_partner:
             error_descrip = "Email ou mot de passe incorrecte!"
             error = 'empty_username_or_password'
-            _logger.error(error_descrip)
             return error_resp(400, error_descrip)
 
         if user_partner and user_partner.is_verified == False:
             error_descrip = "Email non verifié!"
             error = 'email_not_verified'
-            _logger.error(error_descrip)
             return error_resp(400, error_descrip)
         
         # si le partner a un bon mail
