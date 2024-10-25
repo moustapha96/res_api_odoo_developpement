@@ -136,11 +136,11 @@ class ControllerREST(http.Controller):
             request.env = request.env(user=admin_user.id)
         
 
-        # email_admin = 'ccbmtech@ccbm.sn'
-        # password_admin = 'ccbmE@987'
+        email_admin = 'ccbmtech@ccbm.sn'
+        password_admin = 'ccbmE@987'
 
-        email_admin = 'dev-odoo-16'
-        password_admin = 'password'
+        # email_admin = 'dev-odoo-16'
+        # password_admin = 'password'
 
         if username  and password:
             try:

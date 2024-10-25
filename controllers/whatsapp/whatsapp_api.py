@@ -10,9 +10,14 @@ _logger = logging.getLogger(__name__)
 
 class WhatsAppAPI:
     def __init__(self):
-        self.base_url = "https://graph.facebook.com/v17.0/"
-        self.phone_number_id = "376923278848154"
-        self.access_token = "EAB6ggRjDQpsBO97Hduv9Imf8TjbO8tzPDiW7tSb0O6s5CpqYlUhcLxpON7u0cc8EBmL8mjeWWVnn6DmEcsIlg4AZBE8jk2ZCoph3lyth94f4QtSELZAZCLJGGh1dfZBL4oGuoXFdj3eL3jBDCP7ZAWZBer6WZBxhPrjZAduhHZBVKDC70yjm6KSW8joX6IN3DsuJFSRbo3EnXAWDtVnZBW5LUIW3z99g8YZD"
+        """
+        Initialize the WhatsApp API.
+
+        Sets the base URL, phone number ID, and access token.
+        """
+        self.base_url = "https://graph.facebook.com/v20.0/"
+        self.phone_number_id = "408049615732989"
+        self.access_token = "EAAYcfMlIjC0BOzT8IXu6gSrGbtrqxZCoZAvZCBoDiQAr5heKOpGU4ND0Y8IZAM5XNMy3RkPibYAQoQaHTfHBTTknKuXSMLwtRyEwDKY0H3Xifa9ZCpmxUW4oRoK3uvpQ0DkN0trQaBzNYqZCed1zsgw62jnmq8KKKiFSXXLJHpvFoup6Y2hZAU38EUXa5suau2B8crfLsZBPwZAnvKxuoTvLQDPEj26lfa7MbZBvIZD"
 
     def _make_request(self, method, endpoint, data=None):
         """
