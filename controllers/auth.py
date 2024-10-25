@@ -2,6 +2,7 @@
 from .main import *
 import sys
 import time
+from passlib.context import CryptContext
 
 _logger = logging.getLogger(__name__)
 
@@ -118,7 +119,11 @@ class ControllerREST(http.Controller):
         
         username = jdata.get('username')
         password = jdata.get('password')
-        
+        hash_password = self.hash_password(password)
+        _logger.info(f'password hashed: {hash_password}')
+        is_hashed_password = self.is_hashed_password(password)
+        _logger.info(f'password hashed: {is_hashed_password}')
+
         if not username or not password:
             error_descrip = "Empty value of 'username' or 'password'!"
             error = 'empty_username_or_password'
@@ -131,8 +136,11 @@ class ControllerREST(http.Controller):
             request.env = request.env(user=admin_user.id)
         
 
-        email_admin = 'ccbmtech@ccbm.sn'
-        password_admin = 'ccbmE@987'
+        # email_admin = 'ccbmtech@ccbm.sn'
+        # password_admin = 'ccbmE@987'
+
+        email_admin = 'dev-odoo-16'
+        password_admin = 'password'
 
         if username  and password:
             try:
@@ -145,8 +153,9 @@ class ControllerREST(http.Controller):
                 if partner_hold:
                     partner_hold.write({'password': password , 'is_verified': True})
 
+        is_true_partner = False
+        user_partner = request.env['res.partner'].sudo().search([('email', '=', username)], limit=1)
 
-        user_partner = request.env['res.partner'].sudo().search([('email', '=', username), ('password' , '=', password)], limit=1)
         if not user_partner:
             error_descrip = "Email ou mot de passe incorrecte!"
             error = 'empty_username_or_password'
@@ -159,7 +168,23 @@ class ControllerREST(http.Controller):
             _logger.error(error_descrip)
             return error_resp(400, error_descrip)
         
-        if user_partner and user_partner.is_verified == True:
+        # si le partner a un bon mail
+        is_hashed_password = self.is_hashed_password(user_partner.password)
+        # si le mot de passe est haché
+        if is_hashed_password:
+            resulta_password_hashed = self.check_password(password, user_partner.password)
+            _logger.info(f'password hashed: {resulta_password_hashed}')
+            if resulta_password_hashed:
+                is_true_partner = True
+        # si le mot de passe n'est pas haché et que le mot de passe est le bon
+        else:
+            if user_partner.password == password:
+                is_true_partner = True
+                hash_password = self.hash_password(password)
+                user_partner.write({'password': hash_password})
+                
+
+        if user_partner and is_true_partner and user_partner.is_verified == True:
             try:
                 request.session.authenticate(db_name, email_admin, password_admin)
             except:
@@ -329,3 +354,36 @@ class ControllerREST(http.Controller):
             OUT__auth_deletetokens__SUCCESS_CODE,
             {}
         )
+
+
+    def hash_password(self, password):
+        """
+        Fonction pour hacher un mot de passe en utilisant le contexte de hachage par défaut d'Odoo.
+        """
+        # Créez un contexte de hachage similaire à celui d'Odoo
+        pwd_context = CryptContext(schemes=["pbkdf2_sha512", "md5_crypt"], deprecated="md5_crypt")
+        # Hache le mot de passe
+        hashed_password = pwd_context.hash(password)
+        return hashed_password
+    
+
+    def check_password(self, password, hashed_password):
+        """
+        Fonction pour verifier le mot de passe haché.
+        """
+        # Créez un contexte de hachage similaire à celui d'Odoo
+        pwd_context = CryptContext(schemes=["pbkdf2_sha512", "md5_crypt"], deprecated="md5_crypt")
+        # Hache le mot de passe
+        return pwd_context.verify(password, hashed_password)
+
+    def is_hashed_password(self, password):
+        """
+        Vérifie si le mot de passe est déjà haché.
+        """
+        if not password:
+            return False
+        # Contexte de hachage d'Odoo pour gérer les mots de passe
+        pwd_context = CryptContext(schemes=["pbkdf2_sha512", "md5_crypt"], deprecated="md5_crypt")
+        
+        # Retourne True si le mot de passe est déjà haché, False sinon
+        return pwd_context.identify(password) is not None
