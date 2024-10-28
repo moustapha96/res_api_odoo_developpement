@@ -135,7 +135,6 @@ class ControllerREST(http.Controller):
             admin_user = request.env.ref('base.user_admin')
             request.env = request.env(user=admin_user.id)
         
-
         # email_admin = 'ccbmtech@ccbm.sn'
         # password_admin = 'ccbmE@987'
 
@@ -161,8 +160,6 @@ class ControllerREST(http.Controller):
             error = 'empty_username_or_password'
             return error_resp(400, error_descrip)
 
-       
-        
         # si le partner a un bon mail
         is_hashed_password = self.is_hashed_password(user_partner.password)
         # si le mot de passe est haché
