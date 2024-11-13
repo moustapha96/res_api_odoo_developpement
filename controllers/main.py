@@ -750,5 +750,6 @@ else:
         from . import product_categorie_controller
         from . import excel_update_controller
         from . import module_dev_controller
+        from . import entreprise_controller
 
 

@@ -422,7 +422,8 @@ class ControllerREST(http.Controller):
             'country_code': user_partner.country_id.code,
             'country_phone_code': user_partner.country_id.phone_code,
             'is_verified': user_partner.is_verified,
-            'avatar': user_partner.avatar
+            'avatar': user_partner.avatar,
+            'role': user_partner.role
         }
     
     def _generate_and_save_tokens(self, uid):
@@ -449,11 +450,11 @@ class ControllerREST(http.Controller):
     
 
     def _authenticate_odoo_user(self):
-        # email_admin = 'dev-odoo-16'
-        # password_admin = 'password'
+        email_admin = 'dev-odoo-16'
+        password_admin = 'password'
 
-        email_admin = 'ccbmtech@ccbm.sn'
-        password_admin = 'ccbmE@987'
+        # email_admin = 'ccbmtech@ccbm.sn'
+        # password_admin = 'ccbmE@987'
         try:
             request.session.authenticate(self._get_db_name(), email_admin, password_admin)
         except Exception as e:
