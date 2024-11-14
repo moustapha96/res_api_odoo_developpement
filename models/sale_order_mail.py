@@ -598,8 +598,6 @@ class SaleOrderMail(models.Model):
         else:
             self.send_order_confirmation_mail()
         return res
-   
-
 
     @api.model
     def action_register_payment(self, payment_amount):

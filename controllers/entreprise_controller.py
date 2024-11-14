@@ -653,3 +653,46 @@ class EntrepriseController(http.Controller):
                 headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
                 response=json.dumps([])
             )
+    
+    # fonction pour faire une demande d'adhesion
+    @http.route('/api/partner/demande_adhesion', methods=['POST'], type='http', auth='none', cors="*")
+    def api_demande_adhesion(self, **kw):
+        data = json.loads(request.httprequest.data)
+        partner_id = data.get('partner_id')
+        entreprise_code = data.get('entreprise_code')
+
+        if not request.env.user or request.env.user._is_public():
+            admin_user = request.env.ref('base.user_admin')
+            request.env = request.env(user=admin_user.id)
+
+        partner = request.env['res.partner'].sudo().search([('id', '=', partner_id)], limit=1)
+        if not partner:
+            return werkzeug.wrappers.Response(
+                status=400,
+                content_type='application/json; charset=utf-8',
+                headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                response=json.dumps({ "status": "error", "message": "Client non trouvé"}))
+
+        company = request.env['res.company'].sudo().search([('entreprise_code', '=', entreprise_code )], limit=1)
+        if not company:
+            return werkzeug.wrappers.Response(
+                status=400,
+                content_type='application/json; charset=utf-8',
+                headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                response=json.dumps({ "status": "error", "message": "Entreprise non trouvé"}))
+        
+        partner.write({
+            'adhesion': 'pending',
+            'company_id': company.id
+        })
+        partner.send_adhesion_request_mail()
+
+        return werkzeug.wrappers.Response(
+            status=200,
+            content_type='application/json; charset=utf-8',
+            headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+            response=json.dumps({ "status": "success", "message": "Votre demande d'adhésion est bien envoyé"}))
+        
+        
+
+
