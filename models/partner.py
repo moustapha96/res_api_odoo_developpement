@@ -10,3 +10,8 @@ class Partner(models.Model):
         ('main_user', 'Utilisateur Principal'),
         ('secondary_user', 'Utilisateur Secondaire')
     ], string='Rôle', default='secondary_user')
+    adhesion = fields.Selection([
+        ('pending','En cours de validation'),
+        ('validated','Validé'),
+        ('rejected','Rejeté'),
+    ],string ='Adhésion', required = True , default = 'pending')

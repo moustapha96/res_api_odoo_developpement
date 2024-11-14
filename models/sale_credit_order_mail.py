@@ -1,0 +1,220 @@
+from odoo import models, fields, api
+
+from odoo.http import request
+import logging
+from datetime import datetime, timedelta
+import base64
+
+_logger = logging.getLogger(__name__)
+
+class SaleOrderMail(models.Model):
+    _inherit = 'sale.order'
+
+
+    def send_validation_rh_confirmation(self):
+        mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
+
+    def send_validation_admin_confirmation(self):
+        mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
+        
+    def send_preorder_confirmation_mail(self):
+    # Récupérer ou créer une instance de IrMailServer
+        mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
+
+        # Récupérer le partenaire associé à la commande
+        partner = self.partner_id
+        if not partner:
+            return {'status': 'error', 'message': 'Partner not found for the given order'}
+        
+        # Construire le sujet de l'e-mail
+        subject = 'Confirmation de votre précommande'
+
+        # Définir les dates de livraison
+        commitment_date_start = datetime.now() + timedelta(days=30)
+        commitment_date_end = datetime.now() + timedelta(days=60)
+        commitment_date_start_str = commitment_date_start.strftime('%Y-%m-%d')
+        commitment_date_end_str = commitment_date_end.strftime('%Y-%m-%d')
+
+        # Vérifier si le partenaire a déjà un mot de passe
+        create_account_section = ""
+        if not partner.password:
+            # Générer le lien pour créer un compte
+            # create_account_link = f"http://localhost:5173/create-compte?mail={partner.email}"
+            create_account_link = f"https://ccbme.sn/create-compte?mail={partner.email}"
+            # create_account_link = f"https://ccbme.sn/mail={partner.email}?create-compte"
+            create_account_section = f'''
+                <tr>
+                    <td align="center" style="min-width: 590px; padding-top: 20px;">
+                        <span style="font-size: 14px;">Cliquez sur le lien suivant pour créer un compte et suivre votre précommande :</span><br/>
+                        <a href="{create_account_link}" style="font-size: 16px; font-weight: bold;">Créer un compte</a>
+                    </td>
+                </tr>
+            '''
+
+        # Générer les informations de paiement
+        payment_info = ""
+        if self.first_payment_amount or self.second_payment_amount or self.third_payment_amount:
+            payment_info += "<h3>Informations de paiement</h3>"
+            payment_info += "<table border='1' cellpadding='5' cellspacing='0' width='590' style='min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:collapse;'>"
+            payment_info += "<tr><th>Montant</th><th>Date d'échéance</th><th>État</th></tr>"
+            if self.first_payment_amount:
+                first_payment_date = self.first_payment_date.isoformat() if self.first_payment_date else "Non définie"
+                first_payment_state = "Payé" if self.first_payment_state == 'paid' else "Non payé"
+                payment_info += f"<tr><td>{self.first_payment_amount}</td><td>{first_payment_date}</td><td>{first_payment_state}</td></tr>"
+            if self.second_payment_amount:
+                second_payment_date = self.second_payment_date.isoformat() if self.second_payment_date else "Non définie"
+                second_payment_state = "Payé" if self.second_payment_state == 'paid' else "Non payé"
+                payment_info += f"<tr><td>{self.second_payment_amount}</td><td>{second_payment_date}</td><td>{second_payment_state}</td></tr>"
+            if self.third_payment_amount:
+                third_payment_date = self.third_payment_date.isoformat() if self.third_payment_date else "Non définie"
+                third_payment_state = "Payé" if self.third_payment_state == 'paid' else "Non payé"
+                payment_info += f"<tr><td>{self.third_payment_amount}</td><td>{third_payment_date}</td><td>{third_payment_state}</td></tr>"
+            payment_info += "</table>"
+
+        total_amount = self.amount_total
+        remaining_amount = self.amount_residual
+
+        # Construire le contenu de l'e-mail
+        body_html = f'''
+        <table border="0" cellpadding="0" cellspacing="0" style="padding-top: 16px; background-color: #FFFFFF; font-family:Verdana, Arial,sans-serif; color: #454748; width: 100%; border-collapse:separate;">
+            <tr>
+                <td align="center">
+                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="padding: 16px; background-color: #FFFFFF; color: #454748; border-collapse:separate;">
+                        <tbody>
+                            <tr>
+                                <td align="center" style="min-width: 590px;">
+                                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;">
+                                        <tr>
+                                            <td valign="middle">
+                                                <span style="font-size: 10px;">Votre précommande</span><br/>
+                                                <span style="font-size: 20px; font-weight: bold;">
+                                                    {self.name}
+                                                </span>
+                                            </td>
+                                            <td valign="middle" align="right">
+                                                <img style="padding: 0px; margin: 0px; height: auto; width: 120px;" src="https://ccbme.sn/logo.png" alt="logo CCBM SHOP"/>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="2" style="text-align:center;">
+                                                <hr width="100%" style="background-color:rgb(204,204,204);border:medium none;clear:both;display:block;font-size:0px;min-height:1px;line-height:0; margin: 16px 0px 16px 0px;"/>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td align="center" style="min-width: 590px;">
+                                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;">
+                                        <tr>
+                                            <td valign="middle" style="width: 50%;">
+                                                <span style="font-size: 15px; font-weight: bold;">
+                                                    Détails du destinataire
+                                                </span>
+                                            </td>
+                                            <td valign="middle" align="right" style="width: 50%;">
+                                                {partner.name}<br/>
+                                                {partner.phone}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td valign="middle" style="width: 50%;">
+                                                <span style="font-size: 15px; font-weight: bold;">
+                                                    Adresse
+                                                </span>
+                                            </td>
+                                            <td valign="middle" align="right" style="width: 50%;">
+                                                {partner.city}
+                                            </td>
+                                        </tr>
+                                        <br />
+                                        <tr>
+                                            <td valign="middle" style="width: 50%;">
+                                                <span style="font-size: 15px; font-weight: bold;">
+                                                    Date de livraison estimée
+                                                </span>
+                                            </td>
+                                            <td valign="middle" align="right" style="width: 50%;">
+                                                Entre le {commitment_date_start_str} et {commitment_date_end_str}
+                                            </td>
+                                        </tr>
+                                        <br />
+                                        <tr>
+                                            <td valign="middle" style="width: 50%;">
+                                                <span style="font-size: 15px; font-weight: bold;">
+                                                    Méthode de paiement
+                                                </span>
+                                            </td>
+                                            <td valign="middle" align="right" style="width: 50%;">
+                                                Paiement en ligne
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                            <br />
+                            <tr>
+                                <td align="center" style="min-width: 590px;">
+                                    <table border="1" cellpadding="5" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:collapse;">
+                                        <tr>
+                                            <th>Produit</th>
+                                            <th>Quantité</th>
+                                            <th>Prix unitaire</th>
+                                            <th>Total</th>
+                                        </tr>
+                                        {"".join([f"<tr><td>{line.product_id.name}</td><td>{line.product_uom_qty}</td><td>{line.price_unit}</td><td>{line.price_total}</td></tr>" for line in self.order_line])}
+                                        <tr>
+                                            <td colspan="3" style="text-align:right; font-weight:bold;">Total du panier :</td>
+                                            <td style="font-weight:bold;">{total_amount}</td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                            {create_account_section} <!-- Section ajoutée pour le lien de création de compte -->
+                            <br />
+                            <tr>
+                                <td align="center" style="min-width: 590px;">
+                                    {payment_info}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td align="center" style="min-width: 590px;">
+                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: #F1F1F1; color: #454748; padding: 8px; border-collapse:separate;">
+                        <tr>
+                            <td style="text-align: center; font-size: 13px;">
+                                Généré par <a target="_blank" href="https://ccbme.sn" style="color: #875A7B;">CCBM SHOP</a>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+        '''
+
+        email_from = mail_server.smtp_user
+        additional_email = 'shop@ccbm.sn'
+        email_to = f'{partner.email}, {additional_email}'
+
+        # Définir les valeurs du message e-mail
+        email_values = {
+            'email_from': email_from,
+            'email_to': email_to,
+            'subject': subject,
+            'body_html': body_html,
+            'state': 'outgoing',
+        }
+
+        # Construire le message e-mail
+        mail_mail = request.env['mail.mail'].sudo().create(email_values)
+        try:
+            mail_mail.send()
+            return {'status': 'success', 'message': 'Mail envoyé avec succès'}
+        except Exception as e:
+            _logger.error(f'Error sending email: {str(e)}')
+            return {'status': 'error', 'message': str(e)}
+     
+
