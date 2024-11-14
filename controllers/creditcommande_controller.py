@@ -452,7 +452,7 @@ class CreditCommandeREST(http.Controller):
         partner_id = int(data.get('partner_id'))
         order_lines = data.get('order_lines')
 
-        current_user = request.env.user
+
         if not partner_id or not order_lines:
             return request.make_response(
                 json.dumps({'status': 'erreur', 'message': 'Données de commande invalides'}),
