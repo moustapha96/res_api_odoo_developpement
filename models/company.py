@@ -1,7 +1,8 @@
 from odoo import  fields, models, _
 
-class Partner(models.Model):
+class Company(models.Model):
+    
     _inherit = 'res.company'
 
-    entreprise_code = fields.Char(string='Code entreprise', required=False)
-    # hr_email = fields.Char(string="Email RH")
+    entreprise_code = fields.Char(string='Code Entreprise',  required=False)
+    hr_email = fields.Char(string="Email RH")

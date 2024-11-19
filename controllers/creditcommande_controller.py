@@ -8,69 +8,61 @@ _logger = logging.getLogger(__name__)
 
 class CreditCommandeREST(http.Controller):
 
-    @http.route('/api/creditcommandes/details', methods=['POST'], type='http', auth='none', cors="*",  csrf=False)
-    def api_get_credit_order_details(self, **kw):
-        data = json.loads(request.httprequest.data)
-        partner_id = int(data.get('partner_id'))
-        order_id = int(data.get('order_id'))
+    @http.route('/api/creditcommande/<id>', methods=['GET'], type='http', auth='none', cors="*")
+    def api_creditorder_GET(self, id, **kw):
 
-        if not partner_id or not order_id:
-            return request.make_response(
-                json.dumps({'status': 'erreur', 'message': 'Données de commande invalides'}),
-                headers={'Content-Type': 'application/json'}
-            )
-        
-        partner = request.env['res.partner'].sudo().search([('id', '=', partner_id)], limit=1)
-        o = request.env['sale.order'].sudo().search([('id', '=', order_id),( 'partner_id', '=', partner_id ),( 'type_sale' , '=' , 'creditorder' )  ], limit=1)
-        if partner and o:
+        if id:
+            orders = request.env['sale.order'].sudo().search([ ('type_sale' , '=' , 'creditorder' ) ,  ( 'partner_id.id', '=', id ) ])
+            order_data = []
+            if orders:
+                for o in orders:
+                    order_data.append({
+                         'id': o.id,
+                         'type_sale':  o.type_sale,
+                         'date_order': o.date_order.isoformat() if o.date_order else None,
+                         'name': o.name,
+                         'partner_id': o.partner_id.id or None,
+                         'partner_name': o.partner_id.name or None,
+                         'partner_street': o.partner_id.street or None,
+                         'partner_street2': o.partner_id.street2 or None,
+                         'partner_city': o.partner_id.city or None,
+                         'partner_state_id': o.partner_id.state_id.id or None,
+                         'partner_state_name': o.partner_id.state_id.name or None,
+                         'partner_zip': o.partner_id.zip or None,
+                         'partner_country_id': o.partner_id.country_id.id or None,
+                         'partner_country_name': o.partner_id.country_id.name or None,
+                         'partner_vat': o.partner_id.vat or None,
+                         'partner_email': o.partner_id.email or None,
+                         'partner_phone': o.partner_id.phone or None,
+                         'amount_untaxed': o.amount_untaxed or None,
+                         'amount_tax': o.amount_tax or None,
+                         'amount_total': o.amount_total or None,
+                         'amount_residual': o.amount_residual,
+                         'state': o.state or None,
+                         'user_id': o.partner_id.user_id.id or None,
+                         'user_name': o.partner_id.user_id.name or None,
+                         'create_date': o.create_date.isoformat() if o.create_date else None,
+                         'payment_line_ids': o.payment_term_id or None,
+                         
+                         'first_payment_date': o.first_payment_date.isoformat() if o.first_payment_date else None,
+                         'second_payment_date': o.second_payment_date.isoformat() if o.second_payment_date else None,
+                         'third_payment_date': o.third_payment_date.isoformat() if o.third_payment_date else None,
 
-            data = {
-                        'id': o.id,
-                        'type_sale':  o.type_sale,
-                        'date_order': o.date_order.isoformat() if o.date_order else None,
-                        'validation_rh_state': o.validation_rh_state,
-                        'validation_admin_state': o.validation_admin_state,
-                        'commitment_date': o.commitment_date.isoformat(),
-                        'name': o.name,
-                        'partner_id': o.partner_id.id or None,
-                        'partner_name': o.partner_id.name or None,
-                        'partner_street': o.partner_id.street or None,
-                        'partner_street2': o.partner_id.street2 or None,
-                        'partner_city': o.partner_id.city or None,
-                        'partner_state_id': o.partner_id.state_id.id or None,
-                        'partner_state_name': o.partner_id.state_id.name or None,
-                        'partner_zip': o.partner_id.zip or None,
-                        'partner_country_id': o.partner_id.country_id.id or None,
-                        'partner_country_name': o.partner_id.country_id.name or None,
-                        'partner_vat': o.partner_id.vat or None,
-                        'partner_email': o.partner_id.email or None,
-                        'partner_phone': o.partner_id.phone or None,
-                        'amount_untaxed': o.amount_untaxed or None,
-                        'amount_tax': o.amount_tax or None,
-                        'amount_total': o.amount_total or None,
-                        'amount_residual': o.amount_residual,
-                        'state': o.state or None,
-                        'create_date': o.create_date.isoformat() if o.create_date else None,
-                        'payment_line_ids': o.payment_term_id or None,
+                         'first_payment_amount': o.first_payment_amount,
+                         'second_payment_amount': o.second_payment_amount,
+                         'third_payment_amount': o.third_payment_amount,
 
-                        'first_payment_date': o.first_payment_date.isoformat() if o.first_payment_date else None,
-                        'second_payment_date': o.second_payment_date.isoformat() if o.second_payment_date else None,
-                        'third_payment_date': o.third_payment_date.isoformat() if o.third_payment_date else None,
-
-                        'first_payment_amount': o.first_payment_amount,
-                        'second_payment_amount': o.second_payment_amount,
-                        'third_payment_amount': o.third_payment_amount,
-
-                        'first_payment_state': o.first_payment_state,
-                        'second_payment_state': o.second_payment_state,
-                        'third_payment_state': o.third_payment_state,
-
-                        'fourth_payment_amount': o.fourth_payment_amount,
-                        'fourth_payment_date': o.fourth_payment_date.isoformat() if o.fourth_payment_date else None,
-                        'fourth_payment_state': o.fourth_payment_state,
+                         'first_payment_state': o.first_payment_state,
+                         'second_payment_state': o.second_payment_state,
+                         'third_payment_state': o.third_payment_state,
                         
-                        'advance_payment_status':o.advance_payment_status,
-                        'order_lines': [{
+                         'validation_rh': o.validation_rh,
+                         'validation_state': o.validation_state,
+                         'validation_admin': o.validation_admin,
+                         
+                         'advance_payment_status':o.advance_payment_status,
+                         'note': o.note or None,
+                         'order_line': [{
                             'id': l.id or None,
                             'product_id': l.product_id.id or None,
                             'product_name': l.product_id.name or None,
@@ -85,325 +77,142 @@ class CreditCommandeREST(http.Controller):
                             'qty_to_invoice': l.qty_to_invoice or None,
                             'qty_invoiced': l.qty_invoiced or None,
                             'is_downpayment' : l.is_downpayment or None,
-                    } for l in o.order_line if not l.is_downpayment]
-            }
-                    
+                        } for l in o.order_line if not l.is_downpayment]
+                    })
 
-            resp = werkzeug.wrappers.Response(
+                resp = werkzeug.wrappers.Response(
+                    status=200,
+                    content_type='application/json; charset=utf-8',
+                    headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                    response=json.dumps(order_data)
+                )
+                return resp
+            return werkzeug.wrappers.Response(
                 status=200,
                 content_type='application/json; charset=utf-8',
                 headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
-                response=json.dumps(data)
+                response=json.dumps("pas de données")
             )
-            return resp
-            
-            
         return werkzeug.wrappers.Response(
             status=400,
             content_type='application/json; charset=utf-8',
             headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
-            response=json.dumps("Client et commande invalide")
+            response=json.dumps("user_id est obligatoire")
         )
-    
-    @http.route('/api/creditcommandes', methods=['POST'], type='http', auth='none', cors="*" , csrf=False)
-    def api_create_credit_order(self, **kw):
+
+    @http.route('/api/creditcommandes/details', methods=['POST'], type='http', auth='none', cors="*" , csrf=False)
+    def api_creditorder__GET_ONE(self,  **kw):
         data = json.loads(request.httprequest.data)
-        partner_id = int(data.get('partner_id'))
-        order_lines = data.get('order_lines')
-        type_sale = data.get('type_sale')
-        payment_mode = data.get('payment_mode')
-        state = data.get('state')
-        commitment_date = data.get('commitment_date')
-        company_id = data.get('company_id')
-        parent_id = data.get('parent_id')
+        partner_id = int( data.get('partner_id'))
+        creditommande_id = int (data.get('creditcommande_id'))
+        order = request.env['sale.order'].sudo().search([('id','=', creditommande_id) , ('type_sale' , '=' , 'creditorder' ) , ( 'partner_id', '=', partner_id )])
 
-        if not partner_id or not order_lines:
-            raise ValueError('Invalid données commande crédit')
-        
-        partner = request.env['res.partner'].sudo().search([('id', '=', partner_id)], limit=1)
-        partner_parent = request.env['res.partner'].sudo().search([('id', '=', parent_id)], limit=1)
-
-        if not partner_parent or (partner_parent.id != partner.parent_id.id):
+        payment = request.env['account.payment'].sudo().search([ ( 'sale_id', '=' , order.id ) ])
+        # invoice = request.env['account.move'].sudo().search([ ( 'id', '=' , payment.move_id ) ])
+       
+        if not order:
             return werkzeug.wrappers.Response(
-                status=400,
+                status=404,
                 content_type='application/json; charset=utf-8',
                 headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
-                response=json.dumps("Vous n'etes pas autoriser a faire cette opération"))
-
-
-        if not request.env.user or request.env.user._is_public():
-            admin_user = request.env.ref('base.user_admin')
-            request.env = request.env(user=admin_user.id)
-
-        # company = request.env['res.company'].sudo().search([('id', '=', company_id)], limit=1)
-        company = request.env['res.company'].sudo().search([('id', '=', 1 )], limit=1)
-        if  company and partner and partner.adhesion == "accepted" :
-            # Création de commande
-            order = request.env['sale.order'].sudo().create({
-                'partner_id': partner_id,
-                'type_sale': 'creditorder',
-                'company_id': company.id,
-                'currency_id': company.currency_id.id,
-                'company_id': company.id,
-                'commitment_date': datetime.datetime.now() + datetime.timedelta(days=3),
-                'payment_mode': 'online',
-                'validation_rh_state': 'pending',
-                'validation_admin_state': 'pending'
-            })
-            for item in order_lines:
-                product_id = item.get('id')
-                product_uom_qty = item.get('quantity')
-                price_unit = item.get('list_price')
-                if not product_id or not product_uom_qty or not price_unit:
-                    raise ValueError('Missing product data')
-                order_line = request.env['sale.order.line'].sudo().create({
-                    'order_id': order.id,
-                    'product_id': product_id,
-                    'product_uom_qty': product_uom_qty,
-                    'price_unit': price_unit,
-                    'company_id': company.id,
-                    'currency_id': company.currency_id.id,
-                    'state': 'sale',
-                    'invoice_status': 'to invoice'
-                })
-            if order:
-                order.send_credit_order_validation_mail()
-
-                resp = werkzeug.wrappers.Response(
-                    status=201,
-                    content_type='application/json; charset=utf-8',
-                    headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
-                    response=json.dumps({
-                        'id': order.id,
-                        'name': order.name,
-                        'partner_id': order.partner_id.id,
-                        'type_sale': order.type_sale,
-                        'validation_rh_state': order.validation_rh_state,
-                        'validation_admin_state': order.validation_admin_state,
-                        'currency_id': order.currency_id.id,
-                        'company_id': order.company_id.id,
-                        'commitment_date': order.commitment_date.isoformat(),
-                        'state': order.state,
-                        'first_payment_date': order.first_payment_date.isoformat() if order.first_payment_date else None,
-                        'second_payment_date': order.second_payment_date.isoformat() if order.second_payment_date else None,
-                        'third_payment_date': order.third_payment_date.isoformat() if order.third_payment_date else None,
-
-                        'fourth_payment_amount': order.fourth_payment_amount,
-                        'fourth_payment_date': order.fourth_payment_date.isoformat() if order.fourth_payment_date else None,
-                        'fourth_payment_state': order.fourth_payment_state,
-
-                        'first_payment_amount': order.first_payment_amount,
-                        'second_payment_amount': order.second_payment_amount,
-                        'third_payment_amount': order.third_payment_amount,
-                        'first_payment_state': order.first_payment_state,
-                        'second_payment_state': order.second_payment_state,
-                        'third_payment_state': order.third_payment_state,
-                        'amount_residual': order.amount_residual,
-                        'amount_total' : order.amount_total,
-                        'amount_tax': order.amount_tax,
-                        'amount_untaxed' : order.amount_untaxed,
-                        'advance_payment_status':order.advance_payment_status,
-                        'order_lines': [
-                            {
-                                'id': order_line.id,
-                                'quantity': order_line.product_uom_qty,
-                                'list_price': order_line.price_unit,
-                            } for order_line in order.order_line
-                        ]
-                    })
-                )
-                return resp
-
-            return werkzeug.wrappers.Response(
-                status=400,
-                content_type='application/json; charset=utf-8',
-                headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
-                response=json.dumps("Client et commande invalide")
-            )
-        else:
-            return werkzeug.wrappers.Response(
-                status=400,
-                content_type='application/json; charset=utf-8',
-                headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
-                response=json.dumps("Vous n'etes pas autoriser a faire cette opération"))
-
-
-    # methode qu'on utilise
-    @http.route('/api/creditcommande/<id>/payment/<amount>/<token>', methods=['GET'], type='http', cors="*", auth='none', csrf=False)
-    def api_create_payment_rang_creditorder(self, id , amount , token):
-
-
-        user = request.env['res.users'].sudo().browse(request.env.uid)
-        if not user or user._is_public():
-            admin_user = request.env.ref('base.user_admin')
-            request.env = request.env(user=admin_user.id)
-
-        try:
-            order = request.env['sale.order'].sudo().search([ ('id', '=', id) ], limit=1)
-            partner = request.env['res.partner'].sudo().search([('id', '=', order.partner_id.id)], limit=1)
-            company = request.env['res.company'].sudo().search([('id', '=', 1)], limit=1)
-            
-            journal = request.env['account.journal'].sudo().search([('code', '=', 'CSH1'),( 'company_id', '=', company.id ) ], limit=1)  # type = sale id= 1 & company_id = 1  ==> journal id = 1 / si journal id = 7 : CASH
-            
-            # journal = request.env['account.journal'].sudo().search([('id', '=', 6 )] , limit=1) # type = sale id= 1 & company_id = 1  ==> journal id = 1 / si journal id = 7 : CASH
-            payment_method = request.env['account.payment.method'].sudo().search([ ( 'payment_type', '=',  'inbound' ) ], limit=1) # payement method : TYPE Inbound & id = 1
-            
-            # enregistrement payment
-            if order :
-
-                payment_details = request.env['payment.details'].search([('order_id', '=', order.id), ('payment_token', '=', token) ], limit=1)
-
-                if payment_details.token_status == False and payment_details.payment_state == "completed":
-                    account_payment = request.env['account.payment'].sudo().create({
-                        'payment_type': 'inbound',
-                        'partner_type': 'customer',
-                        'partner_id': partner.id,
-                        'amount': amount,
-                        'journal_id': journal.id,
-                        'currency_id': partner.currency_id.id,
-                        'payment_method_line_id': 1,
-                        'payment_method_id': payment_method.id, # inbound
-                        'sale_id': order.id,
-                        'is_reconciled': True,
-                        # 'move_id': new_invoice.id
-                    })
-                    if account_payment:
-                        account_payment.action_post()
-                        payment_details.write({'token_status': True})
-
-                        return request.make_response(
-                                json.dumps({
-                                    'id': order.id,
-                                    'name': order.name,
-                                    'validation_rh_state': order.validation_rh_state,
-                                    'validation_admin_state': order.validation_admin_state,
-                                    'partner_id': order.partner_id.id,
-                                    'type_sale': order.type_sale,
-                                    'currency_id': order.currency_id.id,
-                                    'company_id': order.company_id.id,
-                                    'commitment_date': order.commitment_date.isoformat(),
-                                    'state': order.state,
-                                    'invoice_status': order.invoice_status,
-                                    'first_payment_date': order.first_payment_date.isoformat() if order.first_payment_date else None,
-                                    'second_payment_date': order.second_payment_date.isoformat() if order.second_payment_date else None,
-                                    'third_payment_date': order.third_payment_date.isoformat() if order.third_payment_date else None,
-                                    'fourth_payment_date': order.fourth_payment_date.isoformat() if order.fourth_payment_date else None,
-
-                                    'first_payment_amount': order.first_payment_amount,
-                                    'second_payment_amount': order.second_payment_amount,
-                                    'third_payment_amount': order.third_payment_amount,
-                                    'fourth_payment_amount': order.fourth_payment_amount,
-
-                                    'first_payment_state': order.first_payment_state,
-                                    'second_payment_state': order.second_payment_state,
-                                    'third_payment_state': order.third_payment_state,
-                                    'fourth_payment_state': order.fourth_payment_state,
-
-                                    'invoice_id': account_payment.move_id.id or None ,
-                                    'is_reconciled': account_payment.is_reconciled,
-                                    'payment_id': account_payment.id,
-                                    'payment_name': account_payment.name,
-                                    'sale_order': account_payment.sale_id.id,
-                                    'move_id': account_payment.move_id.id,
-                                    'move_name': account_payment.move_id.name,
-                                    'amount_untaxed': order.amount_untaxed or None,
-                                    'amount_tax': order.amount_tax or None,
-                                    'amount_total': order.amount_total or None,
-                                    'amount_residual': order.amount_residual,
-                                    
-                                }),
-                                headers={'Content-Type': 'application/json'}
-                            )
-                elif payment_details.token_status == True and payment_details.payment_state == "completed":
-                    return self._make_response({'error': 'Payment déja valide'}, 400)
-                else:
-                    return self._make_response({'error': 'Payment non valide'}, 400)
-
-            else:
-                return request.make_response(
-                            json.dumps({'erreur': 'précommande non trouvé' }),
-                            headers={'Content-Type': 'application/json'}
-                        )
-
-        except ValueError as e:
-            return request.make_response(
-                json.dumps({'status': 'error', 'message': str(e)}),
-                headers={'Content-Type': 'application/json'}
+                response=json.dumps("Précommande introuvable")
             )
 
+        invoice_p = []
+        if len (payment) > 0:
+            for pp in payment:
+                inv = request.env['account.move'].sudo().search([ ( 'id', '=' , pp.move_id.id ) ])
+                invoice_p.append( inv )
+        if order:
+            order_data = {
+                'id': order.id,
+                'type_sale':  order.type_sale,
+                'date_order': order.date_order.isoformat() if order.date_order else None,
+                'name': order.name,
+                'partner_id': order.partner_id.id or None,
+                'partner_name': order.partner_id.name or None,
+                'partner_street': order.partner_id.street or None,
+                'partner_street2': order.partner_id.street2 or None,
+                'partner_city': order.partner_id.city or None,
+                'partner_state_id': order.partner_id.state_id.id or None,
+                'partner_state_name': order.partner_id.state_id.name or None,
+                'partner_zip': order.partner_id.zip or None,
+                'partner_country_id': order.partner_id.country_id.id or None,
+                'partner_country_name': order.partner_id.country_id.name or None,
+                'partner_vat': order.partner_id.vat or None,
+                'partner_email': order.partner_id.email or None,
+                'partner_phone': order.partner_id.phone or None,
+                'amount_untaxed': order.amount_untaxed or None,
+                'amount_tax': order.amount_tax or None,
+                'amount_total': order.amount_total or None,
+                'company_id': order.company_id.id,
+                'commitment_date': order.commitment_date.isoformat(),
+                'state': order.state,
+                'first_payment_date': order.first_payment_date.isoformat() if order.first_payment_date else None,
+                'second_payment_date': order.second_payment_date.isoformat() if order.second_payment_date else None,
+                'third_payment_date': order.third_payment_date.isoformat() if order.third_payment_date else None,
 
+                'first_payment_amount': order.first_payment_amount,
+                'second_payment_amount': order.second_payment_amount,
+                'third_payment_amount': order.third_payment_amount,
 
-    @http.route('/api/creditcommandes/clients/<int:id>/liste', methods=['GET'], type='http', auth='none', cors="*")
-    def api_get_commandesCredit_liste(self,id, **kw):
-        if not request.env.user or request.env.user._is_public():
-            admin_user = request.env.ref('base.user_admin')
-            request.env = request.env(user=admin_user.id)
+                'first_payment_state': order.first_payment_state,
+                'second_payment_state': order.second_payment_state,
+                'third_payment_state': order.third_payment_state,
 
-        partner = request.env['res.partner'].sudo().search([('id', '=', id)], limit=1)
-        if not partner:
-            return werkzeug.wrappers.Response(
-                status=400,
-                content_type='application/json; charset=utf-8',
-                headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
-                response=json.dumps({ "status": "error", "message": "Commandes non trouvé"}))
-        order_data = []
-        orders = request.env['sale.order'].sudo().search([('partner_id','=', partner.id ) , ('type_sale' , '=' , 'creditorder')  ])
-        if orders:
-            for o in orders:
-                order_data.append({
-                    'id': o.id,
-                    'validation_rh_state': o.validation_rh_state,
-                    'validation_admin_state': o.validation_admin_state,
-                    'type_sale':  o.type_sale,
-                    'date_order': o.date_order.isoformat() if o.date_order else None,
-                    'name': o.name,
-                    'payment_mode': o.payment_mode,
-                    'partner_id': o.partner_id.id or None,
-                    'partner_name': o.partner_id.name or None,
-                    'partner_city': o.partner_id.city or None,
-                    'partner_country_id': o.partner_id.country_id.id or None,
-                    'partner_country_name': o.partner_id.country_id.name or None,
-                    'partner_email': o.partner_id.email or None,
-                    'partner_phone': o.partner_id.phone or None,
-                    'amount_untaxed': o.amount_untaxed or None,
-                    'amount_tax': o.amount_tax or None,
-                    'amount_total': o.amount_total or None,
-                    'state': o.state or None,
-                    'advance_payment_status':o.advance_payment_status,
-                    'amount_residual': o.amount_residual,
-                    'create_date': o.create_date.isoformat() if o.create_date else None,
+                'amount_residual': order.amount_residual,
+                'advance_payment_status':order.advance_payment_status,
 
-                    'first_payment_date': o.first_payment_date.isoformat() if o.first_payment_date else None,
-                    'second_payment_date': o.second_payment_date.isoformat() if o.second_payment_date else None,
-                    'third_payment_date': o.third_payment_date.isoformat() if o.third_payment_date else None,
-                    'fourth_payment_date': o.fourth_payment_date.isoformat() if o.fourth_payment_date else None,
+                'validation_rh': order_data.validation_rh,
+                'validation_state': order_data.validation_state,
+                'validation_admin': order_data.validation_admin,
 
-                    'first_payment_amount': o.first_payment_amount,
-                    'second_payment_amount': o.second_payment_amount,
-                    'third_payment_amount': o.third_payment_amount,
-                    'fourth_payment_amount': o.fourth_payment_amount,
-
-                    'first_payment_state': o.first_payment_state,
-                    'second_payment_state': o.second_payment_state,
-                    'third_payment_state': o.third_payment_state,
-                    'fourth_payment_state': o.fourth_payment_state,
-
-                    'order_lines': [{
+                'user_id': order.user_id.id or None,
+                'user_name': order.user_id.name or None,
+                'create_date': order.create_date.isoformat() if order.create_date else None,
+                'payment': [
+                    {
+                        'payment_id' : p.id or None,
+                        'payment_type' : p.payment_type,
+                        'payment_amount' : p.amount,
+                        'is_reconciled': p.is_reconciled
+                    }  for p in payment
+                ],
+                'invoice' : [
+                    {
+                        'invoice_id' : i.id,
+                        'invoice_name': i.name,
+                        'invoice_state': i.state,
+                        'payment_state': i.payment_state,
+                        'invoice_payment_id': i.payment_id.id,
+                        'ref': i.ref
+                    } for i in invoice_p
+                ],
+                'order_lines': [
+                    {
                         'id': l.id or None,
                         'product_id': l.product_id.id or None,
                         'product_name': l.product_id.name or None,
                         'product_uom_qty': l.product_uom_qty or None,
                         'product_uom': l.product_uom.id or None,
                         'product_uom_name': l.product_uom.name or None,
+                        'image_1920': l.product_id.image_1920,
+                        'image_128' : l.product_id.image_128,
+                        'image_1024': l.product_id.image_1024,
+                        'image_512': l.product_id.image_512,
+                        'image_256': l.product_id.image_256,
+                        'categ_id': l.product_id.categ_id.name,
                         'price_unit': l.price_unit or None,
                         'price_subtotal': l.price_subtotal or None,
                         'price_tax': l.price_tax or None,
                         'price_total': l.price_total or None,
                         'qty_delivered': l.qty_delivered or None,
                         'qty_to_invoice': l.qty_to_invoice or None,
-                        'qty_invoiced': l.qty_invoiced or None
-                    } for l in o.order_line]
-                })
+                        'qty_invoiced': l.qty_invoiced or None,
+                        'is_downpayment': l.is_downpayment or None,
+                    } for l in order.order_line if not l.is_downpayment
+                ]
+            }
 
             resp = werkzeug.wrappers.Response(
                 status=200,
@@ -412,10 +221,286 @@ class CreditCommandeREST(http.Controller):
                 response=json.dumps(order_data)
             )
             return resp
-        
-        return werkzeug.wrappers.Response(
+        return  werkzeug.wrappers.Response(
+            status=404,
+            content_type='application/json; charset=utf-8',
+            headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+            response=json.dumps("Commande non trouvée")
+        )
+
+
+    # la fonction qu'on utilise
+    @http.route('/api/creditcommandes',methods=['POST'], type='http', cors="*", auth='none', csrf=False)
+    def api_create_creditorder(self, **kwargs):
+        try:
+            data = json.loads(request.httprequest.data)
+            partner_id = int(data.get('partner_id'))
+            order_lines = data.get('order_lines')
+            if not partner_id or not order_lines:
+                raise ValueError('Invalid données pre-commande')
+            
+            partner = request.env['res.partner'].sudo().search([('id', '=', partner_id)], limit=1)
+
+            if not request.env.user or request.env.user._is_public():
+                admin_user = request.env.ref('base.user_admin')
+                request.env = request.env(user=admin_user.id)
+
+            company = request.env['res.company'].sudo().search([('id', '=', partner.company_id.id)], limit=1)
+            if company:
+                # Création de commande
+                with request.env.cr.savepoint():
+                    order = request.env['sale.order'].sudo().create({
+                        'partner_id': partner_id,
+                        'type_sale': 'preorder',
+                        'currency_id': company.currency_id.id,
+                        'company_id': company.id,
+                        'commitment_date': datetime.datetime.now() + datetime.timedelta(days=60),
+                        'payment_mode': 'domicile'
+                        # 'state': 'sale'
+                    })
+                    # order.action_confirm()
+                    for item in order_lines:
+                        product_id = item.get('id')
+                        product_uom_qty = item.get('quantity')
+                        price_unit = item.get('list_price')
+                        if not product_id or not product_uom_qty or not price_unit:
+                            raise ValueError('Missing product data')
+                        # Création de ligne de commande
+                        order_line = request.env['sale.order.line'].sudo().create({
+                            'order_id': order.id,
+                            'product_id': product_id,
+                            'product_uom_qty': product_uom_qty,
+                            'price_unit': price_unit,
+                            'company_id': company.id,
+                            'currency_id': company.currency_id.id,
+                            'state': 'sale',
+                            # 'type_sale': 'preorder',
+                            'invoice_status': 'to invoice'
+                        })
+                    if order:
+                        order.action_confirm()
+            else:
+                raise ValueError('Company not found')
+
+
+            resp = werkzeug.wrappers.Response(
+                status=201,
+                content_type='application/json; charset=utf-8',
+                headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                response=json.dumps({
+                    'id': order.id,
+                    'name': order.name,
+                    'partner_id': order.partner_id.id,
+                    'type_sale': order.type_sale,
+                    'currency_id': order.currency_id.id,
+                    'company_id': order.company_id.id,
+                    'commitment_date': order.commitment_date.isoformat(),
+                    'state': order.state,
+                    'first_payment_date': order.first_payment_date.isoformat() if order.first_payment_date else None,
+                    'second_payment_date': order.second_payment_date.isoformat() if order.second_payment_date else None,
+                    'third_payment_date': order.third_payment_date.isoformat() if order.third_payment_date else None,
+                    'first_payment_amount': order.first_payment_amount,
+                    'second_payment_amount': order.second_payment_amount,
+                    'third_payment_amount': order.third_payment_amount,
+                    'first_payment_state': order.first_payment_state,
+                    'second_payment_state': order.second_payment_state,
+                    'third_payment_state': order.third_payment_state,
+                    'amount_residual': order.amount_residual,
+                    'amount_total' : order.amount_total,
+                    'amount_tax': order.amount_tax,
+                    'amount_untaxed' : order.amount_untaxed,
+                    'validation_rh': order.validation_rh,
+                    'validation_state': order.validation_state,
+                    'validation_admin': order.validation_admin,
+                    'advance_payment_status':order.advance_payment_status,
+                    'order_lines': [
+                        {
+                            'id': order_line.id,
+                            'quantity': order_line.product_uom_qty,
+                            'list_price': order_line.price_unit,
+                        } for order_line in order.order_line
+                    ]
+                })
+            )
+            return resp
+
+        except ValueError as e:
+            return request.make_response(
+                json.dumps({'status': 'error', 'message': str(e)}),
+                headers={'Content-Type': 'application/json'}
+            )
+        except Exception as e:
+            return request.make_response(
+                json.dumps({'status': 'error', 'message': str(e)}),
+                headers={'Content-Type': 'application/json'}
+            )
+
+
+    @http.route('/api/creditcommandes/update', methods=['POST'], type='http', cors="*", auth='none', csrf=False)
+    def api_update_credit_order(self,**kwargs):
+        try:
+            data = json.loads(request.httprequest.data)
+            partner_id = int(data.get('partner_id'))
+            order_id = data.get('order_id')
+
+            order = request.env['sale.order'].sudo().search([('id', '=', order_id), ( 'partner_id', '=', partner_id ) ], limit=1)
+            # if not request.env.user or request.env.user._is_public():
+            #     admin_user = request.env.ref('base.user_admin')
+            #     request.env = request.env(user=admin_user.id)
+            _logger.info(f"Order: {order}")
+            if order:
+                # Création de commande
+                # with request.env.cr.savepoint():
+                #     order.write({
+                #         'state': 'sale'
+                #     })
+                order.action_confirm()
+            else:
+                raise ValueError('Order not found')
+
+
+            resp = werkzeug.wrappers.Response(
                 status=200,
                 content_type='application/json; charset=utf-8',
                 headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
-                response=json.dumps([])
+                response=json.dumps({
+                    'id': order.id,
+                    'name': order.name,
+                    'partner_id': order.partner_id.id,
+                    'type_sale': order.type_sale,
+                    'currency_id': order.currency_id.id,
+                    'company_id': order.company_id.id,
+                    'commitment_date': order.commitment_date.isoformat(),
+                    'state': order.state,
+                    'first_payment_date': order.first_payment_date.isoformat() if order.first_payment_date else None,
+                    'second_payment_date': order.second_payment_date.isoformat() if order.second_payment_date else None,
+                    'third_payment_date': order.third_payment_date.isoformat() if order.third_payment_date else None,
+
+                    'first_payment_amount': order.first_payment_amount,
+                    'second_payment_amount': order.second_payment_amount,
+                    'third_payment_amount': order.third_payment_amount,
+
+                    'first_payment_state': order.first_payment_state,
+                    'second_payment_state': order.second_payment_state,
+                    'third_payment_state': order.third_payment_state,
+
+                    'validation_rh': order.validation_rh,
+                    'validation_state': order.validation_state,
+                    'validation_admin': order.validation_admin,
+
+                    'amount_residual': order.amount_residual,
+                    'amount_total' : order.amount_total,
+                    'amount_untaxed' : order.amount_untaxed,
+                    'amount_tax': order.amount_tax,
+                    'advance_payment_status':order.advance_payment_status,
+                    'order_lines': [
+                        {
+                            'id': order_line.id,
+                            'quantity': order_line.product_uom_qty,
+                            'list_price': order_line.price_unit,
+                        } for order_line in order.order_line
+                    ]
+                })
             )
+            return resp
+
+        except ValueError as e:
+            return request.make_response(
+                json.dumps({'status': 'error', 'message': str(e)}),
+                headers={'Content-Type': 'application/json'}
+            )
+
+    def create_payment_creditorder(self, order):
+
+        if order:
+            partner = request.env['res.partner'].sudo().search([('id', '=', order.partner_id.id)], limit=1)
+
+            company = request.env['res.company'].sudo().search([('id', '=', partner.company_id.id)], limit=1)
+
+            journal = request.env['account.journal'].sudo().search([('type', 'in', ['bank', 'cash'])])
+
+            journal_vr = journal[-1]
+            _logger.info( f"journal  {journal} journal 6 : {journal_vr} " )
+
+            payment_method_line_vr = request.env['account.payment.method.line'].sudo().search([
+                ('id', '=', 9)], limit=1)
+            account_payment = request.env['account.payment'].sudo().create({
+                'payment_type': 'inbound',
+                'partner_type': 'customer',
+                'partner_id': partner.id,
+                'amount': order.first_payment_amount,
+                'journal_id': journal_vr.id,
+                'currency_id': journal_vr.currency_id.id,
+                'payment_method_line_id': payment_method_line_vr.id,
+                # 'payment_method_id': 1,
+                'sale_id': order.id,
+                # 'move_id': new_invoice.id
+            })
+            if account_payment:
+                _logger.info( f'id facture generere lors du payment {account_payment.move_id}')
+                account_payment.action_post()
+                return { 'invoice_id': account_payment.move_id.id , 'account_payment_id': account_payment.id  }
+        else:
+            return False
+
+
+
+    @http.route('/api/creditcommandes/<id>', methods=['PUT'], type='http', cors="*", auth='none', csrf=False)
+    @check_permissions
+    def api_update_creditorder(self, id, **kwargs):
+        data = json.loads(request.httprequest.data)
+        partner_id = int(data.get('partner_id'))
+        order_lines = data.get('order_lines')
+
+
+        if not partner_id or not order_lines:
+            return request.make_response(
+                json.dumps({'status': 'erreur', 'message': 'Données de commande invalides'}),
+                headers={'Content-Type': 'application/json'}
+            )
+
+        commande = request.env['sale.order'].sudo().search([('id', '=', id)], limit=1 )
+
+        if not commande:
+            return request.make_response(
+                json.dumps({'status': 'erreur', 'message': 'Pre Commande non trouvée'}),
+                headers={'Content-Type': 'application/json'}
+            )
+
+        commande.write({
+            'commitment_date': datetime.datetime.now(),
+            'state': 'sale'
+        })
+
+        # commande.action_confirm()
+        response = werkzeug.wrappers.Response(
+            status=204,
+            content_type='application/json; charset=utf-8',
+            headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+            response=json.dumps({
+                'id': commande.id,
+                'name': commande.name,
+                'partner_id': commande.partner_id.id,
+                'type_sale': commande.type_sale,
+                'currency_id': commande.currency_id.id,
+                'company_id': commande.company_id.id,
+                'commitment_date': commande.commitment_date.isoformat(),
+                'state': commande.state,
+                'first_payment_date': commande.first_payment_date.isoformat() if commande.first_payment_date else None,
+                'second_payment_date': commande.second_payment_date.isoformat() if commande.second_payment_date else None,
+                'third_payment_date': commande.third_payment_date.isoformat() if commande.third_payment_date else None,
+                'first_payment_amount': commande.first_payment_amount,
+                'second_payment_amount': commande.second_paymen_tamount,
+                'third_payment_amount': commande.third_payment_amount,
+
+                'first_payment_state': commande.first_payment_state,
+                'second_payment_state': commande.second_payment_state,
+                'third_payment_state': commande.third_payment_state,
+                'advance_payment_status': commande.advance_payment_status,
+
+                'validation_rh': commande.validation_rh,
+                'validation_state': commande.validation_state,
+                'validation_admin': commande.validation_admin,
+            })
+        )
+        return response
