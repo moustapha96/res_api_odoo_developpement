@@ -30,7 +30,8 @@
         'security/ir.model.access.csv',
         'views/ir_model_view.xml',
         'views/product_template_view.xml',
-        'views/res_partner_view.xml'
+        'views/res_partner_view.xml',
+        # 'views/sale_order_view.xml',
     ],
     'images': [
         'static/description/banner.png',

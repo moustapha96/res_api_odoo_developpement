@@ -42,7 +42,9 @@ class PreCommandeREST(http.Controller):
                          'user_id': o.partner_id.user_id.id or None,
                          'user_name': o.partner_id.user_id.name or None,
                          'create_date': o.create_date.isoformat() if o.create_date else None,
+                         
                          'payment_line_ids': o.payment_term_id or None,
+                         
                          'first_payment_date': o.first_payment_date.isoformat() if o.first_payment_date else None,
                          'second_payment_date': o.second_payment_date.isoformat() if o.second_payment_date else None,
                          'third_payment_date': o.third_payment_date.isoformat() if o.third_payment_date else None,
@@ -54,6 +56,7 @@ class PreCommandeREST(http.Controller):
                          'first_payment_state': o.first_payment_state,
                          'second_payment_state': o.second_payment_state,
                          'third_payment_state': o.third_payment_state,
+                         
                          'advance_payment_status':o.advance_payment_status,
                          'note': o.note or None,
                          'order_line': [{

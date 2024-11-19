@@ -824,7 +824,9 @@ class PaymentREST(http.Controller):
             order = request.env['sale.order'].sudo().search([('id', '=',  order_id )], limit=1)
             if order:
                 partner = order.partner_id
-                company = partner.company_id
+                # company = partner.company_id
+                company  = request.env['res.company'].sudo().search([('id', '=', 1)], limit=1)
+
                 if payment_details.token_status == False and payment_state == "completed":
                     facture = f"https://paydunya.com/checkout/receipt/{token}"
                     url_facture = facture
@@ -885,6 +887,49 @@ class PaymentREST(http.Controller):
                                 return self._make_response(self._order_to_dict(order), 200)
                         else:
                             return self._make_response(self._order_to_dict(order), 200)
+                    
+                    elif order.type_sale == "creditorder":
+
+                        journal = request.env['account.journal'].sudo().search([('code', '=', 'CSH1'),( 'company_id', '=', company.id ) ], limit=1)  # type = sale id= 1 & company_id = 1  ==> journal id = 1 / si journal id = 7 : CASH
+                        payment_method = request.env['account.payment.method'].sudo().search([ ( 'payment_type', '=',  'inbound' ) ], limit=1) # payement method : TYPE Inbound & id = 1
+                        payment_method_line = request.env['account.payment.method.line'].sudo().search([('payment_method_id', '=', payment_method.id), ('journal_id', '=', journal.id)], limit=1)
+                        
+                        if order.amount_residual > 0 :
+                            account_payment = request.env['account.payment'].sudo().create({
+                                'payment_type': 'inbound',
+                                'partner_type': 'customer',
+                                'partner_id': partner.id,
+                                'amount': total_amount,
+                                'journal_id': journal.id,
+                                'currency_id': partner.currency_id.id,
+                                'payment_method_line_id': 1,
+                                'payment_method_id': payment_method.id,
+                                'sale_id': order.id,
+                                'is_reconciled': True,
+                            })
+                            if account_payment:
+                                account_payment.action_post()
+                            
+                            if order.state == "draft":
+                                order.action_confirm()
+                                
+                            payment_details.write({
+                                'token_status': True,
+                                'url_facture': url_facture,
+                                'customer_name': customer_name,
+                                'customer_email': customer_email,
+                                'customer_phone': customer_phone,
+                                'payment_date': payment_date,
+                                'payment_state': "completed"
+                            })
+
+                           
+                            return self._make_response(self._order_to_dict(order), 200)
+                            
+                        else:
+                            return self._make_response(self._order_to_dict(order), 200)
+                    
+
                     else:
                         return self._make_response(self._order_to_dict(order), 200)
                 elif payment_details.token_status == True and payment_details.payment_state == "completed":

@@ -342,6 +342,7 @@ class userREST(http.Controller):
 
     @http.route('/api/users/avatar/<id>', methods=['PUT'], type='http', auth='none', cors="*", csrf=False)
     def api_users_avatar(self, id ):
+
         data = json.loads(request.httprequest.data)
         avatar_url = data.get('avatar')
 
@@ -399,8 +400,9 @@ class userREST(http.Controller):
         password = data.get('password')
         city = data.get('city')
         phone = data.get('phone')
+        # company_id = data.get('company_id')
 
-        company = request.env['res.company'].sudo().search([('id', '=', 1)], limit=1)
+        # company = request.env['res.company'].sudo().search([('id', '=', 1)], limit=1)
         country = request.env['res.country'].sudo().search([('id', '=', 204)], limit=1)
         partner_email = request.env['res.partner'].sudo().search([('email', '=', email)], limit=1)
 
@@ -411,6 +413,13 @@ class userREST(http.Controller):
                 headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
                 response=json.dumps("Utilisateur avec cet adresse mail existe déjà")
             )
+        
+        company_choice = None
+        # if company_id:
+        #     company_choice = request.env['res.company'].sudo().search([('id', '=', int(company_id))], limit=1)
+        # else:
+        company_choice = request.env['res.company'].sudo().search([('id', '=', 1)], limit=1)
+
 
         if not partner_email :
             user = request.env['res.users'].sudo().search([('id', '=', request.env.uid)], limit=1)
@@ -422,13 +431,13 @@ class userREST(http.Controller):
                 'name': name,
                 'email': email,
                 'customer_rank': 1,
-                'company_id': company.id,
+                'company_id': company_choice.id,
                 'city': city,
                 'phone': phone,
                 'is_company': False,
                 'active': True,
                 'type': 'contact',
-                'company_name': company.name,
+                'company_name': company_choice.name,
                 'country_id': country.id or None,
                 'password': password,
                 'is_verified': False
@@ -509,6 +518,7 @@ class userREST(http.Controller):
         password = data.get('password')
         city = data.get('adresse')
         name = data.get('name')
+       
 
         partner = request.env['res.partner'].sudo().search([('email', '=', email)], limit=1)
         if not partner:
@@ -518,6 +528,7 @@ class userREST(http.Controller):
                 headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
                 response=json.dumps("Compte client non è, veuillez reessayer")
             )
+
         if partner:
             partner.write({
                 'name': name,
