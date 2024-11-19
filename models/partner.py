@@ -4,13 +4,11 @@ from odoo.http import request
 import logging
 from datetime import datetime, timedelta
 import base64
-
 _logger = logging.getLogger(__name__)
-
 class Partner(models.Model):
     _inherit = 'res.partner'
 
-    password = fields.Char(string='Mot de passe de connexion sur la partie web', widget='password', required=False)
+    password = fields.Char(string='Mot de passe de connexion sur la partie web',widget='password', required=False)
     is_verified = fields.Boolean(string='Etat verification compte mail', default=False)
     avatar = fields.Char(string='Photo profil Client', required=False)
     role = fields.Selection([
@@ -18,23 +16,47 @@ class Partner(models.Model):
         ('secondary_user', 'Utilisateur Secondaire')
     ], string='Rôle', default='secondary_user')
     adhesion = fields.Selection([
-        ('pending','En cours de validation'),
-        ('validated','Validé'),
-        ('rejected','Rejeté'),
-    ], string='Adhésion', required=True, default='pending')
-    company_id = fields.Many2one('res.company', string='Société')
-    hr_email = fields.Char(related='company_id.hr_email', string="Email RH", readonly=True)
+        ('pending', 'En cours de validation'),
+        ('accepted', 'Accepté'),
+        ('rejected', 'Rejeté')
+    ], string='Adhésion', default='pending')
+    adhesion_submit = fields.Boolean(string="Etat demande d'adhésion", default=False)
+
+    entreprise_code = fields.Char(string='Code entreprise', required=False)
+    # la fonction pour generer le code
+    # @api.model
+    # def create(self, vals):
+    #     vals['entreprise_code'] = self.get_entreprise_code()
+    #     return super(Partner, self).create(vals)
+    
+    # def get_entreprise_code(self):
+    #     current_date = datetime.now()
+    #     current_year = current_date.year
+    #     current_month = current_date.month
+    #     current_day = current_date.day
+    #     current_time = current_date.strftime('%H%M%S')
+        
+    #     current_date_str = f"{current_year}{current_month:02d}{current_day:02d}"
+        
+    #     name_prefix = self.name[:4] if self.name else 'N/A'
+        
+    #     company_count = self.env['res.partner'].search_count([('is_company', '=', True)])
+        
+    #     return f"{name_prefix} {current_date_str}{current_time}{company_count}"
 
     @api.model
     def action_confirm_demande_adhesion(self):
-        res = super(Partner, self).action_confirm_demande_adhesion()
         if self.adhesion == 'pending':
+            self.adhesion_submit = True
             self.send_adhesion_request_mail()
-        elif self.adhesion == 'validated':
+        elif self.adhesion == 'accepted':
+            self.adhesion_submit = False
             self.send_adhesion_confirmation_mail()
         elif self.adhesion == 'rejected':
+            self.adhesion_submit = False
             self.send_adhesion_rejection_mail()
-        return res
+        
+        return True
 
     def send_adhesion_request_mail(self):
         mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
@@ -343,9 +365,9 @@ class Partner(models.Model):
             _logger.error(f'Error sending email to client: {str(e)}')
         
         # Envoyer l'e-mail au RH si body_html_hr est fourni
-        if body_html_hr and self.hr_email:
+        if body_html_hr and self.email:
             # email_to_hr = f'{self.hr_email}, {additional_email}'
-            email_to_hr = f'{self.hr_email}'
+            email_to_hr = f'{self.email}'
             email_values_hr = {
                 'email_from': email_from,
                 'email_to': email_to_hr,
@@ -357,7 +379,7 @@ class Partner(models.Model):
             
             try:
                 mail_mail_hr.send()
-                _logger.info(f'Email sent successfully to HR: {self.hr_email}')
+                _logger.info(f'Email sent successfully to HR: {self.email}')
             except Exception as e:
                 _logger.error(f'Error sending email to HR: {str(e)}')
 

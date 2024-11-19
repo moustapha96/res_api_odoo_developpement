@@ -234,6 +234,9 @@ class userREST(http.Controller):
 
             # Compter les commandes en cours
             progress_count = order_obj.sudo().search_count([('partner_id.id', '=', partner.id), ('state', 'in', ['sent', 'to_delivered']), ('type_sale', 'in', ['order', 'preorder'])])
+
+            # for creditorder
+            creditorder_count = order_obj.sudo().search_count([('partner_id.id', '=', partner.id), ('state', 'not in', ['cancel']) , ('type_sale', 'in', ['order', 'creditorder'])])
            
             return http.Response(json.dumps({
                 'user_name': partner.name,
@@ -241,6 +244,7 @@ class userREST(http.Controller):
                 'preorder_count': preorder_count,
                 'delivered_count': delivered_count,
                 'progress_count': progress_count,
+                'creditorder_count': creditorder_count
             }), content_type='application/json')
         else:
             return http.Response(json.dumps({
@@ -400,7 +404,7 @@ class userREST(http.Controller):
         password = data.get('password')
         city = data.get('city')
         phone = data.get('phone')
-        company_id = data.get('company_id')
+        # company_id = data.get('company_id')
 
         # company = request.env['res.company'].sudo().search([('id', '=', 1)], limit=1)
         country = request.env['res.country'].sudo().search([('id', '=', 204)], limit=1)
@@ -415,10 +419,10 @@ class userREST(http.Controller):
             )
         
         company_choice = None
-        if company_id:
-            company_choice = request.env['res.company'].sudo().search([('id', '=', int(company_id))], limit=1)
-        else:
-            company_choice = request.env['res.company'].sudo().search([('id', '=', 1)], limit=1)
+        # if company_id:
+        #     company_choice = request.env['res.company'].sudo().search([('id', '=', int(company_id))], limit=1)
+        # else:
+        company_choice = request.env['res.company'].sudo().search([('id', '=', 1)], limit=1)
 
 
         if not partner_email :

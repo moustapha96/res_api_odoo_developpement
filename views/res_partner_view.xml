@@ -22,6 +22,20 @@
             </field>
         </record>
 
+        <record id="view_partner_form_inherit_adhesion" model="ir.ui.view">
+            <field name="name">res.partner.form.inherit.adhesion</field>
+            <field name="model">res.partner</field>
+            <field name="inherit_id" ref="base.view_partner_form" />
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='role']" position="after">
+                    <field name="adhesion" />
+                    <field name="entreprise_code" />
+
+                </xpath>
+            </field>
+        </record>
+
+        <!-- adhesion -->
         <!-- <record id="view_partner_form_inherit_password" model="ir.ui.view">
             <field name="name">res.partner.form.inherit.password</field>
             <field name="model">res.partner</field>

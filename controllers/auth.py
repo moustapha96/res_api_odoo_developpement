@@ -105,9 +105,37 @@ class ControllerREST(http.Controller):
                 expires_in = None
         return int(round(expires_in or (sys.maxsize - time.time())))
 
- 
-    
-    # Refresh access token:
+
+    def _get_parent_data(self, user_partner ):
+        _logger.info(f" user parent {user_partner.parent_id} , {user_partner.parent_id.name},{user_partner.parent_id.phone}")
+        
+        if user_partner.parent_id:
+            return {
+                'id': user_partner.parent_id.id,
+                'name': user_partner.parent_id.name,
+                'email': user_partner.parent_id.email,
+                'phone': user_partner.parent_id.phone,
+                'entreprise_code': user_partner.parent_id.entreprise_code or None,
+                'info': 'Parent'
+            }
+        else:
+           return {}
+        
+        
+    def _get_company_data(self, user_partner ):
+        _logger.info(f" user parent {user_partner.parent_id} , {user_partner.parent_id.name},{user_partner.parent_id.phone}")
+        
+        return {
+                'id': user_partner.company_id.id,
+                'name': user_partner.company_id.name,
+                'email': user_partner.company_id.email,
+                'phone': user_partner.company_id.phone,
+                'entreprise_code': user_partner.company_id.entreprise_code or None,
+                'info': "Entreprise"
+            }    
+            
+
+
     @http.route('/api/auth/refresh_token', methods=['POST'], type='http', auth='none', cors=rest_cors_value, csrf=False)
     def api_auth_refreshtoken(self, **kw):
         # Get request parameters from url
@@ -230,7 +258,7 @@ class ControllerREST(http.Controller):
     def _get_db_name(self):
         return request.session.db
 
-    def _create_successful_response(self, uid, tokens, user_data, company_data):
+    def _create_successful_response(self, uid, tokens, user_data , company_data, parent_data):
         response_data = {
             'uid': uid,
             'user_context': request.session.context if uid else {},
@@ -238,6 +266,7 @@ class ControllerREST(http.Controller):
             'user_info': user_data,
             'is_verified': user_data['is_verified'],
             'company': company_data,
+            'parent': parent_data, 
             **tokens
         }
 
@@ -252,14 +281,13 @@ class ControllerREST(http.Controller):
     
     def _get_user_data(self, user_partner, uid):
         return {
-            'id': uid,
+            'id': user_partner.id,
+            'uid': uid,
             'name': user_partner.name,
             'email': user_partner.email,
-            'company_id': user_partner.company_id.id,
             'partner_id': user_partner.id,
-            'company_name': user_partner.company_id.name,
-            'company_email': user_partner.company_id.email,
-            'company_phone': user_partner.company_id.phone,
+            # 'company_name': user_partner.company_id.name  or None,
+            # 'company_id': user_partner.company_id.id or None,
             'partner_city': user_partner.city,
             'partner_phone': user_partner.phone,
             'country_id': user_partner.country_id.id,
@@ -268,17 +296,11 @@ class ControllerREST(http.Controller):
             'country_phone_code': user_partner.country_id.phone_code,
             'is_verified': user_partner.is_verified,
             'avatar': user_partner.avatar,
-            'role': user_partner.role
+            'role': user_partner.role,
+            'adhesion': user_partner.adhesion,
+            'adhesion_submit' : user_partner.adhesion_submit
         }
     
-    def _get_company_data(self, user_partner ):
-        return {
-            'id': user_partner.company_id.id,
-            'name': user_partner.company_id.name,
-            'email': user_partner.company_id.email,
-            'phone': user_partner.company_id.phone,
-        }
-
     def _generate_and_save_tokens(self, uid):
         access_token = generate_token()
         refresh_token = generate_token()
@@ -376,8 +398,47 @@ class ControllerREST(http.Controller):
             tokens = self._generate_and_save_tokens(uid)
             user_data = self._get_user_data(user_partner, uid)
             company_data = self._get_company_data(user_partner)
+            parent_data = self._get_parent_data(user_partner)
             
-            return self._create_successful_response(uid, tokens, user_data , company_data)
+            return self._create_successful_response(uid, tokens, user_data, company_data ,parent_data)
+        
+        except Exception as e:
+            _logger.error(f"Error in api_auth_gettokens: {str(e)}")
+            return error_response(500, 'internal_server_error', str(e))
+        
+
+    @http.route('/api/auth/login', methods=['POST'], type='http', auth='none', cors='*', csrf=False)
+    def api_auth_login_post(self, **kw):
+
+        try:
+            jdata = json.loads(request.httprequest.data)
+            username, password = self._validate_credentials(jdata)
+            
+            self._authenticate_admin()
+            user_partner = self._get_user_partner(username)
+            
+            if not user_partner:
+                return error_resp(400, "Email ou mot de passe incorrecte!")
+            
+            if not user_partner.is_verified:
+                return error_resp(400, "Email non verifié!")
+            
+            is_true_partner = self._verify_partner_password(user_partner, password)
+            
+            if not is_true_partner:
+                return error_resp(401, "Email ou mot de passe incorrecte")
+            
+            uid = self._authenticate_odoo_user()
+            
+            if not uid:
+                return error_response(401, 'odoo_user_authentication_failed', "Odoo User authentication failed!")
+            
+            tokens = self._generate_and_save_tokens(uid)
+            user_data = self._get_user_data(user_partner, uid)
+            company_data = self._get_company_data(user_partner)
+            parent_data = self._get_parent_data(user_partner)
+            
+            return self._create_successful_response(uid, tokens, user_data, company_data, parent_data)
         
         except Exception as e:
             _logger.error(f"Error in api_auth_gettokens: {str(e)}")
