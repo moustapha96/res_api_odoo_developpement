@@ -400,7 +400,7 @@ class userREST(http.Controller):
         password = data.get('password')
         city = data.get('city')
         phone = data.get('phone')
-        # company_id = data.get('company_id')
+        company_id = data.get('company_id')
 
         # company = request.env['res.company'].sudo().search([('id', '=', 1)], limit=1)
         country = request.env['res.country'].sudo().search([('id', '=', 204)], limit=1)
@@ -415,10 +415,10 @@ class userREST(http.Controller):
             )
         
         company_choice = None
-        # if company_id:
-        #     company_choice = request.env['res.company'].sudo().search([('id', '=', int(company_id))], limit=1)
-        # else:
-        company_choice = request.env['res.company'].sudo().search([('id', '=', 1)], limit=1)
+        if company_id:
+            company_choice = request.env['res.company'].sudo().search([('id', '=', int(company_id))], limit=1)
+        else:
+            company_choice = request.env['res.company'].sudo().search([('id', '=', 1)], limit=1)
 
 
         if not partner_email :
