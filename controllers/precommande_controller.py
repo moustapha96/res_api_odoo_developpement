@@ -237,7 +237,8 @@ class PreCommandeREST(http.Controller):
                 admin_user = request.env.ref('base.user_admin')
                 request.env = request.env(user=admin_user.id)
 
-            company = request.env['res.company'].sudo().search([('id', '=', partner.company_id.id)], limit=1)
+            # company = request.env['res.company'].sudo().search([('id', '=', partner.company_id.id)], limit=1)
+            company = request.env['res.company'].sudo().search([('id', '=', 1)], limit=1)
             if company:
                 # Création de commande
                 with request.env.cr.savepoint():

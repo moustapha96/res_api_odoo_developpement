@@ -419,7 +419,8 @@ class CommandeREST(http.Controller):
             )
 
         partner = request.env['res.partner'].sudo().search([('id', '=', partner_id)], limit=1)
-        company = request.env['res.company'].sudo().search([('id', '=', partner.company_id.id)], limit=1)
+        # company = request.env['res.company'].sudo().search([('id', '=', partner.company_id.id)], limit=1)
+        company = request.env['res.company'].sudo().search([('id', '=', 1)], limit=1)
 
         order = request.env['sale.order'].sudo().create({
                 'partner_id': partner_id,
