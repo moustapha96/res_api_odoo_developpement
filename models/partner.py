@@ -23,26 +23,21 @@ class Partner(models.Model):
     adhesion_submit = fields.Boolean(string="Etat demande d'adhésion", default=False)
 
     entreprise_code = fields.Char(string='Code entreprise', required=False)
-    # la fonction pour generer le code
-    # @api.model
-    # def create(self, vals):
-    #     vals['entreprise_code'] = self.get_entreprise_code()
-    #     return super(Partner, self).create(vals)
-    
-    # def get_entreprise_code(self):
-    #     current_date = datetime.now()
-    #     current_year = current_date.year
-    #     current_month = current_date.month
-    #     current_day = current_date.day
-    #     current_time = current_date.strftime('%H%M%S')
-        
-    #     current_date_str = f"{current_year}{current_month:02d}{current_day:02d}"
-        
-    #     name_prefix = self.name[:4] if self.name else 'N/A'
-        
-    #     company_count = self.env['res.partner'].search_count([('is_company', '=', True)])
-        
-    #     return f"{name_prefix} {current_date_str}{current_time}{company_count}"
+   
+    @api.model_create_multi
+    def create(self, vals_list):
+        """ Méthode pour générer un code unique basé sur le nom, la date de création et le rang de l'entreprise """
+
+        for vals in vals_list:
+            if vals.get('is_company', None):
+                code_date_creation = datetime.now().strftime('%d%m%Y')
+                code_number = self.search_count([('is_company', '=', True)]) + 1
+                code_name = str(vals.get('name')[0:4]).upper()
+                vals['entreprise_code'] = f"{code_name}{code_date_creation}{code_number}"
+
+                return super(Partner, self).create(vals)
+            else:
+                return super(Partner, self).create(vals)
 
     @api.model
     def action_confirm_demande_adhesion(self):

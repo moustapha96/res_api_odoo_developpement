@@ -298,7 +298,8 @@ class ControllerREST(http.Controller):
             'avatar': user_partner.avatar,
             'role': user_partner.role,
             'adhesion': user_partner.adhesion,
-            'adhesion_submit' : user_partner.adhesion_submit
+            'adhesion_submit' : user_partner.adhesion_submit,
+            'parent_id': user_partner.parent_id.id
         }
     
     def _generate_and_save_tokens(self, uid):

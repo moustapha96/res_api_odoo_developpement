@@ -114,7 +114,6 @@ class CreditCommandeREST(http.Controller):
         payment_mode = data.get('payment_mode')
         state = data.get('state')
         commitment_date = data.get('commitment_date')
-        company_id = data.get('company_id')
         parent_id = data.get('parent_id')
 
         if not partner_id or not order_lines:

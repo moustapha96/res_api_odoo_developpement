@@ -168,21 +168,25 @@ class EntrepriseController(http.Controller):
     
 
     # get partner by id
-    @http.route('/api/companies/clients/<int:id>/liste', methods=['GET'], type='http', auth='none', cors="*")
-    def api_get_company(self, id, **kw):
+    @http.route('/api/companies/clients/liste', methods=['POST'], type='http', auth='none', cors="*" , csrf=False)
+    def api_get_company(self, **kw):
         if not request.env.user or request.env.user._is_public():
             admin_user = request.env.ref('base.user_admin')
             request.env = request.env(user=admin_user.id)
 
-        company = request.env['res.company'].sudo().search([('id', '=', id)], limit=1)
-        if not company:
+        data = json.loads(request.httprequest.data)
+        partner_id = data.get('partner_id')
+        parent_id = data.get('parent_id')
+
+        partner = request.env['res.partner'].sudo().search([('id', '=', partner_id)], limit=1)
+        if not partner:
             return werkzeug.wrappers.Response(
                 status=400,
                 content_type='application/json; charset=utf-8',
                 headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
-                response=json.dumps({ "status": "error", "message": "Entreprise non rencontrée"}))
-        
-        partners = request.env['res.partner'].sudo().search([('company_id', '=', company.id)])
+                response=json.dumps({ "status": "error", "message": "Utilisateur non autorisé"}))
+
+        partners = request.env['res.partner'].sudo().search([('parent_id', '=', parent_id)])
         resultats = []
         # convert to json
         for partner in partners:
@@ -321,22 +325,22 @@ class EntrepriseController(http.Controller):
                 response=json.dumps([])
             )
 
-    # getCommande en cours de validation Clients Entreprise api/companies/clients/commandesECDV/${id}
     @http.route('/api/companies/clients/commandesECDV/<int:id>', methods=['GET'], type='http', auth='none', cors="*")
     def api_get_commande_en_cours_de_validation(self,id, **kw):
         if not request.env.user or request.env.user._is_public():
             admin_user = request.env.ref('base.user_admin')
             request.env = request.env(user=admin_user.id)
 
-        company = request.env['res.company'].sudo().search([('id', '=', id)], limit=1)
-        if not company:
+        parent = request.env['res.partner'].sudo().search([('id', '=', id)], limit=1)
+        if not parent:
             return werkzeug.wrappers.Response(
                 status=400,
                 content_type='application/json; charset=utf-8',
                 headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
                 response=json.dumps({ "status": "error", "message": "Commandes non trouvé"}))
+        
         order_data = []
-        orders = request.env['sale.order'].sudo().search([('company_id.id','=', company.id ) , ('type_sale' , '=' , 'creditorder'), ('validation_rh_state' , '=' , 'pending') ])
+        orders = request.env['sale.order'].sudo().search([('partner_id.parent_id','=', parent.id ) , ('type_sale' , '=' , 'creditorder'), ('validation_rh_state' , '=' , 'pending') ])
         if orders:
             for o in orders:
                 order_data.append({
@@ -421,15 +425,15 @@ class EntrepriseController(http.Controller):
             admin_user = request.env.ref('base.user_admin')
             request.env = request.env(user=admin_user.id)
 
-        company = request.env['res.company'].sudo().search([('id', '=', id)], limit=1)
-        if not company:
+        parent = request.env['res.partner'].sudo().search([('id', '=', id)], limit=1)
+        if not parent:
             return werkzeug.wrappers.Response(
                 status=400,
                 content_type='application/json; charset=utf-8',
                 headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
                 response=json.dumps({ "status": "error", "message": "Commandes non trouvé"}))
         order_data = []
-        orders = request.env['sale.order'].sudo().search([('company_id.id','=', company.id ) , ('type_sale' , '=' , 'creditorder' ) , ('validation_rh_state' , '=' , 'rejected') ])
+        orders = request.env['sale.order'].sudo().search([('partner_id.parent_id','=', parent.id ) , ('type_sale' , '=' , 'creditorder' ) , ('validation_rh_state' , '=' , 'rejected') ])
         if orders:
             for o in orders:
                 order_data.append({
@@ -703,15 +707,16 @@ class EntrepriseController(http.Controller):
             admin_user = request.env.ref('base.user_admin')
             request.env = request.env(user=admin_user.id)
 
-        company = request.env['res.company'].sudo().search([('id', '=', id)], limit=1)
-        if not company:
+        parent = request.env['res.partner'].sudo().search([('id', '=', id)], limit=1)
+        if not parent:
             return werkzeug.wrappers.Response(
                 status=400,
                 content_type='application/json; charset=utf-8',
                 headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
                 response=json.dumps({ "status": "error", "message": "Commandes non trouvé"}))
         order_data = []
-        orders = request.env['sale.order'].sudo().search([('company_id.id','=', company.id ) , ('type_sale' , '=' , 'creditorder' ) , ('validation_rh_state' , '=' , 'validated') ])
+
+        orders = request.env['sale.order'].sudo().search([('partner_id.parent_id','=', parent.id ) , ('type_sale' , '=' , 'creditorder' ) , ('validation_rh_state' , '=' , 'validated') ])
         if orders:
             for o in orders:
                 order_data.append({
@@ -920,15 +925,15 @@ class EntrepriseController(http.Controller):
             admin_user = request.env.ref('base.user_admin')
             request.env = request.env(user=admin_user.id)
 
-        company = request.env['res.company'].sudo().search([('id', '=', id)], limit=1)
-        if not company:
+        parent = request.env['res.partner'].sudo().search([('id', '=', id)], limit=1)
+        if not parent:
             return werkzeug.wrappers.Response(
                 status=400,
                 content_type='application/json; charset=utf-8',
                 headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
                 response=json.dumps({ "status": "error", "message": "Commandes non trouvé"}))
         order_data = []
-        orders = request.env['sale.order'].sudo().search([('company_id','=', company.id ) , ('type_sale' , '=' , 'creditorder')  ])
+        orders = request.env['sale.order'].sudo().search([('partner_id.parent_id','=', parent.id ) , ('type_sale' , '=' , 'creditorder')  ])
         if orders:
             for o in orders:
                 order_data.append({
