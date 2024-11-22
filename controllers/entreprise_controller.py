@@ -43,6 +43,15 @@ class EntrepriseController(http.Controller):
                 headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
                 response=json.dumps({ "status": "error", "message": "Partenaire incorrect"}))
         
+        if partner.parent_id.id == parent_partner.id:
+
+            return  werkzeug.wrappers.Response(
+                status=302,
+                content_type='application/json; charset=utf-8',
+                headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                response=json.dumps({ "status": "error", "message": "Vous êtes déja adhérent de cette entreprise"})
+            )
+        
         partner.write({
             'parent_id': parent_partner.id,
             'adhesion': 'pending' ,
@@ -1012,13 +1021,13 @@ class EntrepriseController(http.Controller):
     def api_get_commande(self, **kw):
         data = json.loads(request.httprequest.data)
         order_id = data.get('order_id')
-        company_id = data.get('company_id')
+        parent_id = data.get('parent_id')
 
         if not request.env.user or request.env.user._is_public():
             admin_user = request.env.ref('base.user_admin')
             request.env = request.env(user=admin_user.id)
 
-        order = request.env['sale.order'].sudo().search([('id', '=', order_id),('company_id', '=', company_id)], limit=1)
+        order = request.env['sale.order'].sudo().search([('id', '=', order_id),('partner_id.parent_id','=', parent_id )], limit=1)
         if not order:
             return werkzeug.wrappers.Response(
                 status=400,
@@ -1278,8 +1287,19 @@ class EntrepriseController(http.Controller):
                 headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
                 response=json.dumps({ "status": "error", "message": "Commandes non trouvé"}))
         else:
+
+            state_submit =  None 
+            if state == "accepted":
+                state_submit = False
+            elif state == "pending": 
+                state_submit = True
+            elif state == "rejected":
+                state_submit = False
+
+
             partner.write({
-                'adhesion': state
+                'adhesion': state  ,
+                'adhesion_submit': state_submit
             })
             res = partner.action_confirm_demande_adhesion()
             _logger.info(res)

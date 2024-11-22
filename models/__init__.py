@@ -16,4 +16,5 @@ from . import product_template
 from . import partner
 from .import company
 from .import sale_credit_order_mail
-
+from .import sale_order_cron_credit_mail_remender
+from .import sale_order_cron_credit_mail_recover
