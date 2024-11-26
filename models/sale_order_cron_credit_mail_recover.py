@@ -33,6 +33,7 @@ class SaleOrderCronCreditRecover(models.Model):
 
             if overdue_payments:
                 self._send_overdue_payment_recover_email(order, overdue_payments)
+                self._send_overdue_payment_recover_sms(order, overdue_payments)
                 _logger.info("_send_overdue_payment_recover_email - E-mail envoyé pour la commande %s", order.name)
 
     def _get_overdue_payments(self, order, today):
@@ -161,6 +162,35 @@ class SaleOrderCronCreditRecover(models.Model):
             </tr>
         </table>
         '''
+
+
+    def _send_overdue_payment_recover_sms(self, order, overdue_payments):
+        """
+        Envoie un SMS de rappel pour les paiements en retard.
+        """
+        partner = order.partner_id
+        recipient = partner.phone
+        message = (
+            f"Bonjour {partner.name},\n"
+            f"Votre commande à crédit {order.name} a des paiements en retard :\n"
+        )
+
+        for payment in overdue_payments:
+            message += (
+                f"- {payment[0]} : {payment[1]} {order.currency_id.name} (Échéance : {payment[2].strftime('%d/%m/%Y')})\n"
+            )
+
+        message += (
+            f"Merci de régulariser au plus vite. Pour toute question, contactez-nous.\n"
+            f"L'équipe {order.company_id.name}"
+        )
+
+        self.env['send.sms'].sudo().create({
+            'recipient': recipient,
+            'message': message,
+        }).send_sms()
+
+
 
     def _send_mail(self, mail_server, partner, subject, body_html):
         """

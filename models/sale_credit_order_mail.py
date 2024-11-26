@@ -33,6 +33,7 @@ class SaleCreditOrderMail(models.Model):
         body_html = self._generate_email_body_html(partner, 'validation', payment_info)
 
         self.send_mail(mail_server, partner, subject, body_html)
+        self.send_sms_notification('validation')
 
     def send_credit_order_rejection_mail(self):
         mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
@@ -45,6 +46,7 @@ class SaleCreditOrderMail(models.Model):
         body_html = self._generate_email_body_html(partner, 'rejection')
 
         self.send_mail(mail_server, partner, subject, body_html)
+        self.send_sms_notification('rejection')
 
     def send_credit_order_rh_rejected(self):
         mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
@@ -57,6 +59,7 @@ class SaleCreditOrderMail(models.Model):
         body_html = self._generate_email_body_html(partner, 'rh_rejection')
 
         self.send_mail(mail_server, partner, subject, body_html)
+        self.send_sms_notification('rh_rejection')
 
     def send_credit_order_admin_rejected(self):
         mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
@@ -69,6 +72,7 @@ class SaleCreditOrderMail(models.Model):
         body_html = self._generate_email_body_html(partner, 'admin_rejection')
 
         self.send_mail(mail_server, partner, subject, body_html)
+        self.send_sms_notification('admin_rejection')
 
     def send_credit_order_admin_validation(self):
         mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
@@ -81,6 +85,7 @@ class SaleCreditOrderMail(models.Model):
         body_html = self._generate_email_body_html(partner, 'admin_validation')
 
         self.send_mail(mail_server, partner, subject, body_html)
+        self.send_sms_notification('admin_validation')
 
     def send_credit_order_rh_validation(self):
         mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
@@ -92,6 +97,7 @@ class SaleCreditOrderMail(models.Model):
         body_html = self._generate_email_body_html(partner, 'rh_validation')
 
         self.send_mail(mail_server, partner, subject, body_html)
+        self.send_sms_notification('rh_validation')
 
     def send_credit_order_request_mail(self):
         mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
@@ -110,6 +116,7 @@ class SaleCreditOrderMail(models.Model):
         body_html = self._generate_email_body_html(partner, 'request', create_account_section)
 
         self.send_mail(mail_server, partner, subject, body_html)
+        self.send_sms_notification('request')
 
     def _generate_payment_info_html(self, payments):
         payment_rows = "".join([
@@ -169,7 +176,7 @@ class SaleCreditOrderMail(models.Model):
                 'title': 'Rejet de votre commande à crédit par le service RH',
                 'content': f"""
                     <p>Cher(e) {partner.name},</p>
-                    <p>Nous regrettons de vous informer que votre commande à crédit numéro {self.name} a été rejetée par notre service des Ressources Humaines.</p>
+                    <p>Nous regrettons de vous informer que votre commande à crédit numéro {self.name} a été rejetée par votre service des Ressources Humaines.</p>
                     <p>Si vous avez des questions concernant cette décision, n'hésitez pas à contacter notre service client pour plus d'informations.</p>
                 """
             },
@@ -194,7 +201,7 @@ class SaleCreditOrderMail(models.Model):
                 'title': 'Validation RH de votre commande à crédit',
                 'content': f"""
                     <p>Cher(e) {partner.name},</p>
-                    <p>Nous avons le plaisir de vous informer que votre commande à crédit numéro {self.name} a été validée par notre service des Ressources Humaines.</p>
+                    <p>Nous avons le plaisir de vous informer que votre commande à crédit numéro {self.name} a été validée par votre service des Ressources Humaines.</p>
                     <p>Cette étape marque une avancée importante dans le processus de validation de votre commande.</p>
                     <p>Nous vous tiendrons informé des prochaines étapes.</p>
                 """
@@ -327,7 +334,7 @@ class SaleCreditOrderMail(models.Model):
                                             <td>
                                                 <p>Cher/Chère {partner.name},</p>
                                                 <p>Nous vous informons que votre commande à crédit ({self.name}) a été créée avec succès.</p>
-                                                <p>Votre demande est actuellement en attente de validation par notre service des ressources humaines. Nous vous tiendrons informé de l'avancement de votre demande.</p>
+                                                <p>Votre demande est actuellement en attente de validation par votre service des ressources humaines. Nous vous tiendrons informé de l'avancement de votre demande.</p>
                                                 <p>Merci pour votre confiance.</p>
                                                 <p>Cordialement,<br/>L'équipe {self.company_id.name}</p>
                                             </td>
@@ -355,6 +362,7 @@ class SaleCreditOrderMail(models.Model):
         '''
 
         self.send_mail(mail_server, partner.email, subject, body_html)
+        self.send_sms_notification('creation')
 
     def send_credit_order_creation_notification_to_hr(self):
         mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
@@ -429,6 +437,7 @@ class SaleCreditOrderMail(models.Model):
         '''
 
         self.send_mail(mail_server, self.company_id.email, subject, body_html)
+        self.send_sms_notification('hr_notification')
 
 
     def send_mail(self, mail_server, partner, subject, body_html):
@@ -452,6 +461,27 @@ class SaleCreditOrderMail(models.Model):
         except Exception as e:
             _logger.error(f'Error sending email: {str(e)}')
             return {'status': 'error', 'message': str(e)}
+
+    def send_sms_notification(self, notification_type):
+        message_templates = {
+            'validation': f"Bonjour {self.partner_id.name},\nVotre précommande à crédit numéro {self.name} a été validée avec succès.",
+            'rejection': f"Bonjour {self.partner_id.name},\nNous regrettons de vous informer que votre commande à crédit numéro {self.name} a été rejetée.",
+            'rh_rejection': f"Bonjour {self.partner_id.name},\nNous regrettons de vous informer que votre commande à crédit numéro {self.name} a été rejetée par votre service des Ressources Humaines.",
+            'admin_rejection': f"Bonjour {self.partner_id.name},\nNous regrettons de vous informer que votre commande à crédit numéro {self.name} a été rejetée par notre administration.",
+            'admin_validation': f"Bonjour {self.partner_id.name},\nNous avons le plaisir de vous informer que votre commande à crédit numéro {self.name} a été validée par notre administration.",
+            'rh_validation': f"Bonjour {self.partner_id.name},\nNous avons le plaisir de vous informer que votre commande à crédit numéro {self.name} a été validée par votre service des Ressources Humaines.",
+            'request': f"Bonjour {self.partner_id.name},\nNous avons bien reçu votre demande de commande à crédit numéro {self.name}. Elle est actuellement en cours de validation par nos services.",
+            'creation': f"Bonjour {self.partner_id.name},\nVotre commande à crédit numéro {self.name} a été créée avec succès. Elle est actuellement en attente de validation par votre service des ressources humaines.",
+            'hr_notification': f"Bonjour,\nUne nouvelle demande de commande à crédit numéro {self.name} nécessite votre validation."
+        }
+
+        message = message_templates.get(notification_type, "")
+        if message:
+            recipient = self.partner_id.phone
+            self.env['send.sms'].create({
+                'recipient': recipient,
+                'message': message,
+            }).send_sms()
 
     @api.onchange('validation_rh_state', 'validation_admin_state')
     def onchange_validation(self):
