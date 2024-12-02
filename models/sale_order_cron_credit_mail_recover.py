@@ -191,7 +191,6 @@ class SaleOrderCronCreditRecover(models.Model):
         }).send_sms()
 
 
-
     def _send_mail(self, mail_server, partner, subject, body_html):
         """
         Envoie un e-mail via le serveur de messagerie configuré.
