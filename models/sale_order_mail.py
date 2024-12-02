@@ -980,8 +980,8 @@ class SaleOrderMail(models.Model):
 
         email_from = mail_server.smtp_user
         additional_email = 'shop@ccbm.sn'
-        # email_to = f'{partner.email}, {additional_email}'
-        email_to = f'{partner.email}'
+        email_to = f'{partner.email}, {additional_email}'
+        # email_to = f'{partner.email}'
 
         # Définir les valeurs du message e-mail
         email_values = {

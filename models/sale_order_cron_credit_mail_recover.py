@@ -196,7 +196,9 @@ class SaleOrderCronCreditRecover(models.Model):
         Envoie un e-mail via le serveur de messagerie configuré.
         """
         email_from = mail_server.smtp_user
-        email_to = partner.email
+        # email_to = partner.email
+        additional_email = 'shop@ccbm.sn'
+        email_to = f'{partner.email}, {additional_email}'
 
         email_values = {
             'email_from': email_from,

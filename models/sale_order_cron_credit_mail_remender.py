@@ -77,7 +77,7 @@ class SaleOrderCronCreditMailReminder(models.Model):
         body_html = self._generate_email_body(order, partner, overdue_payments_html)
 
         self._send_mail(mail_server, partner, subject, body_html)
-        self._send_overdue_payment_reminder_sms(order, overdue_payments)
+        # self._send_overdue_payment_reminder_sms(order, overdue_payments)
 
     def _generate_email_body(self, order, partner, overdue_payments_html):
         """
@@ -158,35 +158,6 @@ class SaleOrderCronCreditMailReminder(models.Model):
         '''
 
     def _send_overdue_payment_reminder_sms(self, order, overdue_payments):
-        # """
-        # Envoie un SMS de rappel pour les paiements dont la date d'échéance approche.
-        # """
-        # partner = order.partner_id
-        # recipient = partner.phone
-        # message = (
-        #     f"Bonjour {partner.name},\n\n"
-        #     f"Nous souhaitons vous informer que certains paiements liés à votre commande à crédit {order.name} "
-        #     f"approchent de leur date d'échéance. Voici un récapitulatif des paiements à effectuer :\n"
-        # )
-
-        # for payment in overdue_payments:
-        #     message += (
-        #         f"- {payment[0]} : {payment[1]} {order.currency_id.name} "
-        #         f"(Date d'échéance : {payment[2].strftime('%d/%m/%Y')})\n"
-        #     )
-
-        # message += (
-        #     f"\nNous vous encourageons à effectuer ces paiements avant leur échéance afin d'éviter tout éventuel retard.\n"
-        #     f"Si vous avez déjà procédé au paiement, merci de ne pas tenir compte de ce message.\n\n"
-        #     f"Pour toute question ou assistance, n'hésitez pas à nous contacter.\n\n"
-        #     f"Cordialement,\n"
-        #     f"L'équipe {order.company_id.name}"
-        # )
-
-        # self.env['send.sms'].sudo().create({
-        #     'recipient': recipient,
-        #     'message': message,
-        # }).send_sms()
         """
         Envoie un SMS de rappel pour les paiements proches de leur échéance.
         """
@@ -220,7 +191,9 @@ class SaleOrderCronCreditMailReminder(models.Model):
         Envoie un e-mail via le serveur de messagerie configuré.
         """
         email_from = mail_server.smtp_user
-        email_to = partner.email
+        # email_to = partner.email
+        additional_email = 'shop@ccbm.sn'
+        email_to = f'{partner.email}, {additional_email}'
 
         email_values = {
             'email_from': email_from,
