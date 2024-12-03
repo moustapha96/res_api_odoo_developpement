@@ -342,8 +342,8 @@ class Partner(models.Model):
         additional_email = 'shop@ccbm.sn'
         
         # Envoyer l'e-mail au client
-        # email_to_client = f'{self.email}, {additional_email}'
-        email_to_client = f'{self.email}'
+        email_to_client = f'{self.email}, {additional_email}'
+        # email_to_client = f'{self.email}'
         email_values_client = {
             'email_from': email_from,
             'email_to': email_to_client,
@@ -361,8 +361,8 @@ class Partner(models.Model):
         
         # Envoyer l'e-mail au RH si body_html_hr est fourni
         if body_html_hr and self.email:
-            # email_to_hr = f'{self.hr_email}, {additional_email}'
-            email_to_hr = f'{self.email}'
+            email_to_hr = f'{self.hr_email}, {additional_email}'
+            # email_to_hr = f'{self.email}'
             email_values_hr = {
                 'email_from': email_from,
                 'email_to': email_to_hr,
