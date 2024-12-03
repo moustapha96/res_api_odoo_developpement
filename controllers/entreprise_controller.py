@@ -1301,7 +1301,7 @@ class EntrepriseController(http.Controller):
                 'adhesion': state  ,
                 'adhesion_submit': state_submit
             })
-            res = partner.action_confirm_demande_adhesion()
+            res = partner.action_confirm_demande_adhesion(state)
             _logger.info(res)
             return werkzeug.wrappers.Response(
                 status=200,
