@@ -825,6 +825,7 @@ class EntrepriseController(http.Controller):
             order.write({
                 'validation_rh_state': state
             })
+            order.validate_rh()
             # res = order.action_validation_rh_state()
             _logger.info(res)
             return werkzeug.wrappers.Response(

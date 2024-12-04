@@ -821,7 +821,7 @@ class SaleOrderMail(models.Model):
             for echance, amount, date, state in payments:
                 if amount:
                     payment_date = date.strftime('%Y-%m-%d') if date else "Non définie"
-                    payment_state = "Payé" if state == 'paid' else "Non payé"
+                    payment_state = "Payé" if state == True else "Non payé"
                     payment_info += f"<tr><td>{echance}</td><td>{amount}</td><td>{payment_date}</td><td>{payment_state}</td></tr>"
             
             payment_info += "</table>"
@@ -999,7 +999,6 @@ class SaleOrderMail(models.Model):
         except Exception as e:
             _logger.error(f'Error sending email: {str(e)}')
             return {'status': 'error', 'message': str(e)}    
-
 
     @api.model
     def action_confirm(self):

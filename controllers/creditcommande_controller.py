@@ -147,7 +147,8 @@ class CreditCommandeREST(http.Controller):
                 'commitment_date': datetime.datetime.now() + datetime.timedelta(days=3),
                 'payment_mode': 'online',
                 'validation_rh_state': 'pending',
-                'validation_admin_state': 'pending'
+                'validation_admin_state': 'pending',
+                'date_approved_creditorder': datetime.datetime.now()
             })
             for item in order_lines:
                 product_id = item.get('id')
