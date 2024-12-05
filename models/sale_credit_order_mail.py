@@ -463,7 +463,7 @@ class SaleCreditOrderMail(models.Model):
         <p>Veuillez vous connecter au système pour examiner et valider cette commande.</p>
         '''
 
-        return self.send_mail(mail_server, self.partner_id, subject, body_html)
+        return self.send_mail(mail_server, admin_user.partner_id, subject, body_html)
 
 
 
