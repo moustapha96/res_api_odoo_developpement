@@ -787,6 +787,33 @@ class SaleOrderMail(models.Model):
             return {'status': 'error', 'message': str(e)}
 
 
+    def send_credit_order_to_rh_for_confirmation(self):
+        mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
+        
+        partner = self.partner_id
+        if not partner:
+            return {'status': 'error', 'message': 'Partner not found for the given order'}
+        # Send email to HR
+        parent = self.partner_id.parent_id
+        rh_user = request.env['res.partner'].sudo().search([('role', '=', 'main_user'), ('parent_id', '=', parent.id)], limit=1)
+        
+        if rh_user:
+            hr_subject = f'Nouvelle commande à crédit à valider - {self.name}'
+            hr_body_html = f'''
+            <p>Bonjour,</p>
+            <p>Une nouvelle commande à crédit nécessite votre validation :</p>
+            <ul>
+                <li>Numéro de commande : {self.name}</li>
+                <li>Client : {partner.name}</li>
+                <li>Montant total : {self.amount_total}</li>
+            </ul>
+            <p>Veuillez vous connecter au système pour examiner et valider cette commande.</p>
+            '''
+            self.send_mail(mail_server, rh_user, hr_subject, hr_body_html)
+
+        return {'status': 'success', 'message': 'Emails sent successfully'}
+
+    
     # mail apres payment creditorder
     def send_payment_status_mail_creditorder(self):
         # Récupérer ou créer une instance de IrMailServer
@@ -1012,10 +1039,19 @@ class SaleOrderMail(models.Model):
             self.send_payment_status_mail_creditorder()
         return res
 
-   
+    @api.model
+    def create(self, vals):
+        order = super(SaleOrderMail, self).create(vals)
+        if order.type_sale == 'creditorder':
+            order.send_credit_order_validation_mail()
+            order.send_credit_order_to_rh_for_confirmation()
+        return order
+
     @api.model
     def action_register_payment(self, payment_amount):
         res = super(SaleOrderMail, self).action_register_payment(payment_amount)
         self.send_payment_status_mail()
         return res
+
+   
     

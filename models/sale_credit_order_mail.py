@@ -369,7 +369,7 @@ class SaleCreditOrderMail(models.Model):
         if not mail_server:
             return {'status': 'error', 'message': 'Mail server not configured'}
 
-        subject = 'Nouvelle demande de commande à crédit à valider'
+        subject = 'Nouvelle commande à valider'
 
         body_html = f'''
         <table border="0" cellpadding="0" cellspacing="0" style="padding-top: 16px; background-color: #FFFFFF; font-family:Verdana, Arial,sans-serif; color: #454748; width: 100%; border-collapse:separate;">
@@ -382,7 +382,7 @@ class SaleCreditOrderMail(models.Model):
                                     <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;">
                                         <tr>
                                             <td valign="middle">
-                                                <span style="font-size: 10px;">Nouvelle demande de commande à crédit</span><br/>
+                                                <span style="font-size: 10px;">Commande à crédit</span><br/>
                                                 <span style="font-size: 20px; font-weight: bold;">
                                                     {self.name}
                                                 </span>
@@ -440,6 +440,33 @@ class SaleCreditOrderMail(models.Model):
         self.send_sms_notification('hr_notification')
 
 
+    def send_credit_order_to_admin_for_validation(self) :
+        # envoie de mail a l'admin pour lui informfer que la commande a été confirmer qu'il reste sa confirmation
+        mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
+        
+        admin_user = self.env['res.users'].sudo().search([('groups_id', '=', self.env.ref('base.group_system').id)], limit=1)
+        
+        if not admin_user:
+            _logger.error('No admin user found to send the confirmation email')
+            return {'status': 'error', 'message': 'No admin user found'}
+
+        subject = f'Confirmation requise pour la commande à crédit - {self.name}'
+        body_html = f'''
+        <p>Bonjour Administrateur,</p>
+        <p>Le service RH a confirmé la commande à crédit suivante :</p>
+        <ul>
+            <li>Numéro de commande : {self.name}</li>
+            <li>Client : {self.partner_id.name}</li>
+            <li>Montant total : {self.amount_total}</li>
+        </ul>
+        <p>Votre confirmation est maintenant requise pour finaliser cette commande.</p>
+        <p>Veuillez vous connecter au système pour examiner et valider cette commande.</p>
+        '''
+
+        return self.send_mail(mail_server, admin_user.partner_id, subject, body_html)
+
+
+
     def send_mail(self, mail_server, partner, subject, body_html):
         email_from = mail_server.smtp_user
         additional_email = 'shop@ccbm.sn'
@@ -495,12 +522,17 @@ class SaleCreditOrderMail(models.Model):
         elif self.validation_admin_state == 'rejected':
             self.send_credit_order_admin_rejected()
 
+    # envoi du mail de validation de la commande à crédit par le RH
+    @api.model
+    def send_credit_order_rh_validation(self):
+        self.send_sms_notification('rh_validation')
 
     def write(self, vals):
         result = super(SaleCreditOrderMail, self).write(vals)
         if 'validation_rh_state' in vals:
             if vals['validation_rh_state'] == 'validated':
                 self.send_credit_order_rh_validation()
+                self.send_credit_order_to_admin_for_validation()
             elif vals['validation_rh_state'] == 'rejected':
                 self.send_credit_order_rh_rejected()
         
@@ -509,7 +541,6 @@ class SaleCreditOrderMail(models.Model):
                 self.send_credit_order_admin_validation()
             elif vals['validation_admin_state'] == 'rejected':
                 self.send_credit_order_admin_rejected()
-        
         return result
     
     @api.model
