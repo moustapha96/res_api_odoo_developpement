@@ -1045,6 +1045,7 @@ class SaleOrderMail(models.Model):
         if order.type_sale == 'creditorder':
             order.send_credit_order_validation_mail()
             order.send_credit_order_to_rh_for_confirmation()
+            order.state = "validation" 
         return order
 
     @api.model
