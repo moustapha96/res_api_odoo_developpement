@@ -295,10 +295,10 @@ class userREST(http.Controller):
                 )
                 return resp
             return werkzeug.wrappers.Response(
-                status=400,
+                status=200,
                 content_type='application/json; charset=utf-8',
                 headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
-                response=json.dumps({'message': "Un compte avec ce numéro téléphone existe déjà"})
+                response=json.dumps({ "code": 300 ,'message': "Un compte avec ce numéro téléphone existe déjà"})
             )
         return werkzeug.wrappers.Response(
             status=400,

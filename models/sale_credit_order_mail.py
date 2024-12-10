@@ -440,11 +440,38 @@ class SaleCreditOrderMail(models.Model):
         self.send_sms_notification('hr_notification')
 
 
-    def send_credit_order_to_admin_for_validation(self) :
-        # envoie de mail a l'admin pour lui informfer que la commande a été confirmer qu'il reste sa confirmation
-        mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
+    # def send_credit_order_to_admin_for_validation(self) :
+    #     # envoie de mail a l'admin pour lui informfer que la commande a été confirmer qu'il reste sa confirmation
+    #     mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
         
-        admin_user = self.env['res.users'].sudo().search([('groups_id', '=', self.env.ref('base.group_system').id)], limit=1)
+    #     admin_user = self.env['res.users'].sudo().search([('groups_id', '=', self.env.ref('base.group_system').id)], limit=1)
+        
+    #     if not admin_user:
+    #         _logger.error('No admin user found to send the confirmation email')
+    #         return {'status': 'error', 'message': 'No admin user found'}
+
+    #     subject = f'Confirmation requise pour la commande à crédit - {self.name}'
+    #     body_html = f'''
+    #     <p>Bonjour Administrateur,</p>
+    #     <p>Le service RH a confirmé la commande à crédit suivante :</p>
+    #     <ul>
+    #         <li>Numéro de commande : {self.name}</li>
+    #         <li>Client : {self.partner_id.name}</li>
+    #         <li>Montant total : {self.amount_total}</li>
+    #     </ul>
+    #     <p>Votre confirmation est maintenant requise pour finaliser cette commande.</p>
+    #     <p>Veuillez vous connecter au système pour examiner et valider cette commande.</p>
+    #     '''
+
+    #     return self.send_mail(mail_server, admin_user.partner_id, subject, body_html)
+
+
+    def send_credit_order_to_admin_for_validation(self):
+        # Envoie un mail à l'administrateur pour lui informer qu'une commande à crédit a été confirmée et nécessite sa validation
+        mail_server = self.env['ir.mail_server'].sudo().search([], limit=1)
+        admin_user = self.env['res.users'].sudo().search(
+            [('groups_id', '=', self.env.ref('base.group_system').id)], limit=1
+        )
         
         if not admin_user:
             _logger.error('No admin user found to send the confirmation email')
@@ -452,19 +479,82 @@ class SaleCreditOrderMail(models.Model):
 
         subject = f'Confirmation requise pour la commande à crédit - {self.name}'
         body_html = f'''
-        <p>Bonjour Administrateur,</p>
-        <p>Le service RH a confirmé la commande à crédit suivante :</p>
-        <ul>
-            <li>Numéro de commande : {self.name}</li>
-            <li>Client : {self.partner_id.name}</li>
-            <li>Montant total : {self.amount_total}</li>
-        </ul>
-        <p>Votre confirmation est maintenant requise pour finaliser cette commande.</p>
-        <p>Veuillez vous connecter au système pour examiner et valider cette commande.</p>
+        <table border="0" cellpadding="0" cellspacing="0" style="padding-top: 16px; background-color: #FFFFFF; font-family:Verdana, Arial,sans-serif; color: #454748; width: 100%; border-collapse:separate;">
+            <tr>
+                <td align="center">
+                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="padding: 16px; background-color: #FFFFFF; color: #454748; border-collapse:separate;">
+                        <tbody>
+                            <tr>
+                                <td align="center" style="min-width: 590px;">
+                                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;">
+                                        <tr>
+                                            <td valign="middle">
+                                                <span style="font-size: 10px;">Commande à crédit</span><br/>
+                                                <span style="font-size: 20px; font-weight: bold;">
+                                                    {self.name}
+                                                </span>
+                                            </td>
+                                            <td valign="middle" align="right">
+                                                <img style="padding: 0px; margin: 0px; height: auto; width: 120px;" src="https://ccbme.sn/logo.png" alt="logo CCBM SHOP"/>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="2" style="text-align:center;">
+                                                <hr width="100%" style="background-color:rgb(204,204,204);border:medium none;clear:both;display:block;font-size:0px;min-height:1px;line-height:0; margin: 16px 0px 16px 0px;"/>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td align="center" style="min-width: 590px;">
+                                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;">
+                                        <tr>
+                                            <td>
+                                                <p>Bonjour Administrateur,</p>
+                                                <p>Le service RH a confirmé la commande à crédit suivante :</p>
+                                                <ul>
+                                                    <li>Numéro de commande : {self.name}</li>
+                                                    <li>Client : {self.partner_id.name}</li>
+                                                    <li>Montant total : {self.amount_total} {self.currency_id.name}</li>
+                                                </ul>
+                                                <p>Votre confirmation est maintenant requise pour finaliser cette commande.</p>
+                                                <p>Veuillez vous connecter au système pour examiner et valider cette commande.</p>
+                                                <p>Cordialement,<br/>Le système automatique</p>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td align="center" style="min-width: 590px;">
+                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: #F1F1F1; color: #454748; padding: 8px; border-collapse:separate;">
+                        <tr>
+                            <td style="text-align: center; font-size: 13px;">
+                                Généré par <a target="_blank" href="https://ccbme.sn" style="color: #875A7B;">CCBM SHOP</a>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
         '''
-
         return self.send_mail(mail_server, admin_user.partner_id, subject, body_html)
+        # mail_values = {
+        #     'subject': subject,
+        #     'body_html': body_html,
+        #     'email_to': admin_user.email,
+        #     'email_from': mail_server.smtp_user if mail_server else 'noreply@ccbme.sn',
+        # }
 
+        # mail = self.env['mail.mail'].sudo().create(mail_values)
+        # mail.send()
+        # _logger.info(f'Email sent to admin: {admin_user.email} for order {self.name}')
+        # return {'status': 'success', 'message': 'Email sent successfully'}
 
 
     def send_mail(self, mail_server, partner, subject, body_html):

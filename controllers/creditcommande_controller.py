@@ -22,6 +22,7 @@ class CreditCommandeREST(http.Controller):
         
         partner = request.env['res.partner'].sudo().search([('id', '=', partner_id)], limit=1)
         o = request.env['sale.order'].sudo().search([('id', '=', order_id),( 'partner_id', '=', partner_id ),( 'type_sale' , '=' , 'creditorder' )  ], limit=1)
+        
         if partner and o:
 
             data = {
@@ -30,7 +31,7 @@ class CreditCommandeREST(http.Controller):
                         'date_order': o.date_order.isoformat() if o.date_order else None,
                         'validation_rh_state': o.validation_rh_state,
                         'validation_admin_state': o.validation_admin_state,
-                        'commitment_date': o.commitment_date.isoformat(),
+                        'commitment_date': o.commitment_date.isoformat() if o.commitment_date else None,
                         'name': o.name,
                         'partner_id': o.partner_id.id or None,
                         'partner_name': o.partner_id.name or None,
@@ -419,3 +420,33 @@ class CreditCommandeREST(http.Controller):
                 headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
                 response=json.dumps([])
             )
+
+
+    # check if the partner has order type creditorder not paid total
+    @http.route('/api/creditcommandes/clients/<int:id>/stateCommande', methods=['GET'], type='http', auth='none', cors="*")
+    def api_get_commandesCredit_existe(self,id, **kw):
+        if not request.env.user or request.env.user._is_public():
+            admin_user = request.env.ref('base.user_admin')
+            request.env = request.env(user=admin_user.id)
+
+        partner = request.env['res.partner'].sudo().search([('id', '=', id)], limit=1)
+        if not partner:
+            return werkzeug.wrappers.Response(
+                status=400,
+                content_type='application/json; charset=utf-8',
+                headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                response=json.dumps({ "status": "error", "message": "Client non rencontré"}))
+
+        orders = request.env['sale.order'].sudo().search([('partner_id','=', partner.id ) , ('type_sale' , '=' , 'creditorder')  , ( 'amount_residual' , '>' , '0' ) ])
+        if orders:
+            return werkzeug.wrappers.Response(
+                status=200,
+                content_type='application/json; charset=utf-8',
+                headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                response=json.dumps({ "status": "success", "code": 400, "message": "Vous avez des commandes à crédit non payées"}))
+        else:
+            return werkzeug.wrappers.Response(
+                status=200,
+                content_type='application/json; charset=utf-8',
+                headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                response=json.dumps({ "status": "success", "code": 200, "message": "Vous n'avez aucune commande à crédit non payée"}))
