@@ -299,7 +299,8 @@ class ControllerREST(http.Controller):
             'role': user_partner.role,
             'adhesion': user_partner.adhesion,
             'adhesion_submit' : user_partner.adhesion_submit,
-            'parent_id': user_partner.parent_id.id
+            'parent_id': user_partner.parent_id.id,
+            'function': user_partner.function or "",
         }
     
     def _generate_and_save_tokens(self, uid):
@@ -326,11 +327,11 @@ class ControllerREST(http.Controller):
     
 
     def _authenticate_odoo_user(self):
-        # email_admin = 'dev-odoo-16'
-        # password_admin = 'password'
+        email_admin = 'dev-odoo-16'
+        password_admin = 'password'
 
-        email_admin = 'ccbmtech@ccbm.sn'
-        password_admin = 'ccbmE@987'
+        # email_admin = 'ccbmtech@ccbm.sn'
+        # password_admin = 'ccbmE@987'
         try:
             request.session.authenticate(self._get_db_name(), email_admin, password_admin)
         except Exception as e:

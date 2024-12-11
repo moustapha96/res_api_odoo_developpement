@@ -440,31 +440,7 @@ class SaleCreditOrderMail(models.Model):
         self.send_sms_notification('hr_notification')
 
 
-    # def send_credit_order_to_admin_for_validation(self) :
-    #     # envoie de mail a l'admin pour lui informfer que la commande a été confirmer qu'il reste sa confirmation
-    #     mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
-        
-    #     admin_user = self.env['res.users'].sudo().search([('groups_id', '=', self.env.ref('base.group_system').id)], limit=1)
-        
-    #     if not admin_user:
-    #         _logger.error('No admin user found to send the confirmation email')
-    #         return {'status': 'error', 'message': 'No admin user found'}
-
-    #     subject = f'Confirmation requise pour la commande à crédit - {self.name}'
-    #     body_html = f'''
-    #     <p>Bonjour Administrateur,</p>
-    #     <p>Le service RH a confirmé la commande à crédit suivante :</p>
-    #     <ul>
-    #         <li>Numéro de commande : {self.name}</li>
-    #         <li>Client : {self.partner_id.name}</li>
-    #         <li>Montant total : {self.amount_total}</li>
-    #     </ul>
-    #     <p>Votre confirmation est maintenant requise pour finaliser cette commande.</p>
-    #     <p>Veuillez vous connecter au système pour examiner et valider cette commande.</p>
-    #     '''
-
-    #     return self.send_mail(mail_server, admin_user.partner_id, subject, body_html)
-
+    
 
     def send_credit_order_to_admin_for_validation(self):
         # Envoie un mail à l'administrateur pour lui informer qu'une commande à crédit a été confirmée et nécessite sa validation

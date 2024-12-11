@@ -258,6 +258,7 @@ class userREST(http.Controller):
         name = data.get('name')
         city = data.get('city')
         phone = data.get('phone')
+        departement = data.get('departement')
 
         if data:
             country = request.env['res.country'].sudo().search([ ('id' , '=' , 204 ) ] , limit = 1 )
@@ -270,6 +271,7 @@ class userREST(http.Controller):
                     'city': city,
                     'phone': phone,
                     'country_id': country.id or None,
+                    'function': departement
                 })
 
                 resp = werkzeug.wrappers.Response(
@@ -291,6 +293,11 @@ class userREST(http.Controller):
                         'country_phone_code': partner.country_id.phone_code,
                         'avatar': partner.avatar or None,
                         'is_verified' : partner.is_verified,
+                        'function': partner.function or "",
+                        'role': partner.role,
+                        'adhesion': partner.adhesion,
+                        'adhesion_submit' : partner.adhesion_submit,
+                        'parent_id': partner.parent_id.id,
                     })
                 )
                 return resp
@@ -555,5 +562,90 @@ class userREST(http.Controller):
             content_type='application/json; charset=utf-8',
             headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
             response=json.dumps("Compte client non créé, veuillez reessayer")
+        )
+    
+    # api/partner/compte/${id}/details
+    @http.route('/api/partner/compte/<int:id>/details', methods=['GET'], type='http', auth='none', cors="*")
+    def api_partner_get_detail_by_id(self, id, **kw):
+        partner = request.env['res.partner'].sudo().search([('id', '=', id)], limit=1)
+        if partner:
+            
+            user = request.env['res.users'].sudo().browse(request.env.uid)
+            if not user or user._is_public():
+                admin_user = request.env.ref('base.user_admin')
+                request.env = request.env(user=admin_user.id)
+
+            resp = werkzeug.wrappers.Response(
+                    status=200,
+                    content_type='application/json; charset=utf-8',
+                    headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                    response=json.dumps({
+                        'id': partner.id,
+                        'name': partner.name,
+                        'email': partner.email,
+                        'partner_id': partner.id,
+                        'company_id': partner.company_id.id,
+                        'company_name': partner.company_id.name,
+                        'partner_city': partner.city,
+                        'partner_phone': partner.phone,
+                        'country_id': partner.country_id.id or None,
+                        'country_name': partner.country_id.name or None,
+                        'country_code': partner.country_id.code,
+                        'country_phone_code': partner.country_id.phone_code,
+                        'avatar': partner.avatar or None,
+                        'is_verified' : partner.is_verified,
+                        'function': partner.function or "",
+                        'role': partner.role,
+                        'adhesion': partner.adhesion,
+                        'adhesion_submit' : partner.adhesion_submit,
+                        'parent_id': partner.parent_id.id,
+                    })
+                )
+            return resp
+        else:
+            return werkzeug.wrappers.Response(
+                status=400,
+                content_type='application/json; charset=utf-8',
+                headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                response=json.dumps("Compte client non trouvé, veuillez reessayer")
+            )
+
+
+
+
+    @http.route('/api/partner/<int:partner_id>/update', methods=['POST'], type='http', auth='none', cors="*", csrf=False)
+    def api_partner_update(self, partner_id, **kw):
+        try:
+            data = json.loads(request.httprequest.data)
+            partner = request.env['res.partner'].sudo().browse(partner_id)
+            
+            if not partner:
+                return self._json_response("Compte client non trouvé", status=404)
+
+            # Fields to update
+            update_fields = {
+                'name': data.get('name'),
+                'email': data.get('email'),
+                'phone': data.get('partner_phone'),
+                'city': data.get('partner_city'),
+                'function': data.get('function')
+            }
+
+            # Remove None values
+            update_fields = {k: v for k, v in update_fields.items() if v is not None}
+
+            partner.write(update_fields)
+
+            return self._json_response("Informations du compte mises à jour avec succès", status=200)
+
+        except Exception as e:
+            return self._json_response(f"Erreur lors de la mise à jour du compte: {str(e)}", status=400)
+
+    def _json_response(self, message, status=200):
+        return werkzeug.wrappers.Response(
+            status=status,
+            content_type='application/json; charset=utf-8',
+            headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+            response=json.dumps({"message": message})
         )
     

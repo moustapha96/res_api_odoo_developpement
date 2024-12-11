@@ -216,7 +216,8 @@ class EntrepriseController(http.Controller):
                 'avatar': partner.avatar,
                 'role': partner.role,
                 'adhesion': partner.adhesion,
-                'adhesion_submit': partner.adhesion_submit
+                'adhesion_submit': partner.adhesion_submit,
+                'function': partner.function
                 
             })
 
@@ -1214,7 +1215,8 @@ class EntrepriseController(http.Controller):
             'phone': client.phone or None,
             'function': client.function or None,
             'title': client.title or None,
-            'adhesion': client.adhesion or None
+            'adhesion': client.adhesion or None,
+            'function': client.function
         }
 
         resp = werkzeug.wrappers.Response(
