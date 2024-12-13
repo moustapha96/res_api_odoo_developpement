@@ -57,6 +57,7 @@ class EntrepriseController(http.Controller):
             'adhesion': 'pending' ,
             'adhesion_submit': True
         })
+        partner.action_confirm_demande_adhesion('pending')
         resultat =  {
             'id': partner.id,
             'uid': partner.id,
@@ -1290,7 +1291,7 @@ class EntrepriseController(http.Controller):
                 headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
                 response=json.dumps({ "status": "error", "message": "Commandes non trouvé"}))
         else:
-
+           
             state_submit =  None 
             if state == "accepted":
                 state_submit = False
@@ -1298,6 +1299,10 @@ class EntrepriseController(http.Controller):
                 state_submit = True
             elif state == "rejected":
                 state_submit = False
+                partner.write({
+                    'parent_id': None,
+                    'adhesion_submit': False
+                })
 
 
             partner.write({
