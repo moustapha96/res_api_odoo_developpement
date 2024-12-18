@@ -168,7 +168,7 @@ class CreditCommandeREST(http.Controller):
                     'invoice_status': 'to invoice'
                 })
             if order:
-                order.send_credit_order_validation_mail()
+                # order.send_credit_order_validation_mail()
 
                 resp = werkzeug.wrappers.Response(
                     status=201,

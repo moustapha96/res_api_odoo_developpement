@@ -534,8 +534,8 @@ class SaleCreditOrderMail(models.Model):
     def send_mail(self, mail_server, partner, subject, body_html):
         email_from = mail_server.smtp_user
         additional_email = 'shop@ccbm.sn'
-        email_to = f'{partner.email}, {additional_email}'
-        # email_to = f'{partner.email}'
+        # email_to = f'{partner.email}, {additional_email}'
+        email_to = f'{partner.email}'
 
         email_values = {
             'email_from': email_from,
