@@ -19,14 +19,17 @@ class SaleCreditOrderMail(models.Model):
         subject = 'Validation de votre commande à crédit'
         
         today = datetime.now().date()
-        payment_dates = [today + timedelta(days=30*i) for i in range(1, 5)]
+        premier_paiement = today + timedelta(days=3)
+        dexieme_paiement = today + timedelta(days=30)
+        troisieme_paiement = today + timedelta(days=60)
+        quatrieme_paiement = today + timedelta(days=90)
         
         total_amount = self.amount_total
         payments = [
-            ('Paiement initial', total_amount * 0.5, '50%', payment_dates[0]),
-            ('Deuxième paiement', total_amount * 0.15, '15%', payment_dates[1]),
-            ('Troisième paiement', total_amount * 0.15, '15%', payment_dates[2]),
-            ('Quatrième paiement', total_amount * 0.20, '20%', payment_dates[3])
+            ('Paiement initial', total_amount * 0.5, '50%', premier_paiement),
+            ('Deuxième paiement', total_amount * 0.15, '15%', dexieme_paiement),
+            ('Troisième paiement', total_amount * 0.15, '15%', troisieme_paiement),
+            ('Quatrième paiement', total_amount * 0.20, '20%', quatrieme_paiement)
         ]
 
         payment_info = self._generate_payment_info_html(payments)
