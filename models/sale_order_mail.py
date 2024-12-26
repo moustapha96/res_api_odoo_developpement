@@ -437,7 +437,7 @@ class SaleOrderMail(models.Model):
                 'title': 'Validation de votre précommande à crédit',
                 'content': f"""
                     <p>Félicitations {partner.name},</p>
-                    <p>Votre précommande à crédit numéro {self.name} a été validée.</p>
+                    <p>Votre commande à crédit numéro {self.name} a été validée.</p>
                     <p><strong>Important :</strong> Le paiement initial de 50% validera complètement votre commande à crédit.</p>
                     <p>Détails de la commande :</p>
                 """
@@ -1034,19 +1034,17 @@ class SaleOrderMail(models.Model):
             self.send_preorder_confirmation_mail()
         elif self.type_sale == 'order':
             self.send_order_confirmation_mail()
-        elif self.type_sale == 'creditorder':
-            self.date_approved_creditorder = datetime.now()
-            self.send_payment_status_mail_creditorder()
+       
         return res
 
-    @api.model
-    def create(self, vals):
-        order = super(SaleOrderMail, self).create(vals)
-        if order.type_sale == 'creditorder':
-            order.send_credit_order_validation_mail()
-            order.send_credit_order_to_rh_for_confirmation()
-            order.state = "validation" 
-        return order
+    # @api.model
+    # def create(self, vals):
+    #     order = super(SaleOrderMail, self).create(vals)
+    #     if order.type_sale == 'creditorder':
+    #         order.send_credit_order_validation_mail()
+    #         order.send_credit_order_to_rh_for_confirmation()
+    #         order.state = "validation" 
+    #     return order
 
     @api.model
     def action_register_payment(self, payment_amount):

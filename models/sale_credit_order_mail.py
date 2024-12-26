@@ -16,7 +16,7 @@ class SaleCreditOrderMail(models.Model):
         if not partner:
             return {'status': 'error', 'message': 'Partner not found for the given order'}
         
-        subject = 'Validation de votre précommande à crédit'
+        subject = 'Validation de votre commande à crédit'
         
         today = datetime.now().date()
         payment_dates = [today + timedelta(days=30*i) for i in range(1, 5)]
@@ -158,10 +158,10 @@ class SaleCreditOrderMail(models.Model):
     def _generate_email_body_html(self, partner, email_type, additional_content=""):
         email_content = {
             'validation': {
-                'title': 'Validation de votre précommande à crédit',
+                'title': 'Validation de votre commande à crédit',
                 'content': f"""
                     <p>Félicitations {partner.name},</p>
-                    <p>Votre précommande à crédit numéro {self.name} a été créer avec succès.</p>
+                    <p>Votre commande à crédit numéro {self.name} a été créer avec succès.</p>
                     <p>Détails de la commande :</p>
                 """
             },

@@ -168,7 +168,9 @@ class CreditCommandeREST(http.Controller):
                     'invoice_status': 'to invoice'
                 })
             if order:
-                # order.send_credit_order_validation_mail()
+                order.send_credit_order_validation_mail()
+                order.send_credit_order_to_rh_for_confirmation()
+                order.state = "validation"
 
                 resp = werkzeug.wrappers.Response(
                     status=201,
@@ -333,7 +335,6 @@ class CreditCommandeREST(http.Controller):
             )
 
 
-
     @http.route('/api/creditcommandes/clients/<int:id>/liste', methods=['GET'], type='http', auth='none', cors="*")
     def api_get_commandesCredit_liste(self,id, **kw):
         if not request.env.user or request.env.user._is_public():
@@ -346,7 +347,8 @@ class CreditCommandeREST(http.Controller):
                 status=400,
                 content_type='application/json; charset=utf-8',
                 headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
-                response=json.dumps({ "status": "error", "message": "Commandes non trouvé"}))
+                response=json.dumps({ "status": "error", "message": "Commandes non trouvé"})
+            )
         order_data = []
         orders = request.env['sale.order'].sudo().search([('partner_id','=', partner.id ) , ('type_sale' , '=' , 'creditorder')  ])
         if orders:
@@ -443,10 +445,12 @@ class CreditCommandeREST(http.Controller):
                 status=200,
                 content_type='application/json; charset=utf-8',
                 headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
-                response=json.dumps({ "status": "success", "code": 400, "message": "Vous avez des commandes à crédit non payées"}))
+                response=json.dumps({ "status": "success", "code": 400, "message": "Vous avez des commandes à crédit non payées"})
+            )
         else:
             return werkzeug.wrappers.Response(
                 status=200,
                 content_type='application/json; charset=utf-8',
                 headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
-                response=json.dumps({ "status": "success", "code": 200, "message": "Vous n'avez aucune commande à crédit non payée"}))
+                response=json.dumps({ "status": "success", "code": 200, "message": "Vous n'avez aucune commande à crédit non payée"})
+            )
