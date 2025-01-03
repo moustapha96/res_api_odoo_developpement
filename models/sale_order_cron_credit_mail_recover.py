@@ -2,7 +2,18 @@ from odoo import models, fields, api
 from datetime import timedelta
 import logging
 
+import re
+import time
+from contextlib import contextmanager
+from threading import Timer
+
 _logger = logging.getLogger(__name__)
+
+MAX_RETRY_ATTEMPTS = 3
+MAIL_TIMEOUT = 30
+SMS_TIMEOUT = 10
+_mail_server_cache = None
+
 
 class SaleOrderCronCreditRecover(models.Model):
     _inherit = 'sale.order'
@@ -12,29 +23,39 @@ class SaleOrderCronCreditRecover(models.Model):
         """
         Envoie des rappels par e-mail pour les commandes à crédit avec des paiements en retard.
         """
-        today = fields.Date.today()
-        three_days_after_now = today + timedelta(days=3)
-        _logger.info("Execution de send_overdue_payment_recover - Date du jour : %s", today)
+        try:
+            today = fields.Date.today()
+            three_days_after_now = today + timedelta(days=3)
+            _logger.info("Execution de send_overdue_payment_recover - Date du jour : %s", today)
 
-        overdue_orders = self.search([
-            ('type_sale', '=', 'creditorder'),
-            ('state', '=', 'sale'),
-            '|', '|', '|',
-            '&', ('first_payment_date', '>=', today), ('first_payment_date', '<=', three_days_after_now),
-            '&', ('second_payment_date', '>=', today), ('second_payment_date', '<=', three_days_after_now),
-            '&', ('third_payment_date', '>=', today), ('third_payment_date', '<=', three_days_after_now),
-            '&', ('fourth_payment_date', '>=', today), ('fourth_payment_date', '<=', three_days_after_now),
-        ])
-        _logger.info("Commandes en retard récupérées : %s", overdue_orders)
+            overdue_orders = self.search([
+                ('type_sale', '=', 'creditorder'),
+                ('state', '=', 'sale'),
+                '|', '|', '|',
+                '&', ('first_payment_date', '>=', today), ('first_payment_date', '<=', three_days_after_now),
+                '&', ('second_payment_date', '>=', today), ('second_payment_date', '<=', three_days_after_now),
+                '&', ('third_payment_date', '>=', today), ('third_payment_date', '<=', three_days_after_now),
+                '&', ('fourth_payment_date', '>=', today), ('fourth_payment_date', '<=', three_days_after_now),
+            ])
+            _logger.info("Commandes en retard récupérées : %s", overdue_orders)
 
-        for order in overdue_orders:
-            overdue_payments = self._get_overdue_payments(order, today)
-            _logger.info("_get_overdue_payments - Paiements en retard pour la commande %s : %s", order.name, overdue_payments)
+            for order in overdue_orders:
+                if not self._validate_contact(order.partner_id):
+                    continue
+                
+                overdue_payments = self._get_overdue_payments(order, today)
+                if not overdue_payments:
+                    continue
+                _logger.info("_get_overdue_payments - Paiements en retard pour la commande %s : %s", order.name, overdue_payments)
 
-            if overdue_payments:
-                self._send_overdue_payment_recover_email(order, overdue_payments)
-                self._send_overdue_payment_recover_sms(order, overdue_payments)
-                _logger.info("_send_overdue_payment_recover_email - E-mail envoyé pour la commande %s", order.name)
+                if overdue_payments:
+                    self._send_overdue_payment_recover_email(order, overdue_payments)
+                    self._send_overdue_payment_recover_sms(order, overdue_payments)
+                    _logger.info("_send_overdue_payment_recover_email - E-mail envoyé pour la commande %s", order.name)
+        
+        except Exception as e:
+            _logger.error("Erreur lors de l'envoi des rappels: %s", str(e))
+            return False
 
     def _get_overdue_payments(self, order, today):
         """
@@ -216,3 +237,24 @@ class SaleOrderCronCreditRecover(models.Model):
         except Exception as e:
             _logger.error(f'Erreur lors de l\'envoi du mail à {email_to}: {str(e)}')
             return {'status': 'error', 'message': str(e)}
+
+
+
+def _validate_contact(self, partner):
+    """Valide les informations de contact du partenaire"""
+    if not partner.email or not re.match(r"[^@]+@[^@]+\.[^@]+", partner.email):
+        _logger.error(f"Email invalide pour le partenaire {partner.name}")
+        return False
+    
+    if not partner.phone or not re.match(r"^\+?[0-9]{8,}$", partner.phone):
+        _logger.error(f"Numéro de téléphone invalide pour le partenaire {partner.name}")
+        return False
+    
+    return True
+
+def _get_mail_server(self):
+    """Récupère le serveur mail avec mise en cache"""
+    global _mail_server_cache
+    if not _mail_server_cache:
+        _mail_server_cache = self.env['ir.mail_server'].sudo().search([], limit=1)
+    return _mail_server_cache

@@ -237,9 +237,13 @@ class AccountPaymentPreorder(models.Model):
         else:
             return {'status': 'error', 'message': 'User not found for the given email'}
 
+
+
     # @api.model
     def action_post(self):
         res = super(AccountPaymentPreorder, self).action_post()
         if self.sale_id.type_sale == 'preorder':
             self.send_payment_status_mail()
+        elif self.sale_id.type_sale == 'creditorder':
+            self.sale_id.send_payment_status_mail_creditorder()
         return res

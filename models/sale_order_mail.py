@@ -856,6 +856,10 @@ class SaleOrderMail(models.Model):
         total_amount = self.amount_total
         remaining_amount = self.amount_residual
 
+        fully_paid_message = ""
+        if remaining_amount == 0:
+            fully_paid_message = "<p style='font-size: 16px; font-weight: bold; color: green;'>Votre commande à crédit est totalement payée.</p>"
+
         body_html = f'''
         <table border="0" cellpadding="0" cellspacing="0" style="padding-top: 16px; background-color: #FFFFFF; font-family:Verdana, Arial,sans-serif; color: #454748; width: 100%; border-collapse:separate;">
             <tr>
@@ -963,6 +967,11 @@ class SaleOrderMail(models.Model):
                             <br />
                             <tr>
                                 <td align="center" style="min-width: 590px;">
+                                        {fully_paid_message}
+                                    </td>
+                                </tr>
+                            <tr>
+                                <td align="center" style="min-width: 590px;">
                                     <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;">
                                         <tr>
                                             <td valign="middle" style="width: 50%;">
@@ -1007,8 +1016,8 @@ class SaleOrderMail(models.Model):
 
         email_from = mail_server.smtp_user
         additional_email = 'shop@ccbm.sn'
-        email_to = f'{partner.email}, {additional_email}'
-        # email_to = f'{partner.email}'
+        # email_to = f'{partner.email}, {additional_email}'
+        email_to = f'{partner.email}'
 
         # Définir les valeurs du message e-mail
         email_values = {
@@ -1037,14 +1046,6 @@ class SaleOrderMail(models.Model):
        
         return res
 
-    # @api.model
-    # def create(self, vals):
-    #     order = super(SaleOrderMail, self).create(vals)
-    #     if order.type_sale == 'creditorder':
-    #         order.send_credit_order_validation_mail()
-    #         order.send_credit_order_to_rh_for_confirmation()
-    #         order.state = "validation" 
-    #     return order
 
     @api.model
     def action_register_payment(self, payment_amount):
@@ -1052,5 +1053,11 @@ class SaleOrderMail(models.Model):
         self.send_payment_status_mail()
         return res
 
-   
-    
+    @api.depends('amount_paid', 'amount_total')
+    def compute_amount_residual_tracked(self):
+        _logger.info("Mail envoyé pour la commande %s", self.name)
+        for order in self:
+            if order.type_sale == 'creditorder':
+                _logger.info("Mail envoyé pour la commande %s", order.name)
+                order.send_payment_status_mail_creditorder()
+            
