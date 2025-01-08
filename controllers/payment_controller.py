@@ -83,7 +83,11 @@ class PaymentREST(http.Controller):
                                     if order.advance_payment_status != 'paid':
                                         payment_details.write({'token_status': True})
                                         _logger.info(f'payment order : {status }')
-                                        return self._create_payment_and_confirm_order(order, partner, journal, payment_method, payment_method_line)
+                                        if order.payment_mode == "echelonne":
+                                            return self._create_payment_and_confirm_order(order, payment_details.amount , partner, journal, payment_method, payment_method_line)
+                                        else:
+                                            return self._create_payment_and_confirm_order(order, order.amount_total , partner, journal, payment_method, payment_method_line)
+
                                     return self._make_response({'status': 'success'}, 200)
 
                                 elif order.type_sale == "preorder":
@@ -747,7 +751,10 @@ class PaymentREST(http.Controller):
                 if order.advance_payment_status == 'paid':
                     return self._make_response(self._order_to_dict(order), 200)
                 else:
-                    return self._create_payment_and_confirm_order(order, partner, journal, payment_method, payment_method_line)
+                    if order.payment_mode =="echelonne":
+                        return self._create_payment_and_confirm_order(order, payment_details.amount, partner, journal, payment_method, payment_method_line)
+                    else:
+                        return self._create_payment_and_confirm_order(order, order.amount_total, partner, journal, payment_method, payment_method_line)
 
             elif payment_details and payment_details.token_status == True:
                 return self._make_response({'message': 'Payment deja valide'}, 200)
@@ -758,12 +765,12 @@ class PaymentREST(http.Controller):
         except ValueError as e:
             return self._make_response({'status': 'error', 'message': str(e)}, 400)
 
-    def _create_payment_and_confirm_order(self, order, partner, journal, payment_method, payment_method_line):
+    def _create_payment_and_confirm_order(self, order, amount ,partner, journal, payment_method, payment_method_line):
         account_payment = request.env['account.payment'].sudo().create({
             'payment_type': 'inbound',
             'partner_type': 'customer',
             'partner_id': partner.id,
-            'amount': order.amount_total,
+            'amount': amount,
             'journal_id': journal.id,
             'currency_id': journal.currency_id.id,
             'payment_method_line_id': payment_method_line.id,
@@ -848,7 +855,12 @@ class PaymentREST(http.Controller):
                                 'payment_date': payment_date,
                                 'payment_state': "completed"
                             })
-                            return self._create_payment_and_confirm_order(order, partner, journal, payment_method, payment_method_line)
+                            if order.payment_mode == "echelonne":
+                                return self._create_payment_and_confirm_order(order,payment_details.amount , partner, journal, payment_method, payment_method_line)
+                            else:
+                                return self._create_payment_and_confirm_order(order,order.amount_total, partner, journal, payment_method, payment_method_line)
+
+                            
                         
                     elif order.type_sale == "preorder":
                         

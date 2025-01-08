@@ -11,31 +11,98 @@ class SaleOrderCronCreditMailReminder(models.Model):
     def send_overdue_payment_reminders(self):
         """
         Envoie des rappels par e-mail pour les commandes à crédit avec des paiements prévus
-        entre aujourd'hui et 7 jours avant la date d'échéance.
+        dans les 7 prochains jours, y compris le jour même.
         """
         today = fields.Date.today()
-        reminder_date_limit = today - timedelta(days=7)
+        reminder_end = today - timedelta(days=7)
 
-        # Recherche des commandes à crédit avec des paiements attendus dans 7 jours
+      
         overdue_orders = self.search([
             ('type_sale', '=', 'creditorder'),
-            ('state', '=', 'sale'),
-            '|', '|', '|',
-            '&', ('first_payment_date', '>=', reminder_date_limit), ('first_payment_date', '<=', today),
-            '&', ('second_payment_date', '>=', reminder_date_limit), ('second_payment_date', '<=', today),
-            '&', ('third_payment_date', '>=', reminder_date_limit), ('third_payment_date', '<=', today),
-            '&', ('fourth_payment_date', '>=', reminder_date_limit), ('fourth_payment_date', '<=', today),
+            '|', '|', '|', '|',
+            '&', ('first_payment_date', '>=', reminder_end), ('first_payment_date', '<', today), ('first_payment_state', '=', False),
+            '&', ('second_payment_date', '>=', reminder_end), ('second_payment_date', '<', today), ('second_payment_state', '=', False),
+            '&', ('third_payment_date', '>=', reminder_end), ('third_payment_date', '<', today), ('third_payment_state', '=', False),
+            '&', ('fourth_payment_date', '>=', reminder_end), ('fourth_payment_date', '<', today), ('fourth_payment_state', '=', False),
         ])
-
-        _logger.info(f"Commandes trouvées pour rappels (paiements attendus le {today}): {len(overdue_orders)}")
 
         for order in overdue_orders:
             overdue_payments = self._get_overdue_payments(order, today)
             if overdue_payments:
+                _logger.info(f"Commandes trouvées pour rappels : {overdue_payments}")
                 self._send_overdue_payment_reminder_email(order, overdue_payments)
                 self._send_overdue_payment_reminder_sms(order, overdue_payments)
 
+
+        # premier_dates = self.search([
+        #      ('type_sale', '=', 'creditorder'), ('first_payment_date', '>', reminder_end), ('first_payment_date', '<', today)
+        # ])
+        # deuxieme_dates = self.search([
+        #     ('type_sale', '=', 'creditorder'), ('second_payment_date', '>', reminder_end), ('second_payment_date', '<', today)
+        # ])
+        # troisieme_dates = self.search([
+        #      ('type_sale', '=', 'creditorder'), ('third_payment_date', '>', reminder_end), ('third_payment_date', '<', today)
+        # ])
+        # quatrieme_dates = self.search([
+        #      ('type_sale', '=', 'creditorder'), ('fourth_payment_date', '>', reminder_end), ('fourth_payment_date', '<', today)
+        # ])
+
+        # _logger.info(f"Commandes trouvées pour rappels premier_dates : {len(premier_dates)} , {premier_dates}")
+        # for n in premier_dates:
+        #     _logger.info(f"Commandes trouvées pour rappels premier_dates : {n.name}")
+
+        # _logger.info(f"Commandes trouvées pour rappels deuxieme_dates : {len(deuxieme_dates)} , {deuxieme_dates}")
+        # for n in deuxieme_dates:
+        #     _logger.info(f"Commandes trouvées pour rappels deuxieme_dates : {n.name}")
+        # _logger.info(f"Commandes trouvées pour rappels troisieme_dates : {len(troisieme_dates)} , {troisieme_dates}")
+        # for n in troisieme_dates:
+        #     _logger.info(f"Commandes trouvées pour rappels troisieme_dates : {n.name}")
+        # _logger.info(f"Commandes trouvées pour rappels quatrieme_dates : {len(quatrieme_dates)} , {quatrieme_dates}")
+        # for n in quatrieme_dates:
+        #     _logger.info(f"Commandes trouvées pour rappels quatrieme_dates : {n.name}")
+
+
+
+        # _logger.info(f"Commandes trouvées pour rappels (paiements en retard le {today}): {len(upcoming_orders)}")
+
+        # import pdb; pdb.set_trace() 
+
+        # for order in upcoming_orders:
+        # for order in premier_dates:
+        #     overdue_payments = self._get_overdue_payments(order, today)
+        #     if overdue_payments:
+        #         self._send_overdue_payment_reminder_email(order, overdue_payments)
+        #         self._send_overdue_payment_reminder_sms(order, overdue_payments)
+        # for order in deuxieme_dates:
+        #     overdue_payments = self._get_overdue_payments(order, today)
+        #     if overdue_payments:
+        #         self._send_overdue_payment_reminder_email(order, overdue_payments)
+        #         self._send_overdue_payment_reminder_sms(order, overdue_payments)
+
+
+
     def _get_overdue_payments(self, order, today):
+        overdue_payments = []
+        payment_fields = [
+            ('first_payment_date', 'first_payment_state', 'first_payment_amount', 'Premier paiement'),
+            ('second_payment_date', 'second_payment_state', 'second_payment_amount', 'Deuxième paiement'),
+            ('third_payment_date', 'third_payment_state', 'third_payment_amount', 'Troisième paiement'),
+            ('fourth_payment_date', 'fourth_payment_state', 'fourth_payment_amount', 'Quatrième paiement'),
+        ]
+
+        date_seven = today - timedelta(days=7)
+        for date_field, state_field, amount_field, payment_name in payment_fields:
+            payment_date = getattr(order, date_field)
+            payment_state = getattr(order, state_field)
+            payment_amount = getattr(order, amount_field)
+
+            if payment_date and date_seven <= payment_date < today and not payment_state:
+                overdue_payments.append((payment_name, payment_amount, payment_date))
+
+        _logger.info(f"Paiements en retard trouvés pour la commande {order.name} : {overdue_payments}")
+        return overdue_payments
+        
+    def _get_overdue_payments2(self, order, today):
         """
         Récupère les paiements en retard pour une commande donnée.
         """
@@ -46,15 +113,17 @@ class SaleOrderCronCreditMailReminder(models.Model):
             ('third_payment_date', 'third_payment_state', 'third_payment_amount', 'Troisième paiement'),
             ('fourth_payment_date', 'fourth_payment_state', 'fourth_payment_amount', 'Quatrième paiement'),
         ]
-
+        _logger.info(order)
         for date_field, state_field, amount_field, payment_name in payment_fields:
             payment_date = getattr(order, date_field)
             payment_state = getattr(order, state_field)
             payment_amount = getattr(order, amount_field)
 
-            if payment_date and payment_date <= today and payment_date >= today - timedelta(days=7) and not payment_state:
+            date_seven = today - timedelta(days=7)
+            if payment_date and payment_date > date_seven and payment_date < today and not payment_state:
                 overdue_payments.append((payment_name, payment_amount, payment_date))
 
+            _logger.info("Paiements en retard trouvés pour la commande %s : %s", order.name, overdue_payments)
         return overdue_payments
 
     def _send_overdue_payment_reminder_email(self, order, overdue_payments):
@@ -132,7 +201,7 @@ class SaleOrderCronCreditMailReminder(models.Model):
                                                 <p>Nous vous prions de bien vouloir effectuer le paiement dès que possible pour régulariser votre situation.</p>
                                                 <p>Si vous avez déjà effectué le paiement, veuillez ignorer ce message.</p>
                                                 <p>Pour toute question, n'hésitez pas à nous contacter.</p>
-                                                <p>Cordialement,<br/>L'équipe {order.company_id.name}</p>
+                                                <p>Cordialement,<br/>L'équipe CCBM Shop</p>
                                             </td>
                                         </tr>
                                     </table>
@@ -175,7 +244,7 @@ class SaleOrderCronCreditMailReminder(models.Model):
 
         message += (
             f"Merci d'effectuer ces paiements à temps. Pour toute question, contactez-nous.\n"
-            f"L'équipe {order.company_id.name}"
+            f"L'équipe CCBM Shop"
         )
 
         self.env['send.sms'].sudo().create({

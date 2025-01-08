@@ -21,7 +21,7 @@ class SaleOrderCronCreditRecover(models.Model):
     @api.model
     def send_overdue_payment_recover(self):
         """
-        Envoie des rappels par e-mail pour les commandes à crédit avec des paiements en retard.
+        Envoie des rappels par e-mail pour les commandes à crédit avec des paiements en retard et non payés.
         """
         try:
             today = fields.Date.today()
@@ -30,14 +30,14 @@ class SaleOrderCronCreditRecover(models.Model):
 
             overdue_orders = self.search([
                 ('type_sale', '=', 'creditorder'),
-                ('state', '=', 'sale'),
                 '|', '|', '|',
-                '&', ('first_payment_date', '>=', today), ('first_payment_date', '<=', three_days_after_now),
-                '&', ('second_payment_date', '>=', today), ('second_payment_date', '<=', three_days_after_now),
-                '&', ('third_payment_date', '>=', today), ('third_payment_date', '<=', three_days_after_now),
-                '&', ('fourth_payment_date', '>=', today), ('fourth_payment_date', '<=', three_days_after_now),
+                '&', ('first_payment_date', '<=', today), ('first_payment_state', '=', False),
+                '&', ('second_payment_date', '<=', today), ('second_payment_state', '=', False),
+                '&', ('third_payment_date', '<=', today), ('third_payment_state', '=', False),
+                '&', ('fourth_payment_date', '<=', today), ('fourth_payment_state', '=', False),
             ])
             _logger.info("Commandes en retard récupérées : %s", overdue_orders)
+
 
             for order in overdue_orders:
                 if not self._validate_contact(order.partner_id):
@@ -217,9 +217,9 @@ class SaleOrderCronCreditRecover(models.Model):
         Envoie un e-mail via le serveur de messagerie configuré.
         """
         email_from = mail_server.smtp_user
-        # email_to = partner.email
+        email_to = partner.email
         additional_email = 'shop@ccbm.sn'
-        email_to = f'{partner.email}, {additional_email}'
+        # email_to = f'{partner.email}, {additional_email}'
 
         email_values = {
             'email_from': email_from,
@@ -240,21 +240,22 @@ class SaleOrderCronCreditRecover(models.Model):
 
 
 
-def _validate_contact(self, partner):
-    """Valide les informations de contact du partenaire"""
-    if not partner.email or not re.match(r"[^@]+@[^@]+\.[^@]+", partner.email):
-        _logger.error(f"Email invalide pour le partenaire {partner.name}")
-        return False
-    
-    if not partner.phone or not re.match(r"^\+?[0-9]{8,}$", partner.phone):
-        _logger.error(f"Numéro de téléphone invalide pour le partenaire {partner.name}")
-        return False
-    
-    return True
+    def _validate_contact(self, partner):
+        """Valide les informations de contact du partenaire"""
+        if not partner.email or not re.match(r"[^@]+@[^@]+\.[^@]+", partner.email):
+            _logger.error(f"Email invalide pour le partenaire {partner.name}")
+            return False
+        
+        if not partner.phone or not re.match(r"^\+?[0-9]{8,}$", partner.phone):
+            _logger.error(f"Numéro de téléphone invalide pour le partenaire {partner.name}")
+            return False
+        
+        return True
 
-def _get_mail_server(self):
-    """Récupère le serveur mail avec mise en cache"""
-    global _mail_server_cache
-    if not _mail_server_cache:
-        _mail_server_cache = self.env['ir.mail_server'].sudo().search([], limit=1)
-    return _mail_server_cache
+    def _get_mail_server(self):
+        """Récupère le serveur mail avec mise en cache"""
+        global _mail_server_cache
+        if not _mail_server_cache:
+            _mail_server_cache = self.env['ir.mail_server'].sudo().search([], limit=1)
+        return _mail_server_cache
+

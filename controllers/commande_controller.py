@@ -38,6 +38,7 @@ class CommandeREST(http.Controller):
                         'amount_untaxed': o.amount_untaxed or None,
                         'amount_tax': o.amount_tax or None,
                         'amount_total': o.amount_total or None,
+                        'amount_residual': o.amount_residual,
                         'state': o.state or None,
                         'user_id': o.user_id.id or None,
                         'user_name': o.user_id.name or None,
@@ -127,6 +128,7 @@ class CommandeREST(http.Controller):
                 'amount_untaxed': order.amount_untaxed or None,
                 'amount_tax': order.amount_tax or None,
                 'amount_total': order.amount_total or None,
+                'amount_residual': order.amount_residual,
                 'state': order.state or None,
                 'user_id': order.user_id.id or None,
                 'user_name': order.user_id.name or None,
@@ -405,6 +407,7 @@ class CommandeREST(http.Controller):
         partner_id = int( data.get('partner_id'))
         order_lines = data.get('order_lines')
         state = data.get('state')
+        payment_mode = data.get('payment_mode')
 
         _logger.info(f"arrive au post {partner_id} {order_lines} {state}")
 
@@ -428,6 +431,7 @@ class CommandeREST(http.Controller):
                 'currency_id' : company.currency_id.id,
                 'company_id' : company.id,
                 'commitment_date': datetime.datetime.now() + datetime.timedelta(days=30),
+                'payment_mode': payment_mode,
                 # 'state': 'sale'
             })
 
@@ -471,6 +475,7 @@ class CommandeREST(http.Controller):
                 'amount_tax': order.amount_tax,
                 'amount_untaxed': order.amount_untaxed,
                 'advance_payment_status': order.advance_payment_status,
+                'payment_mode': order.payment_mode,
                 'order_lines': [
                     {
                         'id': order_line.id,
