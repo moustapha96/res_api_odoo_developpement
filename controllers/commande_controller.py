@@ -422,7 +422,10 @@ class CommandeREST(http.Controller):
             )
 
         partner = request.env['res.partner'].sudo().search([('id', '=', partner_id)], limit=1)
-        # company = request.env['res.company'].sudo().search([('id', '=', partner.company_id.id)], limit=1)
+
+        previous_orders = request.env['sale.order'].sudo().search_count([('partner_id', '=', partner_id)])
+        is_first_order = previous_orders == 0
+        
         company = request.env['res.company'].sudo().search([('id', '=', 1)], limit=1)
 
         order = request.env['sale.order'].sudo().create({
@@ -445,6 +448,8 @@ class CommandeREST(http.Controller):
                     json.dumps({'status': 'error', 'message': 'Missing product data'}),
                     headers={'Content-Type': 'application/json'}
                 )
+            if is_first_order:
+                price_unit *= 0.97  # Réduction de 3 %
 
             request.env['sale.order.line'].sudo().create({
                 'order_id': order.id,
@@ -530,7 +535,7 @@ class CommandeREST(http.Controller):
             partner = self.get_or_create_partner(partner_id, name, email, telephone, adresse)
             if isinstance(partner, dict):  # If error response was returned
                 return partner
-
+        
             # Création de la commande
             company = request.env['res.company'].sudo().search([('id', '=', 1)], limit=1)
             order = request.env['sale.order'].sudo().create({

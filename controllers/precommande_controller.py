@@ -238,6 +238,10 @@ class PreCommandeREST(http.Controller):
                 request.env = request.env(user=admin_user.id)
 
             # company = request.env['res.company'].sudo().search([('id', '=', partner.company_id.id)], limit=1)
+
+            previous_orders = request.env['sale.order'].sudo().search_count([('partner_id', '=', partner_id)])
+            is_first_order = previous_orders == 0
+
             company = request.env['res.company'].sudo().search([('id', '=', 1)], limit=1)
             if company:
                 # Création de commande
@@ -259,6 +263,10 @@ class PreCommandeREST(http.Controller):
                         if not product_id or not product_uom_qty or not price_unit:
                             raise ValueError('Missing product data')
                         # Création de ligne de commande
+
+                        if is_first_order:
+                            price_unit *= 0.97 
+                            
                         order_line = request.env['sale.order.line'].sudo().create({
                             'order_id': order.id,
                             'product_id': product_id,
