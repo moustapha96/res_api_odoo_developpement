@@ -12,8 +12,6 @@ import os
 from odoo.http import request
 from datetime import datetime, timedelta
 
-
-
 class ExcelUpdateController(http.Controller):
 
 
@@ -36,19 +34,7 @@ class ExcelUpdateController(http.Controller):
 
         user_ip = request.httprequest.remote_addr
         _logger.info(f"User IP: {user_ip}")
-       
-
-        # location_info = {}
-        # try:
-        #     response = request.get(f'https://ipinfo.io/{user_ip}/json?token=a7bca817c4bc37')  # Remplacez YOUR_API_KEY par votre clé API
-        #     if response.status_code == 200:
-        #         location_info = response.json()
-        #         _logger.info(f"Location Info: {location_info}")
-        #     else:
-        #             _logger.warning(f"Failed to get location info: {response.status_code}")
-        # except Exception as e:
-        #     _logger.error(f"Error retrieving location info: {e}")
-                
+                    
 
         Lead = request.env['crm.lead'].sudo()
         Partner = request.env['res.partner'].sudo()  # Modèle des partenaires
