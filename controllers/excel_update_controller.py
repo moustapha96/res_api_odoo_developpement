@@ -1,94 +1,100 @@
-# -*- coding: utf-8 -*-
+
 from .main import *
-import sys
-import pdb
-import logging
-_logger = logging.getLogger(__name__)
-
-
-import os
-
-
+from odoo import http
 from odoo.http import request
-from datetime import datetime, timedelta
+import json
+import logging
 
-class ExcelUpdateController(http.Controller):
+
+class CRMUpdateController(http.Controller):
+    @http.route('/api/create_or_update_crm', type='http',  auth='none', methods=['POST'], cors="*", csrf=False)
+    def create_or_update_crm(self, **post):
+        try:
+
+            if not request.env.user or request.env.user._is_public():
+                admin_user = request.env.ref('base.user_admin')
+                request.env = request.env(user=admin_user.id)
+
+            data = json.loads(request.httprequest.data)
+            crm_data = data.get('data')
+
+            if not crm_data:
+                return json.dumps({"status": "error", "message": "Aucune donnée CRM reçue"})
+
+            CRM = request.env['crm.lead'].sudo()
+            Partner = request.env['res.partner'].sudo()
+
+         
+            existing_crm = CRM.search([('email_from', '=', crm_data.get('email'))], limit=1)
 
 
-    @http.route('/api/create_leads', methods=['POST'], auth="none", type='http', cors="*", csrf=False)
-    def create_leads(self, **kw):
-        data = json.loads(request.httprequest.data)
-        leads_data = data.get('data')
-
-        if not leads_data or not isinstance(leads_data, list):
-            _logger.info("No lead data received or data is not a list")
-            return request.make_response(
-                json.dumps({"status": "error", "message": "Aucune donnée de lead reçue ou format invalide"}),
-                status=400,
-                headers={'Content-Type': 'application/json'}
-            )
-
-        if not request.env.user or request.env.user._is_public():
-            admin_user = request.env.ref('base.user_admin')
-            request.env = request.env(user=admin_user.id)
-
-        user_ip = request.httprequest.remote_addr
-        _logger.info(f"User IP: {user_ip}")
-                    
-
-        Lead = request.env['crm.lead'].sudo()
-        Partner = request.env['res.partner'].sudo()  # Modèle des partenaires
-        created_leads = []
-       
-        tag_produit = request.env['crm.tag'].sudo().search([('name', '=', 'Produit')], limit=1)
-    
-
-        for lead in leads_data:
-            _logger.info(f"Processing lead: {lead}")
-            # Vérification des champs obligatoires
-            if 'productName' not in lead or 'email' not in lead or 'type' not in lead:
-                _logger.info("Missing required fields in lead data")
-                continue  # Ignorer ce lead si les champs obligatoires manquent
-
-            existing_lead = Lead.search([
-                ('email_from', '=', lead['email']),
-                ('name', '=', lead['productName']),
-                ('date_deadline', '>=', datetime.now().date()),  
-                ('date_deadline', '<=', datetime.now().date())
+            existing_crm = CRM.search([
+                '|',
+                ('email_from', '=', crm_data.get('email')),
+                ('email_from', '=', crm_data.get('guest_id'))
             ], limit=1)
 
-            if existing_lead:
-                _logger.info(f"Lead with product '{lead['productName']}', email '{lead['email']}' and today's date already exists. Skipping.")
-                continue 
 
-            # Vérifier si un partenaire existe avec le même email
-            partner = Partner.search([('email', '=', lead['email'])], limit=1)
-            partner_id = partner.id if partner else False 
+            guest_id = crm_data.get('guest_id')
+            partner = None
+            if crm_data.get('email') != "Guest":
+                partner = Partner.search([('email', '=', crm_data.get('email'))], limit=1)
 
-           
-            if lead['type'] == 'order':
-                date_deadline = datetime.now() + timedelta(days=7) 
-            elif lead['type'] == 'preorder':
-                date_deadline = datetime.now() + timedelta(days=60) 
+
+
+            montant_esperer = 0
+            crm_values = {
+                'name': f"Opportunité pour {crm_data.get('name')}",
+                'partner_id': partner.id if partner else None,
+                'email_from': crm_data.get('email') if partner else crm_data.get('guest_id'),
+                'phone': crm_data.get('phone'),
+                'description': (
+                    f"**Type :** {crm_data.get('type')}\n"
+                    f"**Date :** {crm_data.get('date')}\n"
+                    f"**Localisation :** {crm_data.get('location')}\n"
+                    f"**Coordonnées :** {crm_data.get('localisation')}\n\n"
+                    f"**Produits :**\n"
+                    + "\n".join(
+                        f"- **{produit['nom']}**\n"
+                        f"  - Quantité : {produit['quantité']}\n"
+                        f"  - Prix unitaire : {produit['prix']} F CFA\n"
+                        f"  - Date : {produit['date']}\n"
+                        for produit in crm_data.get('produits', [])
+                    )
+                ),
+                'type': 'opportunity',
+                'expected_revenue': 0
+            }
+
+            if crm_data.get('produits'):
+                crm_values['description'] += "\n\nProduits:\n\n"
+                for produit in crm_data['produits']:
+                    crm_values['description'] += (
+                        f"- {produit['nom']} (Quantité: {produit['quantité']}, "
+                        f"Prix: {produit['prix']}, Date: {produit['date']} \n\n"
+                    )
+                    montant_esperer += produit['prix'] * produit['quantité']
+                crm_values['expected_revenue'] = montant_esperer
+
+            # Mise à jour ou création du CRM
+            if existing_crm:
+                existing_crm.write(crm_values)
+                crm_id = existing_crm.id
+                message = "CRM mis à jour avec succès"
             else:
-                date_deadline = None  
+                new_crm = CRM.create(crm_values)
+                crm_id = new_crm.id
+                message = "Nouveau CRM créé avec succès"
 
-            new_lead = Lead.create({
-                'name': lead['productName'], 
-                'email_from': lead['email'], 
-                'phone': lead.get('phone'), 
-                'user_id': request.env.user.id, 
-                'description':  f"Date: {lead['date']}, User: {lead['user']}, Type: {lead['type']}, location : {lead['location']}",
-                'date_deadline': date_deadline, 
-                'partner_id': partner_id,
-                'expected_revenue': lead['price'],
-                'tag_ids': [(6, 0, [tag_produit.id])] if tag_produit else [],
-                # 'location': lead['location']
-            })
-            created_leads.append(new_lead.id)
-
-        return request.make_response(
-            json.dumps({"status": "success", "message": "Leads créés avec succès", "lead_ids": created_leads}),
-            status=201,
-            headers={'Content-Type': 'application/json'}
-        )
+            return werkzeug.wrappers.Response(
+                status=200,
+                content_type='application/json; charset=utf-8',
+                headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                response=json.dumps({"status": "success", "message": message, "crm_id": crm_id})
+            )
+        except Exception as e:
+            return werkzeug.wrappers.Response(
+                status=400,
+                content_type='application/json; charset=utf-8',
+                response=json.dumps({"status": "error", "message": str(e)})
+            )
