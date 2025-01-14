@@ -35,7 +35,6 @@ class CRMUpdateController(http.Controller):
             ], limit=1)
 
 
-            guest_id = crm_data.get('guest_id')
             partner = None
             if crm_data.get('email') != "Guest":
                 partner = Partner.search([('email', '=', crm_data.get('email'))], limit=1)
