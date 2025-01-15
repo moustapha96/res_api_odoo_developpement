@@ -36,6 +36,20 @@ class ProductCategorieControllerREST(http.Controller):
             response=json.dumps("pas de données")  )
 
 
+    # api/produits-count
+    @http.route('/api/produits-count', methods=['GET'], type='http', auth='none', cors="*")
+    def api__products_count_GET(self, **kw):
+
+        products = request.env['product.product'].sudo().search([('sale_ok', '=', True)])
+        resp = werkzeug.wrappers.Response(
+            status=200,
+            content_type='application/json; charset=utf-8',
+            headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+            response=json.dumps(len(products))
+        )
+        return resp
+
+
     @http.route('/api/produits-page', methods=['GET'], type='http', auth='none', cors="*")
     def api__products_GET_per_page(self, **kw):
         page = int(kw.get('page', 1))
