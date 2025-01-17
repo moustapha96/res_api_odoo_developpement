@@ -83,6 +83,7 @@ class ProductCategorieControllerREST(http.Controller):
                 'active': p.active,
                 'is_preorder': p.product_tmpl_id.is_preorder,
                 'preorder_price': p.product_tmpl_id.preorder_price,
+                'promo_price': p.product_tmpl_id.promo_price,
                 'is_creditorder': p.product_tmpl_id.is_creditorder or None,
                 'creditorder_price': p.product_tmpl_id.creditorder_price or None,
             })
@@ -134,6 +135,7 @@ class ProductCategorieControllerREST(http.Controller):
                 'active': p.active,
                 'is_preorder': p.product_tmpl_id.is_preorder,
                 'preorder_price': p.product_tmpl_id.preorder_price,
+                'promo_price': p.product_tmpl_id.promo_price,
                 'is_creditorder': p.product_tmpl_id.is_creditorder or None,
                 'creditorder_price': p.product_tmpl_id.creditorder_price or None,
             })
@@ -188,6 +190,7 @@ class ProductCategorieControllerREST(http.Controller):
                 'is_preorder': p.product_tmpl_id.is_preorder,
                 'preorder_price': p.product_tmpl_id.preorder_price,
                 'is_creditorder': p.product_tmpl_id.is_creditorder or None,
+                'promo_price': p.product_tmpl_id.promo_price,
                 'creditorder_price': p.product_tmpl_id.creditorder_price or None,
                 # 'ttc_price': p.product_tmpl_id.ttc_price
             })
@@ -248,6 +251,7 @@ class ProductCategorieControllerREST(http.Controller):
                 'quanitty_prevu': p.virtual_available,
                 'is_creditorder': p.product_tmpl_id.is_creditorder or None,
                 'creditorder_price': p.product_tmpl_id.creditorder_price or None,
+                'promo_price': p.product_tmpl_id.promo_price,
             }
 
             resp = werkzeug.wrappers.Response(
@@ -305,6 +309,7 @@ class ProductCategorieControllerREST(http.Controller):
                 'preorder_price': p.product_tmpl_id.preorder_price,
                 'is_creditorder': p.product_tmpl_id.is_creditorder or None,
                 'creditorder_price': p.product_tmpl_id.creditorder_price or None,
+                'promo_price': p.product_tmpl_id.promo_price,
             })
                 
             resp = werkzeug.wrappers.Response(
@@ -358,6 +363,7 @@ class ProductCategorieControllerREST(http.Controller):
                 'preorder_price': p.product_tmpl_id.preorder_price,
                 'is_creditorder': p.product_tmpl_id.is_creditorder or None,
                 'creditorder_price': p.product_tmpl_id.creditorder_price or None,
+                'promo_price': p.product_tmpl_id.promo_price,
                 # 'ttc_price': p.product_tmpl_id.ttc_price
             })
         resp = werkzeug.wrappers.Response(
@@ -405,6 +411,7 @@ class ProductCategorieControllerREST(http.Controller):
                 'preorder_price': p.product_tmpl_id.preorder_price,
                 'is_creditorder': p.product_tmpl_id.is_creditorder or None,
                 'creditorder_price': p.product_tmpl_id.creditorder_price or None,
+                'promo_price': p.product_tmpl_id.promo_price,
                 # 'ttc_price': p.product_tmpl_id.ttc_price
             })
 
