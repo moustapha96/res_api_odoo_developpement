@@ -448,7 +448,16 @@ class CommandeREST(http.Controller):
                     json.dumps({'status': 'error', 'message': 'Missing product data'}),
                     headers={'Content-Type': 'application/json'}
                 )
-            if is_first_order:
+
+            # je recuperer le produit a travers son id
+            le_produit = request.env['product.product'].sudo().search([('id', '=', product_id)], limit=1)
+            if not le_produit:
+                return request.make_response(
+                    json.dumps({'status': 'error', 'message': 'Product not found'}),
+                    headers={'Content-Type': 'application/json'}
+                )
+
+            if is_first_order and not le_produit.product_tmpl_id.en_promo:
                 price_unit *= 0.97  # Réduction de 3 %
 
             request.env['sale.order.line'].sudo().create({
@@ -570,6 +579,7 @@ class CommandeREST(http.Controller):
                 status=500,
                 headers={'Content-Type': 'application/json'}
             )
+    
     def get_or_create_partner(self, partner_id, name, email, telephone, adresse):
         """Recherche ou crée un partenaire."""
         if partner_id is None:
@@ -600,6 +610,7 @@ class CommandeREST(http.Controller):
                 return partner
             else:
                 return {'status': 'error', 'message': 'Partner not found'}
+    
     def create_order_line(self, order_id, item):
         """Crée une ligne de commande."""
         product_id = item.get('id')

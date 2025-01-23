@@ -166,8 +166,18 @@ class CreditCommandeREST(http.Controller):
                 if not product_id or not product_uom_qty or not price_unit:
                     raise ValueError('Missing product data')
                 
-                if is_first_order:
-                    price_unit *= 0.97
+
+                 # je recuperer le produit a travers son id
+                le_produit = request.env['product.product'].sudo().search([('id', '=', product_id)], limit=1)
+                if not le_produit:
+                    return request.make_response(
+                        json.dumps({'status': 'error', 'message': 'Product not found'}),
+                        headers={'Content-Type': 'application/json'}
+                    )
+
+                if is_first_order and not le_produit.product_tmpl_id.en_promo:
+                    price_unit *= 0.97  # Réduction de 3 %
+                
 
                 order_line = request.env['sale.order.line'].sudo().create({
                     'order_id': order.id,

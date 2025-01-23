@@ -513,6 +513,9 @@ class PreCommandeREST(http.Controller):
             company = request.env['res.company'].sudo().search([('id', '=', partner.company_id.id)], limit=1)
             journal = request.env['account.journal'].sudo().search([('company_id', '=', company.id),  ('type', '=', 'sale') ], limit=1)
 
+            previous_orders = request.env['sale.order'].sudo().search_count([('partner_id', '=', partner_id)])
+            is_first_order = previous_orders == 0
+
             if company:
                 # Création de commande
                 with request.env.cr.savepoint():
@@ -532,6 +535,19 @@ class PreCommandeREST(http.Controller):
                         if not product_id or not product_uom_qty or not price_unit:
                             raise ValueError('Missing product data')
                         # Création de ligne de commande
+
+                        # je recuperer le produit a travers son id
+                        le_produit = request.env['product.product'].sudo().search([('id', '=', product_id)], limit=1)
+                        if not le_produit:
+                            return request.make_response(
+                                json.dumps({'status': 'error', 'message': 'Product not found'}),
+                                headers={'Content-Type': 'application/json'}
+                            )
+
+                        if is_first_order and not le_produit.product_tmpl_id.en_promo:
+                            price_unit *= 0.97  # Réduction de 3 % pour la première commande
+
+
                         order_line = request.env['sale.order.line'].sudo().create({
                             'order_id': order.id,
                             'product_id': product_id,
