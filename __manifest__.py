@@ -22,7 +22,8 @@
         'web',
         'mail',
         'sale',
-        'account'
+        'account',
+        'product'
     ],
     'data': [
         'data/ir_configparameter_data.xml',
@@ -32,7 +33,10 @@
         'views/product_template_view.xml',
         'views/res_partner_view.xml',
         'views/ir_cron_data.xml',
-        # 'views/sale_order_view.xml',
+
+        'views/comment_actions.xml',
+        'views/comment_menu.xml',
+        'views/comment_views.xml',
     ],
     'images': [
         'static/description/banner.png',

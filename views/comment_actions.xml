@@ -1,0 +1,8 @@
+<!-- my_module/views/comment_actions.xml -->
+<odoo>
+    <record id="action_comment" model="ir.actions.act_window">
+        <field name="name">Commentaires</field>
+        <field name="res_model">web.commentaire</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>

@@ -1,0 +1,4 @@
+<odoo>
+    <menuitem id="menu_comment" name="Commentaires" parent="base.menu_custom"
+        action="action_comment" />
+</odoo> 

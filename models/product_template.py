@@ -9,4 +9,4 @@ class ProductTemplate(models.Model):
     image_3 = fields.Binary(string='Image 3', attachment=True)
     image_4 = fields.Binary(string='Image 4', attachment=True)
 
-   
+    comment_ids = fields.One2many('web.commentaire', 'product_id', string='Commentaires')
