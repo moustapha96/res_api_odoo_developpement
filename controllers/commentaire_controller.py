@@ -105,14 +105,14 @@ class CommentaireController(http.Controller):
 
         produit =   request.env['product.product'].sudo().search([('id', '=', int(id))], limit=1)
         if not produit:
-            return http.Response('Produit not found', status=404)
+            return http.Response([], status=200)
         
         # comment = request.env['web.commentaire'].sudo().search([('product_id.id', '=', id )])
         comment = request.env['web.commentaire'].sudo().search([('product_id.id', '=',   produit.product_tmpl_id.id )])
 
         if not comment:
             resp = werkzeug.wrappers.Response(
-                status=201,
+                status=200,
                 content_type='application/json; charset=utf-8',
                 headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
                 response=json.dumps([])
