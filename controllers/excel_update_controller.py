@@ -1,10 +1,12 @@
 
 from .main import *
-from odoo import http
+
+from odoo import http, models, fields
 from odoo.http import request
 import json
 import logging
 import werkzeug
+
 
 
 class CRMUpdateController(http.Controller):
@@ -192,7 +194,8 @@ class CRMUpdateController(http.Controller):
                 if nouveaux_produits.strip():
                     existing_crm.write({
                         'description': existing_description + nouveaux_produits,
-                        'expected_revenue': existing_crm.expected_revenue + montant_esperer
+                        'expected_revenue': existing_crm.expected_revenue + montant_esperer,
+                        'date_maj': fields.Datetime.now()
                     })
                     message = "Produits ajoutés à l'existant."
                 else:
@@ -224,7 +227,8 @@ class CRMUpdateController(http.Controller):
                     'phone': crm_data.get('phone'),
                     'description': description,
                     'type': 'opportunity',
-                    'expected_revenue': montant_esperer
+                    'expected_revenue': montant_esperer,
+                    'date_maj': fields.Datetime.now()
                 })
                 message = "Nouveau CRM créé avec succès."
                 crm_id = new_crm.id

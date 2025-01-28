@@ -20,5 +20,6 @@ from .import sale_order_cron_credit_mail_remender
 from .import sale_order_cron_credit_mail_recover
 
 from .import commentaire
+from .import crm_model
 
 # from .import delivery_zone 

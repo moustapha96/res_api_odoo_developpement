@@ -1,9 +1,24 @@
 <odoo>
-    <record id="view_comment_form" model="ir.ui.view">
+    <!-- Vues pour Commentaires Produits -->
+    <record id="view_comments_tree" model="ir.ui.view">
+        <field name="name">view_comments_tree</field>
+        <field name="model">web.commentaire</field>
+        <field name="arch" type="xml">
+            <tree string="Commentaires Produits">
+                <field name="author" />
+                <field name="text" />
+                <field name="date" />
+                <field name="product_id" />
+                <field name="review" />
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_comments_form" model="ir.ui.view">
         <field name="name">web.commentaire.form</field>
         <field name="model">web.commentaire</field>
         <field name="arch" type="xml">
-            <form string="Commentaire">
+            <form string="Commentaires Produits">
                 <sheet>
                     <group>
                         <field name="author" />
@@ -16,4 +31,57 @@
             </form>
         </field>
     </record>
+
+    <!-- Vues pour Commentaires Simples -->
+    <record id="view_comments_simple_tree" model="ir.ui.view">
+        <field name="name">web.commentaire.simple.tree</field>
+        <field name="model">web.commentaire.simple</field>
+        <field name="arch" type="xml">
+            <tree string="Commentaires Simples">
+                <field name="author" />
+                <field name="text" />
+                <field name="date" />
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_comments_simple_form" model="ir.ui.view">
+        <field name="name">web.commentaire.simple.form</field>
+        <field name="model">web.commentaire.simple</field>
+        <field name="arch" type="xml">
+            <form string="Commentaires Simples">
+                <sheet>
+                    <group>
+                        <field name="author" />
+                        <field name="text" />
+                        <field name="date" />
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Actions -->
+    <record id="action_comments" model="ir.actions.act_window">
+        <field name="name">Commentaires Produits</field>
+        <field name="res_model">web.commentaire</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="view_comments_tree" />
+    </record>
+
+    <record id="action_comments_simple" model="ir.actions.act_window">
+        <field name="name">Commentaires Simples</field>
+        <field name="res_model">web.commentaire.simple</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="view_comments_simple_tree" />
+    </record>
+
+    <!-- Menus -->
+    <menuitem id="menu_comment_management" name="Gestion des Commentaires" sequence="10" />
+
+    <menuitem id="menu_comments" name="Commentaires Produits" parent="menu_comment_management"
+        sequence="10" action="action_comments" />
+
+    <menuitem id="menu_comments_simple" name="Commentaires Simples" parent="menu_comment_management"
+        sequence="20" action="action_comments_simple" />
 </odoo>

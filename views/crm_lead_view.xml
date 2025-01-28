@@ -1,0 +1,25 @@
+<odoo>
+    <record id="view_crm_lead_form_inherit" model="ir.ui.view">
+        <field name="name">crm.lead.form.inherit</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_lead_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="inside">
+                <group>
+                    <field name="date_maj" />
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="crm_lead_view_list_inherit" model="ir.ui.view">
+        <field name="name">crm.lead.list.inherit</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_case_tree_view_oppor" />
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="date_maj" />
+            </field>
+        </field>
+    </record>
+</odoo>

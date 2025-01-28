@@ -23,7 +23,8 @@
         'mail',
         'sale',
         'account',
-        'product'
+        'product',
+        'crm'
     ],
     'data': [
         'data/ir_configparameter_data.xml',
@@ -34,9 +35,10 @@
         'views/res_partner_view.xml',
         'views/ir_cron_data.xml',
 
-        'views/comment_actions.xml',
-        'views/comment_menu.xml',
-        'views/comment_views.xml',
+        # 'views/comment_actions.xml',
+        # 'views/comment_menu.xml',
+        # 'views/comment_views.xml',
+        'views/crm_lead_view.xml',
     ],
     'images': [
         'static/description/banner.png',
