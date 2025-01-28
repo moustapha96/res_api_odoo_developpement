@@ -1,3 +1,61 @@
+<!-- <odoo>
+    <record id="view_crm_lead_form_inherit" model="ir.ui.view">
+        <field name="name">crm.lead.form.inherit</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_lead_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="inside">
+                <group>
+                    <field name="date_maj" />
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="crm_lead_view_list_inherit" model="ir.ui.view">
+        <field name="name">crm.lead.list.inherit</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_case_tree_view_oppor" />
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="date_maj" />
+            </field>
+        </field>
+    </record>
+
+
+    <record id="view_crm_lead_tree_inherit" model="ir.ui.view">
+        <field name="name">crm.lead.tree.inherit</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_lead_view_tree" />
+        <field name="arch" type="xml">
+            <xpath expr="//tree" position="inside">
+                <field name="lead_line_ids" widget="one2many_list" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_crm_lead_form_inherit" model="ir.ui.view">
+        <field name="name">crm.lead.form.inherit</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_lead_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="inside">
+                <group>
+                    <field name="lead_line_ids">
+                        <tree editable="bottom">
+                            <field name="type" />
+                            <field name="date" />
+                            <field name="products" />
+                            <field name="amount" />
+                        </tree>
+                    </field>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo> -->
+
 <odoo>
     <record id="view_crm_lead_form_inherit" model="ir.ui.view">
         <field name="name">crm.lead.form.inherit</field>
@@ -20,6 +78,37 @@
             <field name="name" position="after">
                 <field name="date_maj" />
             </field>
+        </field>
+    </record>
+
+    <record id="view_crm_lead_tree_inherit" model="ir.ui.view">
+        <field name="name">crm.lead.tree.inherit</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_case_tree_view_oppor" />
+        <field name="arch" type="xml">
+            <xpath expr="//tree" position="inside">
+                <field name="lead_line_ids" widget="one2many_list" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_crm_lead_form_inherit_lines" model="ir.ui.view">
+        <field name="name">crm.lead.form.inherit.lines</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_lead_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="inside">
+                <group>
+                    <field name="lead_line_ids">
+                        <tree editable="bottom">
+                            <field name="type" />
+                            <field name="date" />
+                            <field name="products" />
+                            <field name="amount" />
+                        </tree>
+                    </field>
+                </group>
+            </xpath>
         </field>
     </record>
 </odoo>
