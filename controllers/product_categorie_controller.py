@@ -445,20 +445,24 @@ class ProductCategorieControllerREST(http.Controller):
         
         for c in list_of_category_exclude:
             domain.append(('categ_id.name', 'not ilike', c))
+    
         
-        # Filtres supplémentaires
         if kw.get('search'):
-            domain.append(('name', 'ilike', kw.get('search')))
+            search_terms = kw.get('search').split()
+            for term in search_terms:
+                domain.append(('name', 'ilike', term))
+        
         if kw.get('category') and kw.get('category') != 'All':
             domain.append(('categ_id.name', '=', kw.get('category')))
-        if kw.get('min_price'):
-            domain.append(('list_price', '>=', float(kw.get('min_price'))))
-        if kw.get('max_price'):
-            domain.append(('list_price', '<=', float(kw.get('max_price'))))
+        if kw.get('min'):
+            domain.append(('list_price', '>=', float(kw.get('min'))))
+        if kw.get('max'):
+            domain.append(('list_price', '<=', float(kw.get('max'))))
 
         total = request.env['product.product'].sudo().search_count(domain)
         products = request.env['product.product'].sudo().search(domain, offset=offset, limit=limit)
         
+
         product_data = []
         for p in products:
             product_data.append({
@@ -517,7 +521,11 @@ class ProductCategorieControllerREST(http.Controller):
         
         # Filtres supplémentaires
         if kw.get('search'):
-            domain.append(('name', 'ilike', kw.get('search')))
+            search_terms = kw.get('search').split()
+            for term in search_terms:
+                domain.append(('name', 'ilike', term))
+
+
         if kw.get('category') and kw.get('category') != 'All':
             domain.append(('categ_id.name', '=', kw.get('category')))
         if kw.get('min_price'):
