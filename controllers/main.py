@@ -755,4 +755,6 @@ else:
         # from . import scriping
         from . import commentaire_controller
 
+        # from . import service_controller
+
 
