@@ -528,10 +528,10 @@ class ProductCategorieControllerREST(http.Controller):
 
         if kw.get('category') and kw.get('category') != 'All':
             domain.append(('categ_id.name', '=', kw.get('category')))
-        if kw.get('min_price'):
-            domain.append(('list_price', '>=', float(kw.get('min_price'))))
-        if kw.get('max_price'):
-            domain.append(('list_price', '<=', float(kw.get('max_price'))))
+        if kw.get('min'):
+            domain.append(('list_price', '>=', float(kw.get('min'))))
+        if kw.get('max'):
+            domain.append(('list_price', '<=', float(kw.get('max'))))
 
         total = request.env['product.product'].sudo().search_count(domain)
         products = request.env['product.product'].sudo().search(domain, offset=offset, limit=limit)
