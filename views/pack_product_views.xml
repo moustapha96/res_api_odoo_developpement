@@ -1,0 +1,105 @@
+<odoo>
+    <!-- Form View -->
+    <record id="view_pack_produit_form" model="ir.ui.view">
+        <field name="name">pack.produit.form</field>
+        <field name="model">pack.produit</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <field name="state" widget="statusbar" />
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Nom du pack" />
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="pack_number" readonly="1" />
+                            <field name="start_date" />
+                            <field name="end_date" />
+                            <field name="is_expired" invisible="1" />
+                        </group>
+                        <group>
+                            <field name="product_ids" widget="many2many_tags"
+                                context="{'tree_view_ref': 'product.product_product_tree_view'}" />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Produits du Pack">
+                            <field name="product_lines">
+                                <tree editable="bottom">
+                                    <field name="product_id" />
+                                    <field name="product_id.name" string="Nom du Produit" />
+                                    <field name="product_id.default_code" string="Référence" />
+                                    <field name="product_id.categ_id" string="Catégorie" />
+                                    <field name="list_price" string="Prix Unitaire" />
+                                    <field name="quantity" string="Quantité" />
+                                    <field name="product_id.image_1920" widget="image"
+                                        string="Image" />
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Tree View -->
+    <record id="view_pack_produit_tree" model="ir.ui.view">
+        <field name="name">pack.produit.tree</field>
+        <field name="model">pack.produit</field>
+        <field name="arch" type="xml">
+            <tree string="Packs de Produits" decoration-danger="is_expired">
+                <field name="name" />
+                <field name="pack_number" />
+                <field name="start_date" />
+                <field name="end_date" />
+                <field name="state" widget="badge" />
+                <field name="is_expired" invisible="1" />
+            </tree>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_pack_produit_search" model="ir.ui.view">
+        <field name="name">pack.produit.search</field>
+        <field name="model">pack.produit</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" />
+                <field name="pack_number" />
+                <field name="product_ids" />
+                <separator />
+                <filter string="Expiré" name="expired" domain="[('is_expired', '=', True)]" />
+                <filter string="Non Expiré" name="not_expired" domain="[('is_expired', '=', False)]" />
+                <group expand="0" string="Group By">
+                    <filter string="État" name="state" context="{'group_by': 'state'}" />
+                    <filter string="Date de début" name="start_date"
+                        context="{'group_by': 'start_date'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_pack_produit" model="ir.actions.act_window">
+        <field name="name">Packs de Produits</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">pack.produit</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_pack_produit_search" />
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Créez votre premier pack de produits.
+            </p>
+        </field>
+    </record>
+
+    <!-- Structure du Menu -->
+    <menuitem id="pack_products_root" name="Pack Produits" sequence="10" />
+    <menuitem id="pack_product_list" name="Liste des Packs" parent="pack_products_root"
+        action="action_pack_produit" sequence="20" />
+</odoo>

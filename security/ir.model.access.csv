@@ -3,8 +3,8 @@ access_rest_api_access_token,rest.api.access.token,model_rest_api_access_token,b
 access_rest_api_refresh_token,rest.api.refresh.token,model_rest_api_refresh_token,base.group_system,1,1,1,1
 access_payment_details,payment.details,model_payment_details,base.group_system,1,1,1,1
 access_web_commentaire,access_web_commentaire,model_web_commentaire,base.group_user,1,1,1,1
-
-
 access_crm_lead_line_user,crm.lead.line.user,model_crm_lead_line,base.group_user,1,0,0,0
 
 
+access_pack_produit,pack.produit,model_pack_produit,base.group_user,1,1,1,1
+access_pack_produit_line,access.pack.produit.line,model_pack_produit_line,,1,1,1,1

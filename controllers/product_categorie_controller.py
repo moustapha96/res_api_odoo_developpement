@@ -528,11 +528,27 @@ class ProductCategorieControllerREST(http.Controller):
 
         if kw.get('category') and kw.get('category') != 'All':
             domain.append(('categ_id.name', '=', kw.get('category')))
-        if kw.get('min'):
-            domain.append(('list_price', '>=', float(kw.get('min'))))
-        if kw.get('max'):
-            domain.append(('list_price', '<=', float(kw.get('max'))))
 
+        if kw.get('min'):
+            try:
+                min_price = float(kw.get('min'))
+                domain.append(('list_price', '>=', min_price))
+                domain.append(('product_tmpl_id.promo_price', '>=', min_price))
+                domain.append(('product_tmpl_id.creditorder_price', '>=', min_price))
+            except ValueError:
+                _logger.error("Invalid min price value: %s", kw.get('min'))
+
+        if kw.get('max'):
+            try:
+                max_price = float(kw.get('max'))
+                domain.append(('list_price', '<=', max_price))
+                domain.append(('product_tmpl_id.promo_price', '<=', max_price))
+                domain.append(('product_tmpl_id.creditorder_price', '<=', max_price))
+            except ValueError:
+                _logger.error("Invalid max price value: %s", kw.get('max'))
+
+
+            
         total = request.env['product.product'].sudo().search_count(domain)
         products = request.env['product.product'].sudo().search(domain, offset=offset, limit=limit)
         
@@ -578,3 +594,76 @@ class ProductCategorieControllerREST(http.Controller):
             content_type='application/json; charset=utf-8',
             response=json.dumps(response_data)
         )
+    
+
+    
+
+
+    @http.route('/api/produits/prix', methods=['GET'], type='http', auth='none', cors="*")
+    def api_products_creditorder_GET(self, **kw):
+        products = request.env['product.product'].sudo().search([('sale_ok', '=', True)])
+        product_data = []
+        if products:
+            for p in products:
+                if p.list_price > p.product_tmpl_id.creditorder_price and p.categ_id.name  != "All" and p.categ_id.name != "Services" and p.categ_id.name != "Expenses":
+                    product_data.append({
+                        'id': p.id,
+                        'nom': p.name,
+                        'categ_id': p.categ_id.name,
+                        'en_promo': p.product_tmpl_id.en_promo,
+                        'list_price': p.list_price,
+                        'purchase_ok': p.purchase_ok,
+                        'standard_price': p.standard_price,
+                        'active': p.active,
+                        'is_preorder': p.product_tmpl_id.is_preorder,
+                        'preorder_price': p.product_tmpl_id.preorder_price,
+                        'promo_price': p.product_tmpl_id.promo_price,
+                        'is_creditorder': p.product_tmpl_id.is_creditorder or None,
+                        'creditorder_price': p.product_tmpl_id.creditorder_price or None,
+                    })
+
+        return werkzeug.wrappers.Response(
+            status=200,
+            content_type='application/json; charset=utf-8',
+            response=json.dumps(product_data)
+        )
+
+
+    @http.route('/api/produits/majoration', methods=['GET'], type='http', auth='none', cors="*")
+    def api_products_prix_majoration(self, **kw):
+        critere = [('sale_ok', '=', True), ('en_promo', '=', False)]
+        products = request.env['product.product'].sudo().search(critere)
+        product_data = []
+
+        if products:
+            for p in products:
+                if (
+                    p.list_price > p.product_tmpl_id.creditorder_price 
+                    and p.categ_id.name not in ["All", "Services", "Expenses"]
+                ):
+                  
+                    majoration = p.product_tmpl_id.standard_price * 0.15 + 5000
+
+                    majoration = round(majoration / 1000) * 1000
+                    majoration = int(majoration) 
+
+                    product_data.append({
+                        'id': p.id,
+                        'nom': p.name,
+                        'majoration': majoration,
+                        'categ_id': p.categ_id.name,
+                        'en_promo': p.product_tmpl_id.en_promo,
+                        'list_price': p.list_price,
+                        'purchase_ok': p.purchase_ok,
+                        'standard_price': p.product_tmpl_id.standard_price,
+                        'preorder_price': p.product_tmpl_id.preorder_price,
+                        'promo_price': p.product_tmpl_id.promo_price,
+                        'creditorder_price': p.product_tmpl_id.creditorder_price or None,
+                    })
+
+        return werkzeug.wrappers.Response(
+            status=200,
+            content_type='application/json; charset=utf-8',
+            response=json.dumps(product_data)
+        )
+

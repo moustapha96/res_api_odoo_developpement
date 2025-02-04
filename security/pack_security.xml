@@ -1,0 +1,24 @@
+<odoo>
+    <data noupdate="1">
+        <!-- Groupe utilisateur pour pack.product.line -->
+        <record id="group_pack_product_line_user" model="res.groups">
+            <field name="name">Utilisateur Pack Produit</field>
+            <field name="category_id" ref="base.module_category_sales_management" />
+        </record>
+
+        <!-- Groupe manager pour pack.product.line -->
+        <record id="group_pack_product_line_manager" model="res.groups">
+            <field name="name">Manager Pack Produit</field>
+            <field name="category_id" ref="base.module_category_sales_management" />
+            <field name="implied_ids" eval="[(4, ref('group_pack_product_line_user'))]" />
+        </record>
+
+        <!-- Groupe manager pour pack.product.line -->
+        <record id="group_pack_product_line_admin" model="res.groups">
+            <field name="name">Admin Pack Produit</field>
+            <field name="category_id" ref="base.module_category_sales_management" />
+            <field name="implied_ids" eval="[(4, ref('group_pack_product_line_manager'))]" />
+        </record>
+
+    </data>
+</odoo>

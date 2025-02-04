@@ -21,5 +21,5 @@ from .import sale_order_cron_credit_mail_recover
 
 from .import commentaire
 from .import crm_model
-
+# from .import pack_product
 # from .import delivery_zone 

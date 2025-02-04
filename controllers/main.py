@@ -754,6 +754,7 @@ else:
         from . import creditcommande_controller
         # from . import scriping
         from . import commentaire_controller
+        # from . import pack_product_controller
 
         # from . import service_controller
 

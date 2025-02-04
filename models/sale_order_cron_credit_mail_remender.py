@@ -16,14 +16,28 @@ class SaleOrderCronCreditMailReminder(models.Model):
         today = fields.Date.today()
         reminder_end = today - timedelta(days=7)
 
-      
+        reminder_start_date = today
+        reminder_end_date = today + timedelta(days=7)
+
+
+
+        # overdue_orders = self.search([
+        #     ('type_sale', '=', 'creditorder'),
+        #     ('state', '!=', 'cancel'),
+        #     '|', '|', '|', '|',
+        #     '&', ('first_payment_date', '>=', reminder_end), ('first_payment_date', '<', today), ('first_payment_state', '=', False),
+        #     '&', ('second_payment_date', '>=', reminder_end), ('second_payment_date', '<', today), ('second_payment_state', '=', False),
+        #     '&', ('third_payment_date', '>=', reminder_end), ('third_payment_date', '<', today), ('third_payment_state', '=', False),
+        #     '&', ('fourth_payment_date', '>=', reminder_end), ('fourth_payment_date', '<', today), ('fourth_payment_state', '=', False),
+        # ])
         overdue_orders = self.search([
             ('type_sale', '=', 'creditorder'),
+            ('state', '!=', 'cancel'),
             '|', '|', '|', '|',
-            '&', ('first_payment_date', '>=', reminder_end), ('first_payment_date', '<', today), ('first_payment_state', '=', False),
-            '&', ('second_payment_date', '>=', reminder_end), ('second_payment_date', '<', today), ('second_payment_state', '=', False),
-            '&', ('third_payment_date', '>=', reminder_end), ('third_payment_date', '<', today), ('third_payment_state', '=', False),
-            '&', ('fourth_payment_date', '>=', reminder_end), ('fourth_payment_date', '<', today), ('fourth_payment_state', '=', False),
+            '&', ('first_payment_date', '>=', reminder_start_date), ('first_payment_date', '<=', reminder_end_date), ('first_payment_state', '=', False),
+            '&', ('second_payment_date', '>=', reminder_start_date), ('second_payment_date', '<=', reminder_end_date), ('second_payment_state', '=', False),
+            '&', ('third_payment_date', '>=', reminder_start_date), ('third_payment_date', '<=', reminder_end_date), ('third_payment_state', '=', False),
+            '&', ('fourth_payment_date', '>=', reminder_start_date), ('fourth_payment_date', '<=', reminder_end_date), ('fourth_payment_state', '=', False),
         ])
 
         for order in overdue_orders:
@@ -32,52 +46,6 @@ class SaleOrderCronCreditMailReminder(models.Model):
                 _logger.info(f"Commandes trouvées pour rappels : {overdue_payments}")
                 self._send_overdue_payment_reminder_email(order, overdue_payments)
                 self._send_overdue_payment_reminder_sms(order, overdue_payments)
-
-
-        # premier_dates = self.search([
-        #      ('type_sale', '=', 'creditorder'), ('first_payment_date', '>', reminder_end), ('first_payment_date', '<', today)
-        # ])
-        # deuxieme_dates = self.search([
-        #     ('type_sale', '=', 'creditorder'), ('second_payment_date', '>', reminder_end), ('second_payment_date', '<', today)
-        # ])
-        # troisieme_dates = self.search([
-        #      ('type_sale', '=', 'creditorder'), ('third_payment_date', '>', reminder_end), ('third_payment_date', '<', today)
-        # ])
-        # quatrieme_dates = self.search([
-        #      ('type_sale', '=', 'creditorder'), ('fourth_payment_date', '>', reminder_end), ('fourth_payment_date', '<', today)
-        # ])
-
-        # _logger.info(f"Commandes trouvées pour rappels premier_dates : {len(premier_dates)} , {premier_dates}")
-        # for n in premier_dates:
-        #     _logger.info(f"Commandes trouvées pour rappels premier_dates : {n.name}")
-
-        # _logger.info(f"Commandes trouvées pour rappels deuxieme_dates : {len(deuxieme_dates)} , {deuxieme_dates}")
-        # for n in deuxieme_dates:
-        #     _logger.info(f"Commandes trouvées pour rappels deuxieme_dates : {n.name}")
-        # _logger.info(f"Commandes trouvées pour rappels troisieme_dates : {len(troisieme_dates)} , {troisieme_dates}")
-        # for n in troisieme_dates:
-        #     _logger.info(f"Commandes trouvées pour rappels troisieme_dates : {n.name}")
-        # _logger.info(f"Commandes trouvées pour rappels quatrieme_dates : {len(quatrieme_dates)} , {quatrieme_dates}")
-        # for n in quatrieme_dates:
-        #     _logger.info(f"Commandes trouvées pour rappels quatrieme_dates : {n.name}")
-
-
-
-        # _logger.info(f"Commandes trouvées pour rappels (paiements en retard le {today}): {len(upcoming_orders)}")
-
-        # import pdb; pdb.set_trace() 
-
-        # for order in upcoming_orders:
-        # for order in premier_dates:
-        #     overdue_payments = self._get_overdue_payments(order, today)
-        #     if overdue_payments:
-        #         self._send_overdue_payment_reminder_email(order, overdue_payments)
-        #         self._send_overdue_payment_reminder_sms(order, overdue_payments)
-        # for order in deuxieme_dates:
-        #     overdue_payments = self._get_overdue_payments(order, today)
-        #     if overdue_payments:
-        #         self._send_overdue_payment_reminder_email(order, overdue_payments)
-        #         self._send_overdue_payment_reminder_sms(order, overdue_payments)
 
 
 
@@ -119,8 +87,12 @@ class SaleOrderCronCreditMailReminder(models.Model):
             payment_state = getattr(order, state_field)
             payment_amount = getattr(order, amount_field)
 
-            date_seven = today - timedelta(days=7)
-            if payment_date and payment_date > date_seven and payment_date < today and not payment_state:
+            # date_seven = today - timedelta(days=7)
+            # if payment_date and payment_date > date_seven and payment_date < today and not payment_state:
+            date_start = today
+            date_end = today + timedelta(days=7)
+
+            if payment_date and date_start <= payment_date <= date_end and not payment_state:
                 overdue_payments.append((payment_name, payment_amount, payment_date))
 
             _logger.info("Paiements en retard trouvés pour la commande %s : %s", order.name, overdue_payments)
@@ -232,6 +204,7 @@ class SaleOrderCronCreditMailReminder(models.Model):
         """
         partner = order.partner_id
         recipient = partner.phone
+
         message = (
             f"Bonjour {partner.name},\n"
             f"Votre commande à crédit {order.name} a des paiements proches de leur échéance :\n"
