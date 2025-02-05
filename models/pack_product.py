@@ -17,7 +17,7 @@ class PackProduit(models.Model):
     start_date = fields.Date(string='Date de commencement')
     end_date = fields.Date(string='Date de fin')
     code = fields.Char(string='Code du Pack', required=True, copy=False, readonly=True, index=True, default=lambda self: _('Nouveau'))
-    product_line_ids = fields.One2many('pack.produit.line', 'pack_id', string='Produits')
+    # product_line_ids = fields.One2many('pack.produit.line', 'pack_id', string='Produits')
 
     state = fields.Selection([
         ('draft', 'Brouillon'),
@@ -51,23 +51,24 @@ class PackProduit(models.Model):
         expired_packs.write({'state': 'expire'})
         _logger.info(f"Expiré {len(expired_packs)} packs périmés automatiquement.")
 
-class PackProduitLine(models.Model):
-    _name = 'pack.produit.line'
-    _description = 'Ligne de Pack'
 
-    pack_id = fields.Many2one('pack.produit', string='Pack', ondelete='cascade')
-    product_id = fields.Many2one('product.product', string='Produit', required=True)
-    quantity = fields.Float(string='Quantité', default=1)
-    price_unit = fields.Float(string='Prix Unitaire', store=True)
-    image = fields.Binary(string='Image', attachment=True)
-    category = fields.Many2one('product.category', string='Categorie')
+# class PackProduitLine(models.Model):
+#     _name = 'pack.produit.line'
+#     _description = 'Ligne de Pack'
+
+#     pack_id = fields.Many2one('pack.produit', string='Pack', ondelete='cascade')
+#     product_id = fields.Many2one('product.product', string='Produit', required=True)
+#     quantity = fields.Float(string='Quantité', default=1)
+#     price_unit = fields.Float(string='Prix Unitaire', store=True)
+#     image = fields.Binary(string='Image', attachment=True)
+#     category = fields.Many2one('product.category', string='Categorie')
 
 
-    @api.onchange('product_id')
-    def _onchange_product_id(self):
-        """ Met à jour le prix unitaire en fonction du produit sélectionné. """
+#     @api.onchange('product_id')
+#     def _onchange_product_id(self):
+#         """ Met à jour le prix unitaire en fonction du produit sélectionné. """
 
-        if self.product_id:
-            self.price_unit = self.product_id.list_price
-            self.image = self.product_id.image_1920
-            self.category = self.product_id.categ_id
+#         if self.product_id:
+#             self.price_unit = self.product_id.list_price
+#             self.image = self.product_id.image_1920
+#             self.category = self.product_id.categ_id

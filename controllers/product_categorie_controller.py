@@ -613,7 +613,7 @@ class ProductCategorieControllerREST(http.Controller):
                         'en_promo': p.product_tmpl_id.en_promo,
                         'list_price': p.list_price,
                         'purchase_ok': p.purchase_ok,
-                        'standard_price': p.standard_price,
+                        'standard_price': p.product_tmpl_id.standard_price,
                         'active': p.active,
                         'is_preorder': p.product_tmpl_id.is_preorder,
                         'preorder_price': p.product_tmpl_id.preorder_price,
@@ -649,6 +649,7 @@ class ProductCategorieControllerREST(http.Controller):
 
                     product_data.append({
                         'id': p.id,
+                        'avg_cost': p.avg_cost,
                         'nom': p.name,
                         'majoration': majoration,
                         'categ_id': p.categ_id.name,

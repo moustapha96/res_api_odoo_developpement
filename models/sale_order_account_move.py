@@ -44,7 +44,7 @@ class SaleOrderAccountMove(models.Model):
                     if payment:
                         invoice.write({'payment_id': payment.id})
 
-    @api.model
+    # @api.model
     def action_confirm(self):
         res = super(SaleOrderAccountMove, self).action_confirm()
         self.create_invoice()

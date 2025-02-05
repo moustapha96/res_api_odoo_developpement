@@ -6,5 +6,4 @@ access_web_commentaire,access_web_commentaire,model_web_commentaire,base.group_u
 access_crm_lead_line_user,crm.lead.line.user,model_crm_lead_line,base.group_user,1,0,0,0
 
 
-access_pack_produit,pack.produit,model_pack_produit,base.group_user,1,1,1,1
-access_pack_produit_line,access.pack.produit.line,model_pack_produit_line,,1,1,1,1
+

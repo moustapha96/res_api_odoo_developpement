@@ -1036,7 +1036,7 @@ class SaleOrderMail(models.Model):
             _logger.error(f'Error sending email: {str(e)}')
             return {'status': 'error', 'message': str(e)}    
 
-    @api.model
+    # @api.model
     def action_confirm(self):
         res = super(SaleOrderMail, self).action_confirm()
         if self.type_sale == 'preorder':
