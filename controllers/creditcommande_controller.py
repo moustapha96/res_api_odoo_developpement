@@ -144,8 +144,8 @@ class CreditCommandeREST(http.Controller):
         company = request.env['res.company'].sudo().search([('id', '=', 1 )], limit=1)
         if  company and partner and partner.adhesion == "accepted" :
             # Création de commande
-
             order = request.env['sale.order'].sudo().create({
+                'state': "draft",
                 'partner_id': partner_id,
                 'type_sale': 'creditorder',
                 'company_id': company.id,
