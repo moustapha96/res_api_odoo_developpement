@@ -18,7 +18,7 @@ _mail_server_cache = None
 class SaleOrderCronCreditRecover(models.Model):
     _inherit = 'sale.order'
 
-    @api.model
+   
     def send_overdue_payment_recover(self):
         """
         Envoie des rappels par e-mail pour les commandes à crédit avec des paiements en retard et non payés.
