@@ -609,7 +609,7 @@ class SaleCreditOrderMail(models.Model):
     #         elif vals['validation_admin_state'] == 'rejected':
     #             self.send_credit_order_admin_rejected()
     #     return result
-    
+     
     @api.model
     def action_validation_rh_state(self):
         _logger.debug('action_validation_rh_state()...')

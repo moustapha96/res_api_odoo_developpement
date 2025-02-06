@@ -43,7 +43,7 @@ class EntrepriseController(http.Controller):
                 headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
                 response=json.dumps({ "status": "error", "message": "Partenaire incorrect"}))
         
-        if partner.parent_id.id == parent_partner.id:
+        if partner.parent_id.id == parent_partner.id and partner.adhesion == "accepted":
 
             return  werkzeug.wrappers.Response(
                 status=302,
@@ -51,6 +51,7 @@ class EntrepriseController(http.Controller):
                 headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
                 response=json.dumps({ "status": "error", "message": "Vous êtes déja adhérent de cette entreprise"})
             )
+        
         
         partner.write({
             'parent_id': parent_partner.id,
