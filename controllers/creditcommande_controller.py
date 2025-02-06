@@ -130,7 +130,7 @@ class CreditCommandeREST(http.Controller):
                 status=400,
                 content_type='application/json; charset=utf-8',
                 headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
-                response=json.dumps("Vous n'etes pas autoriser a faire cette opération"))
+                response=json.dumps("Vous n'etes pas autoriser à faire des commandes à crédit"))
 
 
         if not request.env.user or request.env.user._is_public():
@@ -157,6 +157,7 @@ class CreditCommandeREST(http.Controller):
                 'validation_admin_state': 'pending',
                 'date_approved_creditorder': datetime.datetime.now()
             })
+            _logger.info("Commande créee avec successe: %s", order.name)
             for item in order_lines:
 
                 product_id = item.get('id')
@@ -189,10 +190,12 @@ class CreditCommandeREST(http.Controller):
                     'state': 'sale',
                     'invoice_status': 'to invoice'
                 })
+                _logger.info("Ligne de commande ajoutée avec successe: %s", order_line.name)
             if order:
                 order.send_credit_order_validation_mail()
                 order.send_credit_order_to_rh_for_confirmation()
                 order.state = "validation"
+                _logger.info("Commande validée : %s", order.state)
 
                 resp = werkzeug.wrappers.Response(
                     status=201,
@@ -250,7 +253,7 @@ class CreditCommandeREST(http.Controller):
                 status=400,
                 content_type='application/json; charset=utf-8',
                 headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
-                response=json.dumps("Vous n'etes pas autoriser a faire cette opération"))
+                response=json.dumps("Vous n'etes pas autoriser à faire cette opération"))
 
 
     # methode qu'on utilise
