@@ -630,3 +630,114 @@ class CommandeREST(http.Controller):
             'price_unit': price_unit,
             'state': 'sale'
         })
+
+    @http.route('/api/commande-pack', methods=['POST'], type='http', cors="*", auth='none', csrf=False)
+    def api_create_order(self, **kwargs):
+        data = json.loads(request.httprequest.data)
+        partner_id = int( data.get('partner_id'))
+        order_lines = data.get('order_lines')
+        state = data.get('state')
+        payment_mode = data.get('payment_mode')
+
+        _logger.info(f"arrive au post {partner_id} {order_lines} {state}")
+
+        if not request.env.user or request.env.user._is_public():
+            admin_user = request.env.ref('base.user_admin')
+            request.env = request.env(user=admin_user.id)
+
+        if not partner_id or not order_lines:
+            return request.make_response(
+                json.dumps({'status': 'error', 'message': 'Invalid order data'}),
+                headers={'Content-Type': 'application/json'}
+            )
+
+        partner = request.env['res.partner'].sudo().search([('id', '=', partner_id)], limit=1)
+
+        previous_orders = request.env['sale.order'].sudo().search_count([('partner_id', '=', partner_id)])
+        is_first_order = previous_orders == 0
+        
+        company = request.env['res.company'].sudo().search([('id', '=', 1)], limit=1)
+
+        order = request.env['sale.order'].sudo().create({
+                'partner_id': partner_id,
+                'type_sale': 'order',
+                'currency_id' : company.currency_id.id,
+                'company_id' : company.id,
+                'commitment_date': datetime.datetime.now() + datetime.timedelta(days=30),
+                'payment_mode': payment_mode,
+                # 'state': 'sale'
+            })
+
+        for item in order_lines:
+            product_id = item.get('id')
+            product_uom_qty = item.get('quantity')
+            price_unit = item.get('list_price')
+
+            if not product_id or not product_uom_qty or not price_unit:
+                return request.make_response(
+                    json.dumps({'status': 'error', 'message': 'Missing product data'}),
+                    headers={'Content-Type': 'application/json'}
+                )
+
+
+            le_produit = request.env['product.product'].sudo().search([('id', '=', product_id)], limit=1)
+            _logger.info(f'produit {le_produit} ')
+            if not le_produit:
+                return request.make_response(
+                    json.dumps({'status': 'error', 'message': 'Product not found'}),
+                    headers={'Content-Type': 'application/json'}
+                )
+
+            # if is_first_order and not le_produit.product_tmpl_id.en_promo:
+            #     price_unit *= 0.97  # Réduction de 3 %
+
+            request.env['sale.order.line'].sudo().create({
+                'order_id': order.id,
+                'product_id': product_id,
+                'product_uom_qty': product_uom_qty,
+                'price_unit': price_unit,
+                'state': 'sale'
+            })
+
+        if order:
+            order.action_confirm()
+
+        resp = werkzeug.wrappers.Response(
+            status=201,
+            content_type='application/json; charset=utf-8',
+            headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+            response=json.dumps({
+                'id': order.id,
+                'name': order.name,
+                'partner_id': order.partner_id.id,
+                'type_sale': order.type_sale,
+                'currency_id': order.currency_id.id,
+                'company_id': order.company_id.id,
+                'commitment_date': order.commitment_date.isoformat(),
+                'state': order.state,
+                'amount_residual': order.amount_residual,
+                'amount_total': order.amount_total,
+                'amount_tax': order.amount_tax,
+                'amount_untaxed': order.amount_untaxed,
+                'advance_payment_status': order.advance_payment_status,
+                'payment_mode': order.payment_mode,
+                'order_lines': [
+                    {
+                        'id': order_line.id,
+                        'quantity': order_line.product_uom_qty,
+                        'list_price': order_line.price_unit,
+                        'name': order_line.product_id.name,
+                        'image_1920': order_line.product_id.image_1920,
+                        'image_128' : order_line.product_id.image_128,
+                        'image_1024': order_line.product_id.image_1024,
+                        'image_512': order_line.product_id.image_512,
+                        'image_256': order_line.product_id.image_256,
+                        'categ_id': order_line.product_id.categ_id.name,
+                        'type': order_line.product_id.type,
+                        'description': order_line.product_id.description,
+                        'price_total': order_line.price_total,
+                    } for order_line in order.order_line
+                ],
+            })
+        )
+        return resp
