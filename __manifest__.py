@@ -36,7 +36,7 @@
         'views/res_partner_view.xml',
         'views/ir_cron_data.xml',
         'views/crm_lead_view.xml',
-        'views/pack_views.xml',
+        # 'views/pack_views.xml',
     ],
     'images': [
         'static/description/banner.png',
