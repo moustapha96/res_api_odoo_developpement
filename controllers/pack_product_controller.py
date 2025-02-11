@@ -97,3 +97,52 @@ class PackProductController(http.Controller):
         else:
             return request.make_response(json.dumps({'error': 'Pack not found'}), status=404)
 
+
+    # la liste des pack
+    @http.route('/api/pack_product', methods=['GET'], type='http', cors="*", auth='none', csrf=False)
+    def get_pack_product(self):
+        user = request.env['res.users'].sudo().browse(request.env.uid)
+        if not user or user._is_public():
+            admin_user = request.env.ref('base.user_admin')
+            request.env = request.env(user=admin_user.id)
+
+        packs = request.env['pack.produit'].sudo().search([])
+        response_data = []
+        for pack in packs:
+            sommeTotal = sum(line.price_unit * line.quantity for line in pack.product_line_ids)
+            produits = []
+            for line in pack.product_line_ids:
+
+                image_base64 = line.product_id.image_1920.decode('utf-8') if line.product_id.image_1920 else ''
+                image_data = f"data:image/jpeg;base64,{image_base64}" 
+
+                produits.append({
+                    'id': line.id,
+                    'category': line.product_id.categ_id.name if line.product_id.categ_id else None,
+                    'product_id': line.product_id.id,
+                    'image': image_data, 
+                    'name': line.product_id.name,
+                    'price_unit': line.price_unit,
+                    'quantity': line.quantity
+                })
+                image_pack = pack.image.decode('utf-8') if pack.image else ''
+                image_pack = f"data:image/jpeg;base64,{image_pack}" 
+
+            
+            response_data.append({
+                'id': pack.id,
+                'name': pack.name,
+                'image': image_pack,
+                'start_date': pack.start_date.strftime('%Y-%m-%d') if pack.start_date else None,
+                'end_date': pack.end_date.strftime('%Y-%m-%d') if pack.end_date else None,
+                'state': pack.state,
+                'sommeTotal': sommeTotal,
+                'produits': produits,
+                'code' : pack.code
+            })
+
+        return request.make_response(
+            json.dumps(response_data),
+            status=200,
+            headers={'Content-Type': 'application/json'}
+        )

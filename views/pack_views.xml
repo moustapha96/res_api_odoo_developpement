@@ -11,6 +11,7 @@
                     <field name="start_date" />
                     <field name="end_date" />
                     <field name="code" />
+                    <field name="image" widget="image" options="{'size': [50, 50]}" />
                 </tree>
             </field>
         </record>
@@ -36,6 +37,10 @@
                             <field name="start_date" />
                             <field name="end_date" />
                             <field name="code" />
+                        </group>
+                        <group>
+                            <field name="image" widget="image" class="oe_avatar"
+                                string="Image du Pack" />
                         </group>
                         <notebook>
                             <page string="Produits">

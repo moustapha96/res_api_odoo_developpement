@@ -47,6 +47,7 @@ class CommandeREST(http.Controller):
                         'advance_payment_status':o.advance_payment_status,
                         'commitment_date': o.commitment_date.isoformat() if o.commitment_date else None,
                         'note': o.note or None,
+                        'type_order': o.type_order,
                         'order_lines': [{
                             'id': l.id or None,
                             'product_id': l.product_id.id or None,
@@ -142,6 +143,7 @@ class CommandeREST(http.Controller):
                 'advance_payment_status':order.advance_payment_status,
                 'commitment_date': order.commitment_date.isoformat() if order.commitment_date else None,
                 'note': order.note or None,
+                'type_order': order.type_order,
                 'order_lines': [{
                 'id': l.id or None,
                 'product_id': l.product_id.id or None,
@@ -156,6 +158,7 @@ class CommandeREST(http.Controller):
                 'qty_delivered': l.qty_delivered or None,
                 'qty_to_invoice': l.qty_to_invoice or None,
                 'qty_invoiced': l.qty_invoiced or None
+                
                 } for l in order.order_line]
             }
 
@@ -208,6 +211,7 @@ class CommandeREST(http.Controller):
                 'user_id': order.user_id.id or None,
                 'payment_term_id': order.payment_term_id.id or None,
                 'advance_payment_status':order.advance_payment_status,
+                'type_order': order.type_order,
                
                 'commitment_date': order.commitment_date.isoformat() if order.commitment_date else None,
                 'note': order.note or None,
@@ -317,7 +321,7 @@ class CommandeREST(http.Controller):
                 'user_id': order.user_id.id or None,
                 'payment_term_id': order.payment_term_id.id or None,
                 'advance_payment_status':order.advance_payment_status,
-               
+                'type_order': order.type_order,
                 'commitment_date': order.commitment_date.isoformat() if order.commitment_date else None,
                 'note': order.note or None,
                
@@ -408,7 +412,7 @@ class CommandeREST(http.Controller):
         order_lines = data.get('order_lines')
         state = data.get('state')
         payment_mode = data.get('payment_mode')
-
+        
         _logger.info(f"arrive au post {partner_id} {order_lines} {state}")
 
         if not request.env.user or request.env.user._is_public():
@@ -665,6 +669,7 @@ class CommandeREST(http.Controller):
                 'company_id' : company.id,
                 'commitment_date': datetime.datetime.now() + datetime.timedelta(days=30),
                 'payment_mode': payment_mode,
+                'type_order': 'pack',
                 # 'state': 'sale'
             })
 

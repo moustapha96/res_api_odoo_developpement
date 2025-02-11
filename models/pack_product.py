@@ -18,6 +18,7 @@ class PackProduit(models.Model):
     end_date = fields.Date(string='Date de fin')
     code = fields.Char(string='Code du Pack', required=True, copy=False, readonly=True, index=True, default=lambda self: _('Nouveau'))
     product_line_ids = fields.One2many('pack.produit.line', 'pack_id', string='Produits')
+    image = fields.Binary(string='Image', attachment=True)
 
     state = fields.Selection([
         ('draft', 'Brouillon'),
