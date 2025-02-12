@@ -225,11 +225,11 @@ class ProductCategorieControllerREST(http.Controller):
                 'image_2': p.image_2,
                 'image_3': p.image_3,
                 'image_4': p.image_4,
-                # 'image_1920': p.image_1920,
-                # 'image_128' : p.image_128,
-                # 'image_1024': p.image_1024,
+                'image_1920': p.image_1920,
+                'image_128' : p.image_128,
+                'image_1024': p.image_1024,
                 'image_512': p.image_512,
-                # 'image_256': p.image_256,
+                'image_256': p.image_256,
                 'categ_id': p.categ_id.name,
                 'type': p.type,
                 'description': p.description,
@@ -270,15 +270,13 @@ class ProductCategorieControllerREST(http.Controller):
 
     @http.route('/api/produits/categorie/<categ_id>', methods=['GET'], type='http', auth='none', cors="*")
     def api__products_catgeorie_GET(self,categ_id, **kw):
-        products = request.env['product.product'].sudo().search([ ( 'categ_id.name' , '=' , categ_id ),('sale_ok', '=', True) ], limit = 4)
+        products = request.env['product.product'].sudo().search([ ( 'categ_id.name' , '=' , categ_id ),('sale_ok', '=', True) ])
         product_data = []
         base_url = request.env['ir.config_parameter'].sudo().get_param('web.base.url')
 
         if products:
             for p in products:
 
-               
-                
                 product_data.append({
                 'id': p.id,
                 'name': p.name,
