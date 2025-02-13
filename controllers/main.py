@@ -755,7 +755,7 @@ else:
         # from . import scriping
         from . import commentaire_controller
         from . import pack_product_controller
-
+        from . import partner_controller
         # from . import service_controller
 
 
