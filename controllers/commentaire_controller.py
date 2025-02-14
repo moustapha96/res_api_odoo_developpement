@@ -1,16 +1,13 @@
 # my_module/controllers/controllers.py
 from odoo import http
+from odoo.http import request
 
 
 from .main import *
 import pdb
 import datetime
 import logging
-# import json
 import json
-
-from odoo.http import request
-
 import werkzeug
 
 
@@ -176,11 +173,11 @@ class CommentaireController(http.Controller):
         
         data = json.loads(request.httprequest.data)
         author = data.get('author')
-        email = data.get('email')
+        phone = data.get('tel')
         text = data.get('text')
         date = datetime.datetime.now()
     
-        if not author or not text or not email:
+        if not author or not text or not phone:
             return  werkzeug.wrappers.Response(
                 status=200,
                 content_type='application/json; charset=utf-8',
@@ -188,16 +185,17 @@ class CommentaireController(http.Controller):
                 response=json.dumps("Données manquantes")
             )
         
+     
         comment = request.env['web.commentaire.simple'].sudo().create({
             'author': author,
             'text': text,
             'date': date,
-            'email': email
+            'phone': phone
         })
         resultat = {
             'author': comment.author,
             'text': comment.text,
-            'email': comment.email,
+            'phone': comment.phone,
             'date': comment.date.strftime('%Y-%m-%d %H:%M:%S') if comment.date else None,
         }
         resp = werkzeug.wrappers.Response(
