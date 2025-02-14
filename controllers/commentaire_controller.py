@@ -181,7 +181,12 @@ class CommentaireController(http.Controller):
         date = datetime.datetime.now()
     
         if not author or not text or not email:
-            return http.Response('Missing required fields', status=200)
+            return  werkzeug.wrappers.Response(
+                status=200,
+                content_type='application/json; charset=utf-8',
+                headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                response=json.dumps("Données manquantes")
+            )
         
         comment = request.env['web.commentaire.simple'].sudo().create({
             'author': author,

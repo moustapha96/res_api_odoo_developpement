@@ -16,6 +16,6 @@ class CommentaireSimple(models.Model):
     _description = 'Commentaire Simple'
 
     author = fields.Char(string='Author')
-    email = fields.Char(string='Email')  # Champ ajouté
+    email = fields.Char(string='Email')
     text = fields.Text(string='Text')
     date = fields.Datetime(string="Date d'envoie", default=fields.Datetime.now)
