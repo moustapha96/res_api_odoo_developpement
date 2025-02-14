@@ -1,4 +1,13 @@
 <odoo>
-    <menuitem id="menu_comment" name="Commentaires" parent="base.menu_custom"
-        action="action_comment" />
-</odoo> 
+    <!-- Menu principal -->
+    <menuitem id="menu_comment_management" name="Gestion des Commentaires" sequence="10" />
+
+    <!-- Sous-menu pour Commentaires Produits -->
+    <menuitem id="menu_comment_product" name="Commentaires Produits"
+        parent="menu_comment_management"
+        sequence="10" action="action_comment_product" />
+
+    <!-- Sous-menu pour Commentaires Simples -->
+    <menuitem id="menu_comment_simple" name="Commentaires Simples" parent="menu_comment_management"
+        sequence="20" action="action_comment_simple" />
+</odoo>

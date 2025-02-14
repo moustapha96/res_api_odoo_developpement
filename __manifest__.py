@@ -37,6 +37,10 @@
         'views/ir_cron_data.xml',
         'views/crm_lead_view.xml',
         'views/pack_views.xml',
+
+        # 'views/comment_views.xml',
+        # 'views/comment_actions.xml',
+        # 'views/comment_menu.xml',
     ],
     'images': [
         'static/description/banner.png',

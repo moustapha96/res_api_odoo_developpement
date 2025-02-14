@@ -156,6 +156,7 @@ class CommentaireController(http.Controller):
                 'id': comment.id,
                 'author': comment.author,
                 'text': comment.text,
+                'email': comment.email,
                 'date': comment.date.strftime('%Y-%m-%d %H:%M:%S') if comment.date else None,
             })
         
@@ -175,20 +176,23 @@ class CommentaireController(http.Controller):
         
         data = json.loads(request.httprequest.data)
         author = data.get('author')
+        email = data.get('email')
         text = data.get('text')
         date = datetime.datetime.now()
     
-        if not author or not text:
+        if not author or not text or not email:
             return http.Response('Missing required fields', status=200)
         
         comment = request.env['web.commentaire.simple'].sudo().create({
             'author': author,
             'text': text,
             'date': date,
+            'email': email
         })
         resultat = {
             'author': comment.author,
             'text': comment.text,
+            'email': comment.email,
             'date': comment.date.strftime('%Y-%m-%d %H:%M:%S') if comment.date else None,
         }
         resp = werkzeug.wrappers.Response(

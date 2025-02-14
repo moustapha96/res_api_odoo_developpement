@@ -1,8 +1,15 @@
-<!-- my_module/views/comment_actions.xml -->
 <odoo>
-    <record id="action_comment" model="ir.actions.act_window">
-        <field name="name">Commentaires</field>
+    <!-- Action pour Commentaires Produits -->
+    <record id="action_comment_product" model="ir.actions.act_window">
+        <field name="name">Commentaires Produits</field>
         <field name="res_model">web.commentaire</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- Action pour Commentaires Simples -->
+    <record id="action_comment_simple" model="ir.actions.act_window">
+        <field name="name">Commentaires Simples</field>
+        <field name="res_model">web.commentaire.simple</field>
         <field name="view_mode">tree,form</field>
     </record>
 </odoo>
