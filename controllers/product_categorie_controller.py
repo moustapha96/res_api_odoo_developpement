@@ -212,11 +212,10 @@ class ProductCategorieControllerREST(http.Controller):
     def api__products__one_GET(self,id, **kw):
         p = request.env['product.product'].sudo().search([ ( 'id' , '=' , id ),('sale_ok', '=', True) ])
         if p:
-            
-            base_url = request.env['ir.config_parameter'].sudo().get_param('web.base.url')
+            # base_url = request.env['ir.config_parameter'].sudo().get_param('web.base.url')
 
-            url = f"{base_url}/web/image?model=product.template&id={p.product_tmpl_id.id}&field=image"
-            _logger.info(url)
+            # url = f"{base_url}/web/image?model=product.template&id={p.product_tmpl_id.id}&field=image"
+            # _logger.info(url)
 
             produit_data = {
                 'id': p.id,
@@ -261,11 +260,12 @@ class ProductCategorieControllerREST(http.Controller):
                 response=json.dumps(produit_data)
             )
             return resp
+        
         return  werkzeug.wrappers.Response(
             status=200,
             content_type='application/json; charset=utf-8',
             headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
-            response=json.dumps("pas de données")  )
+            response=json.dumps(None))
 
 
     @http.route('/api/produits/categorie/<categ_id>', methods=['GET'], type='http', auth='none', cors="*")
