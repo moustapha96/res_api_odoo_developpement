@@ -453,10 +453,10 @@ class ProductCategorieControllerREST(http.Controller):
         if kw.get('category') and kw.get('category') != 'All':
             domain.append(('categ_id.name', '=', kw.get('category')))
 
-        # if kw.get('min'):
-        #     domain.append(('list_price', '>=', float(kw.get('min'))))
-        # if kw.get('max'):
-        #     domain.append(('list_price', '<=', float(kw.get('max'))))
+        if kw.get('min'):
+            domain.append(('list_price', '>=', float(kw.get('min'))))
+        if kw.get('max'):
+            domain.append(('list_price', '<=', float(kw.get('max'))))
 
 
         
@@ -533,23 +533,23 @@ class ProductCategorieControllerREST(http.Controller):
         if kw.get('category') and kw.get('category') != 'All':
             domain.append(('categ_id.name', '=', kw.get('category')))
 
-        # if kw.get('min'):
-        #     try:
-        #         min_price = float(kw.get('min'))
-        #         domain.append(('list_price', '>=', min_price))
-        #         domain.append(('product_tmpl_id.promo_price', '>=', min_price))
-        #         domain.append(('product_tmpl_id.creditorder_price', '>=', min_price))
-        #     except ValueError:
-        #         _logger.error("Invalid min price value: %s", kw.get('min'))
+        if kw.get('min'):
+            try:
+                min_price = float(kw.get('min'))
+                domain.append(('list_price', '>=', min_price))
+                domain.append(('product_tmpl_id.promo_price', '>=', min_price))
+                domain.append(('product_tmpl_id.creditorder_price', '>=', min_price))
+            except ValueError:
+                _logger.error("Invalid min price value: %s", kw.get('min'))
 
-        # if kw.get('max'):
-        #     try:
-        #         max_price = float(kw.get('max'))
-        #         domain.append(('list_price', '<=', max_price))
-        #         domain.append(('product_tmpl_id.promo_price', '<=', max_price))
-        #         domain.append(('product_tmpl_id.creditorder_price', '<=', max_price))
-        #     except ValueError:
-        #         _logger.error("Invalid max price value: %s", kw.get('max'))
+        if kw.get('max'):
+            try:
+                max_price = float(kw.get('max'))
+                domain.append(('list_price', '<=', max_price))
+                domain.append(('product_tmpl_id.promo_price', '<=', max_price))
+                domain.append(('product_tmpl_id.creditorder_price', '<=', max_price))
+            except ValueError:
+                _logger.error("Invalid max price value: %s", kw.get('max'))
 
 
     
@@ -670,23 +670,23 @@ class ProductCategorieControllerREST(http.Controller):
         if kw.get('category') and kw.get('category') != 'All':
             domain.append(('categ_id.name', '=', kw.get('category')))
 
-        # if kw.get('min'):
-        #     try:
-        #         min_price = float(kw.get('min'))
-        #         domain.append(('list_price', '>=', min_price))
-        #         domain.append(('product_tmpl_id.promo_price', '>=', min_price))
-        #         domain.append(('product_tmpl_id.creditorder_price', '>=', min_price))
-        #     except ValueError:
-        #         _logger.error("Invalid min price value: %s", kw.get('min'))
+        if kw.get('min'):
+            try:
+                min_price = float(kw.get('min'))
+                domain.append(('list_price', '>=', min_price))
+                domain.append(('product_tmpl_id.promo_price', '>=', min_price))
+                domain.append(('product_tmpl_id.creditorder_price', '>=', min_price))
+            except ValueError:
+                _logger.error("Invalid min price value: %s", kw.get('min'))
 
-        # if kw.get('max'):
-        #     try:
-        #         max_price = float(kw.get('max'))
-        #         domain.append(('list_price', '<=', max_price))
-        #         domain.append(('product_tmpl_id.promo_price', '<=', max_price))
-        #         domain.append(('product_tmpl_id.creditorder_price', '<=', max_price))
-        #     except ValueError:
-        #         _logger.error("Invalid max price value: %s", kw.get('max'))
+        if kw.get('max'):
+            try:
+                max_price = float(kw.get('max'))
+                domain.append(('list_price', '<=', max_price))
+                domain.append(('product_tmpl_id.promo_price', '<=', max_price))
+                domain.append(('product_tmpl_id.creditorder_price', '<=', max_price))
+            except ValueError:
+                _logger.error("Invalid max price value: %s", kw.get('max'))
 
 
             
