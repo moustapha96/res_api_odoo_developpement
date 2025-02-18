@@ -431,56 +431,140 @@ class ProductCategorieControllerREST(http.Controller):
 
     # nouvelle fonction
 
+    # @http.route('/api/produits-filtrer', methods=['GET'], type='http', auth='none', cors="*")
+    # def api__products_GET_per_page(self, **kw):
+    #     page = int(kw.get('page', 1))
+    #     limit = int(kw.get('limit', 10))
+    #     offset = (page - 1) * limit
+        
+    #     domain = [('sale_ok', '=', True)]
+
+    #     list_of_category_exclude = ["Services" , "service" , "Expenses" , "Internal" , "Consumable" , "Saleable" , "Software" , "All"]
+        
+    #     for c in list_of_category_exclude:
+    #         domain.append(('categ_id.name', 'not ilike', c))
+    
+        
+    #     if kw.get('search'):
+    #         search_terms = kw.get('search').split()
+    #         for term in search_terms:
+    #             domain.append(('name', 'ilike', term))
+        
+    #     if kw.get('category') and kw.get('category') != 'All':
+    #         domain.append(('categ_id.name', '=', kw.get('category')))
+
+    #     if kw.get('min'):
+    #         domain.append(('list_price', '>=', float(kw.get('min'))))
+    #     if kw.get('max'):
+    #         domain.append(('list_price', '<=', float(kw.get('max'))))
+
+
+        
+    #     total = request.env['product.product'].sudo().search_count(domain)
+    #     products = request.env['product.product'].sudo().search(domain, offset=offset, limit=limit)
+    #     products = sorted(products, key=lambda p: p.list_price or 0)
+        
+
+    #     product_data = []
+    #     for p in products:
+    #         product_data.append({
+    #             'id': p.id,
+    #             'name': p.name,
+    #             'display_name': p.display_name,
+    #             'quantite_en_stock': p.qty_available,
+    #             'quantity_reception':p.incoming_qty,
+    #             'quanitty_virtuelle_disponible': p.free_qty,
+    #             'quanitty_commande': p.outgoing_qty,
+    #             'quanitty_prevu': p.virtual_available,
+    #             'image_256': p.image_256,
+    #             'categ_id': p.categ_id.name,
+    #             'type': p.type,
+    #             'description': p.product_tmpl_id.description,
+    #             'en_promo' : p.product_tmpl_id.en_promo,
+    #             'volume': p.volume,
+    #             'weight': p.weight,
+    #             'sale_ok': p.sale_ok,
+    #             'purchase_ok': p.purchase_ok,
+    #             'standard_price': p.standard_price,
+    #             'active': p.active,
+    #             'list_price': p.list_price,
+    #             'is_preorder': p.product_tmpl_id.is_preorder,
+    #             'preorder_price': p.product_tmpl_id.preorder_price,
+    #             'promo_price': p.product_tmpl_id.promo_price,
+    #             'is_creditorder': p.product_tmpl_id.is_creditorder or None,
+    #             'creditorder_price': p.product_tmpl_id.creditorder_price or None,
+    #         })
+        
+    #     response_data = {
+    #         'products': product_data,
+    #         'total': total,
+    #         'page': page,
+    #         'page_size': limit
+    #     }
+        
+    #     return werkzeug.wrappers.Response(
+    #         status=200,
+    #         content_type='application/json; charset=utf-8',
+    #         response=json.dumps(response_data)
+    #     )
     @http.route('/api/produits-filtrer', methods=['GET'], type='http', auth='none', cors="*")
     def api__products_GET_per_page(self, **kw):
         page = int(kw.get('page', 1))
         limit = int(kw.get('limit', 10))
         offset = (page - 1) * limit
-        
+
         domain = [('sale_ok', '=', True)]
 
-        list_of_category_exclude = ["Services" , "service" , "Expenses" , "Internal" , "Consumable" , "Saleable" , "Software" , "All"]
+        list_of_category_exclude = ["Services", "service", "Expenses", "Internal", "Consumable", "Saleable", "Software", "All"]
         
         for c in list_of_category_exclude:
             domain.append(('categ_id.name', 'not ilike', c))
-    
-        
+
         if kw.get('search'):
             search_terms = kw.get('search').split()
             for term in search_terms:
                 domain.append(('name', 'ilike', term))
-        
+
         if kw.get('category') and kw.get('category') != 'All':
             domain.append(('categ_id.name', '=', kw.get('category')))
 
-        if kw.get('min'):
-            domain.append(('list_price', '>=', float(kw.get('min'))))
-        if kw.get('max'):
-            domain.append(('list_price', '<=', float(kw.get('max'))))
+        # Vérification sécurisée des valeurs numériques
+        min_price = kw.get('min')
+        max_price = kw.get('max')
 
+        if min_price:
+            try:
+                domain.append(('list_price', '>=', float(min_price)))
+            except ValueError:
+                pass
 
-        
+        if max_price:
+            try:
+                domain.append(('list_price', '<=', float(max_price)))
+            except ValueError:
+                pass
+
+        # Comptage total avant la pagination
         total = request.env['product.product'].sudo().search_count(domain)
-        products = request.env['product.product'].sudo().search(domain, offset=offset, limit=limit)
-        products = sorted(products, key=lambda p: p.list_price or 0)
-        
 
-        product_data = []
-        for p in products:
-            product_data.append({
+        # Recherche et tri direct dans la requête
+        products = request.env['product.product'].sudo().search(domain, order='list_price asc', offset=offset, limit=limit)
+
+        product_data = [
+            {
                 'id': p.id,
                 'name': p.name,
                 'display_name': p.display_name,
                 'quantite_en_stock': p.qty_available,
-                'quantity_reception':p.incoming_qty,
+                'quantity_reception': p.incoming_qty,
                 'quanitty_virtuelle_disponible': p.free_qty,
                 'quanitty_commande': p.outgoing_qty,
                 'quanitty_prevu': p.virtual_available,
                 'image_256': p.image_256,
                 'categ_id': p.categ_id.name,
                 'type': p.type,
-                'description': p.product_tmpl_id.description,
-                'en_promo' : p.product_tmpl_id.en_promo,
+                'description': p.product_tmpl_id.description or "",
+                'en_promo': p.product_tmpl_id.en_promo,
                 'volume': p.volume,
                 'weight': p.weight,
                 'sale_ok': p.sale_ok,
@@ -489,24 +573,27 @@ class ProductCategorieControllerREST(http.Controller):
                 'active': p.active,
                 'list_price': p.list_price,
                 'is_preorder': p.product_tmpl_id.is_preorder,
-                'preorder_price': p.product_tmpl_id.preorder_price,
-                'promo_price': p.product_tmpl_id.promo_price,
-                'is_creditorder': p.product_tmpl_id.is_creditorder or None,
-                'creditorder_price': p.product_tmpl_id.creditorder_price or None,
-            })
-        
+                'preorder_price': p.product_tmpl_id.preorder_price or 0,
+                'promo_price': p.product_tmpl_id.promo_price or 0,
+                'is_creditorder': p.product_tmpl_id.is_creditorder or False,
+                'creditorder_price': p.product_tmpl_id.creditorder_price or 0,
+            }
+            for p in products
+        ]
+
         response_data = {
             'products': product_data,
             'total': total,
             'page': page,
             'page_size': limit
         }
-        
+
         return werkzeug.wrappers.Response(
             status=200,
             content_type='application/json; charset=utf-8',
             response=json.dumps(response_data)
         )
+
     
 
 
