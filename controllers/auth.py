@@ -332,6 +332,7 @@ class ControllerREST(http.Controller):
 
         email_admin = 'ccbmtech@ccbm.sn'
         password_admin = 'ccbmE@987'
+        
         try:
             request.session.authenticate(self._get_db_name(), email_admin, password_admin)
         except Exception as e:
