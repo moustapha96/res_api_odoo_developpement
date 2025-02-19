@@ -330,6 +330,7 @@ class ControllerREST(http.Controller):
         # email_admin = 'dev-odoo-16'
         # password_admin = 'password'
 
+        # compte prod
         email_admin = 'ccbmtech@ccbm.sn'
         password_admin = 'ccbmE@987'
         
