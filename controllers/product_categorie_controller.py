@@ -597,99 +597,177 @@ class ProductCategorieControllerREST(http.Controller):
     
 
 
+    # @http.route('/api/produits-filtrer-promo', methods=['GET'], type='http', auth='none', cors="*")
+    # def api__products__promo_GET_per_page(self, **kw):
+    #     page = int(kw.get('page', 1))
+    #     limit = int(kw.get('limit', 10))
+    #     offset = (page - 1) * limit
+        
+    #     domain = [('sale_ok', '=', True), ('en_promo', '=', True)]
+        
+    #     list_of_category_exclude = ["Services" , "service" , "Expenses" , "Internal" , "Consumable" , "Saleable" , "Software" , "All"]
+        
+    #     for c in list_of_category_exclude:
+    #         domain.append(('categ_id.name', 'not ilike', c))
+        
+    #     # Filtres supplémentaires
+    #     if kw.get('search'):
+    #         search_terms = kw.get('search').split()
+    #         for term in search_terms:
+    #             domain.append(('name', 'ilike', term))
+
+
+    #     if kw.get('category') and kw.get('category') != 'All':
+    #         domain.append(('categ_id.name', '=', kw.get('category')))
+
+    #     if kw.get('min'):
+    #         try:
+    #             min_price = float(kw.get('min'))
+    #             domain.append(('list_price', '>=', min_price))
+    #             domain.append(('product_tmpl_id.promo_price', '>=', min_price))
+    #             domain.append(('product_tmpl_id.creditorder_price', '>=', min_price))
+    #         except ValueError:
+    #             _logger.error("Invalid min price value: %s", kw.get('min'))
+
+    #     if kw.get('max'):
+    #         try:
+    #             max_price = float(kw.get('max'))
+    #             domain.append(('list_price', '<=', max_price))
+    #             domain.append(('product_tmpl_id.promo_price', '<=', max_price))
+    #             domain.append(('product_tmpl_id.creditorder_price', '<=', max_price))
+    #         except ValueError:
+    #             _logger.error("Invalid max price value: %s", kw.get('max'))
+
+
+    
+    #     total = request.env['product.product'].sudo().search_count(domain)
+    #     products = request.env['product.product'].sudo().search(domain, offset=offset, limit=limit)
+    #     products = sorted(products, key=lambda p: p.product_tmpl_id.promo_price or 0)
+
+        
+    #     product_data = []
+    #     for p in products:
+    #         product_data.append({
+    #             'id': p.id,
+    #             'name': p.name,
+    #             'display_name': p.display_name,
+    #             'quantite_en_stock': p.qty_available,
+    #             'quantity_reception':p.incoming_qty,
+    #             'quanitty_virtuelle_disponible': p.free_qty,
+    #             'quanitty_commande': p.outgoing_qty,
+    #             'quanitty_prevu': p.virtual_available,
+    #             'image_256': p.image_256,
+    #             'categ_id': p.categ_id.name,
+    #             'type': p.type,
+    #             'description': p.product_tmpl_id.description,
+    #             'en_promo' : p.product_tmpl_id.en_promo,
+    #             'list_price': p.list_price,
+    #             'volume': p.volume,
+    #             'weight': p.weight,
+    #             'sale_ok': p.sale_ok,
+    #             'purchase_ok': p.purchase_ok,
+    #             'standard_price': p.standard_price,
+    #             'active': p.active,
+    #             'is_preorder': p.product_tmpl_id.is_preorder,
+    #             'preorder_price': p.product_tmpl_id.preorder_price,
+    #             'promo_price': p.product_tmpl_id.promo_price,
+    #             'is_creditorder': p.product_tmpl_id.is_creditorder or None,
+    #             'creditorder_price': p.product_tmpl_id.creditorder_price or None,
+    #         })
+        
+    #     response_data = {
+    #         'products': product_data,
+    #         'total': total,
+    #         'page': page,
+    #         'page_size': limit
+    #     }
+        
+    #     return werkzeug.wrappers.Response(
+    #         status=200,
+    #         content_type='application/json; charset=utf-8',
+    #         response=json.dumps(response_data)
+    #     )
+    
+
+    
     @http.route('/api/produits-filtrer-promo', methods=['GET'], type='http', auth='none', cors="*")
     def api__products__promo_GET_per_page(self, **kw):
         page = int(kw.get('page', 1))
         limit = int(kw.get('limit', 10))
         offset = (page - 1) * limit
-        
+
         domain = [('sale_ok', '=', True), ('en_promo', '=', True)]
-        
-        list_of_category_exclude = ["Services" , "service" , "Expenses" , "Internal" , "Consumable" , "Saleable" , "Software" , "All"]
+
+        list_of_category_exclude = ["Services", "service", "Expenses", "Internal", "Consumable", "Saleable", "Software", "All"]
         
         for c in list_of_category_exclude:
             domain.append(('categ_id.name', 'not ilike', c))
         
-        # Filtres supplémentaires
+        
+        # Ajout des filtres dynamiques
         if kw.get('search'):
             search_terms = kw.get('search').split()
             for term in search_terms:
                 domain.append(('name', 'ilike', term))
 
-
         if kw.get('category') and kw.get('category') != 'All':
             domain.append(('categ_id.name', '=', kw.get('category')))
 
-        if kw.get('min'):
-            try:
+        try:
+            if kw.get('min'):
                 min_price = float(kw.get('min'))
-                domain.append(('list_price', '>=', min_price))
-                domain.append(('product_tmpl_id.promo_price', '>=', min_price))
-                domain.append(('product_tmpl_id.creditorder_price', '>=', min_price))
-            except ValueError:
-                _logger.error("Invalid min price value: %s", kw.get('min'))
-
-        if kw.get('max'):
-            try:
+                domain += [
+                    ('list_price', '>=', min_price),
+                    ('product_tmpl_id.promo_price', '>=', min_price),
+                    ('product_tmpl_id.creditorder_price', '>=', min_price),
+                ]
+            if kw.get('max'):
                 max_price = float(kw.get('max'))
-                domain.append(('list_price', '<=', max_price))
-                domain.append(('product_tmpl_id.promo_price', '<=', max_price))
-                domain.append(('product_tmpl_id.creditorder_price', '<=', max_price))
-            except ValueError:
-                _logger.error("Invalid max price value: %s", kw.get('max'))
+                domain += [
+                    ('list_price', '<=', max_price),
+                    ('product_tmpl_id.promo_price', '<=', max_price),
+                    ('product_tmpl_id.creditorder_price', '<=', max_price),
+                ]
+        except ValueError:
+            _logger.error("Invalid price value: min=%s, max=%s", kw.get('min'), kw.get('max'))
 
-
-    
         total = request.env['product.product'].sudo().search_count(domain)
-        products = request.env['product.product'].sudo().search(domain, offset=offset, limit=limit)
+        products = request.env['product.product'].sudo().search(domain, order="list_price ASC", offset=offset, limit=limit)
         products = sorted(products, key=lambda p: p.product_tmpl_id.promo_price or 0)
 
-        
-        product_data = []
-        for p in products:
-            product_data.append({
-                'id': p.id,
-                'name': p.name,
-                'display_name': p.display_name,
-                'quantite_en_stock': p.qty_available,
-                'quantity_reception':p.incoming_qty,
-                'quanitty_virtuelle_disponible': p.free_qty,
-                'quanitty_commande': p.outgoing_qty,
-                'quanitty_prevu': p.virtual_available,
-                'image_256': p.image_256,
-                'categ_id': p.categ_id.name,
-                'type': p.type,
-                'description': p.product_tmpl_id.description,
-                'en_promo' : p.product_tmpl_id.en_promo,
-                'list_price': p.list_price,
-                'volume': p.volume,
-                'weight': p.weight,
-                'sale_ok': p.sale_ok,
-                'purchase_ok': p.purchase_ok,
-                'standard_price': p.standard_price,
-                'active': p.active,
-                'is_preorder': p.product_tmpl_id.is_preorder,
-                'preorder_price': p.product_tmpl_id.preorder_price,
-                'promo_price': p.product_tmpl_id.promo_price,
-                'is_creditorder': p.product_tmpl_id.is_creditorder or None,
-                'creditorder_price': p.product_tmpl_id.creditorder_price or None,
-            })
-        
-        response_data = {
-            'products': product_data,
-            'total': total,
-            'page': page,
-            'page_size': limit
-        }
-        
+        product_data = [{
+            'id': p.id,
+            'name': p.name,
+            'display_name': p.display_name,
+            'quantite_en_stock': p.qty_available,
+            'quantity_reception': p.incoming_qty,
+            'quanitty_virtuelle_disponible': p.free_qty,
+            'quanitty_commande': p.outgoing_qty,
+            'quanitty_prevu': p.virtual_available,
+            'image_256': p.image_256,
+            'categ_id': p.categ_id.name,
+            'type': p.type,
+            'description': p.product_tmpl_id.description,
+            'en_promo': p.product_tmpl_id.en_promo,
+            'list_price': p.list_price,
+            'volume': p.volume,
+            'weight': p.weight,
+            'sale_ok': p.sale_ok,
+            'purchase_ok': p.purchase_ok,
+            'standard_price': p.standard_price,
+            'active': p.active,
+            'is_preorder': p.product_tmpl_id.is_preorder,
+            'preorder_price': p.product_tmpl_id.preorder_price,
+            'promo_price': p.product_tmpl_id.promo_price,
+            'is_creditorder': p.product_tmpl_id.is_creditorder or None,
+            'creditorder_price': p.product_tmpl_id.creditorder_price or None,
+        } for p in products]
+
         return werkzeug.wrappers.Response(
             status=200,
             content_type='application/json; charset=utf-8',
-            response=json.dumps(response_data)
+            response=json.dumps({'products': product_data, 'total': total, 'page': page, 'page_size': limit})
         )
-    
-
-    
 
 
     @http.route('/api/produits/prix', methods=['GET'], type='http', auth='none', cors="*")
@@ -778,7 +856,8 @@ class ProductCategorieControllerREST(http.Controller):
 
             
         total = request.env['product.product'].sudo().search_count(domain)
-        products = request.env['product.product'].sudo().search(domain, offset=offset, limit=limit)
+
+        products = request.env['product.product'].sudo().search(domain, order="list_price ASC", offset=offset, limit=limit)
         products = sorted(products, key=lambda p: p.product_tmpl_id.promo_price or 0)
 
         product_data = []
