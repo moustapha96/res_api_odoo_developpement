@@ -1,14 +1,12 @@
 {
-    "en-promo": {
-        "refrigerateur": 1
-    },
-    "promo-ramadan": {
-        "refrigerateur": 2
-    },
-    "boutique": {
-        "refrigerateur": 1,
-        "tele 32 pouces": 2,
-        "televiseur": 1,
-        "refir": 1
+    "2025-02-20": {
+        "boutique": {
+            "tcl": 1,
+            "televiseur": 1
+        },
+        "promo-ramadan": {
+            "refirge": 1,
+            "refrigerateur": 1
+        }
     }
 }

@@ -10,7 +10,7 @@ import logging
 import json
 import werkzeug
 
-
+from datetime import datetime
 
 class TermeRechercheController(http.Controller):
 
@@ -25,6 +25,10 @@ class TermeRechercheController(http.Controller):
         if not source or not search_terms:
             return http.Response('Missing required fields', status=200)
         
+         # Obtenir la date actuelle au format YYYY-MM-DD
+        current_date = datetime.now().strftime("%Y-%m-%d")
+
+        # Vérifier et créer le dossier si nécessaire
         directory = os.path.dirname(self.FILE_PATH)
         if not os.path.exists(directory):
             os.makedirs(directory, exist_ok=True)
@@ -39,13 +43,21 @@ class TermeRechercheController(http.Controller):
         else:
             terms_data = {}
 
-        if source not in terms_data:
-            terms_data[source] = {}
+        # Vérifier si la date existe, sinon l'initialiser
+        if current_date not in terms_data:
+            terms_data[current_date] = {}
 
-        if search_terms in terms_data[source]:
-            terms_data[source][search_terms] += 1
+
+        # Vérifier si la source existe pour cette date, sinon l'initialiser
+        if source not in terms_data[current_date]:
+            terms_data[current_date][source] = {}
+
+        # Mettre à jour le nombre de recherches pour ce terme et cette source à cette date
+        if search_terms in terms_data[current_date][source]:
+            terms_data[current_date][source][search_terms] += 1
         else:
-            terms_data[source][search_terms] = 1
+            terms_data[current_date][source][search_terms] = 1
+
 
         with open(self.FILE_PATH, "w", encoding="utf-8") as f:
             json.dump(terms_data, f, ensure_ascii=False, indent=4)
