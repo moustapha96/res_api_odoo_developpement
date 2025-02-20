@@ -3,8 +3,8 @@
     'name': 'Odoo REST API DEV',
     'version': '16.0.1.14.8',
     'category': 'Extra Tools',
-    'author': "AVS'",
-    'support': 'avs3.help@gmail.com',
+    'author': "Al hussein KHOUMA",
+    'support': 'alhussein.khouma@ccbm.sn',
     'license': 'OPL-1',
     'website': 'https://app.swaggerhub.com/apis-docs/avs3/odoo_rest_api/1',
     'price': 55.00,
@@ -38,9 +38,6 @@
         'views/crm_lead_view.xml',
         'views/pack_views.xml',
 
-        # 'views/comment_views.xml',
-        # 'views/comment_actions.xml',
-        # 'views/comment_menu.xml',
     ],
     'images': [
         'static/description/banner.png',

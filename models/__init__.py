@@ -23,3 +23,4 @@ from .import commentaire
 from .import crm_model
 from .import pack_product
 # from .import delivery_zone 
+# from .import terme_recherche
