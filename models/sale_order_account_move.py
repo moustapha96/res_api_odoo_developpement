@@ -1,10 +1,16 @@
+
 from odoo import models, fields, api
+import logging
+
+_logger = logging.getLogger(__name__)
+
 
 class SaleOrderAccountMove(models.Model):
     _inherit = 'sale.order'
 
     def create_invoice(self):
         for order in self:
+            _logger.info("creation de facture pour la Commande %s", order.name)
         # Vérifiez si la commande est confirmée
             if order.state == 'sale' and order.type_sale == "order":
                 # Vérifiez si la commande a déjà une facture associée
