@@ -1,0 +1,14 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Run Odoo Tests",
+            "type": "shell",
+            "command": "cd ${workspaceFolder}\\..\\.. && python odoo-bin -d test_database -i res_api_odoo_developpement --test-enable --stop-after-init",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            }
+        }
+    ]
+}

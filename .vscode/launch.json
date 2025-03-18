@@ -1,0 +1,22 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Test API Module",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/../../odoo-bin",
+            "args": [
+                "-c",
+                "${workspaceFolder}/../../odoo.conf",
+                "-d",
+                "test",
+                "-i",
+                "res_api_odoo_developpement",
+                "--test-enable",
+                "--stop-after-init"
+            ],
+            "console": "integratedTerminal"
+        }
+    ]
+}

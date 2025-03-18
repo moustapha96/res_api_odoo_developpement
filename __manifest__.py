@@ -28,12 +28,15 @@
         # 'orbit'
     ],
     'data': [
+        'security/ir.model.access.csv',
+
         'data/ir_configparameter_data.xml',
         'data/ir_cron_data.xml',
-        'security/ir.model.access.csv',
+        
         'views/ir_model_view.xml',
         'views/product_template_view.xml',
         'views/res_partner_view.xml',
+        
         'views/ir_cron_data.xml',
         'views/crm_lead_view.xml',
         'views/pack_views.xml',
@@ -44,4 +47,5 @@
     'installable': True,
     'application': True,
     'auto_install': False,
+
 }
