@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Groupe pour les vues de base -->
+    <data>
+        <function model="ir.model.data" name="check_group">
+            <value>base_views_group</value>
+            <value>res_api_odoo_developpement.base_views</value>
+        </function>
+    </data>
+
+    <!-- Groupe pour les vues avancées -->
+    <data>
+        <function model="ir.model.data" name="check_group">
+            <value>advanced_views_group</value>
+            <value>res_api_odoo_developpement.advanced_views</value>
+        </function>
+    </data>
+</odoo>

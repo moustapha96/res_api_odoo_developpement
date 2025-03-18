@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Vérification de version -->
+        <function model="ir.config_parameter" name="set_param">
+            <value>res_api_odoo.version</value>
+            <value>16.0.1.14.8</value>
+        </function>
+
+        <!-- Contrôle de compatibilité -->
+        <record id="view_api_version_check" model="ir.ui.view">
+            <field name="name">api.version.check</field>
+            <field name="model">res.api.version</field>
+            <field name="arch" type="xml">
+                <form>
+                    <field name="version_compatible" invisible="1" />
+                    <div attrs="{'invisible': [('version_compatible', '=', True)]}">
+                        <p class="alert alert-warning">Version incompatible détectée!</p>
+                    </div>
+                </form>
+            </field>
+        </record>
+    </data>
+</odoo>
