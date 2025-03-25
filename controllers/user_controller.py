@@ -354,6 +354,7 @@ class userREST(http.Controller):
     @http.route('/api/users/avatar/<id>', methods=['PUT'], type='http', auth='none', cors="*", csrf=False)
     def api_users_avatar(self, id ):
 
+        
         data = json.loads(request.httprequest.data)
         avatar_url = data.get('avatar')
 
@@ -454,7 +455,9 @@ class userREST(http.Controller):
                 'is_verified': False
             })
             if partner:
-                self.send_verification_mail(partner.email)
+                # self.send_verification_mail(partner.email)
+                otp_code = partner.send_otp()
+
                 return werkzeug.wrappers.Response(
                     status=201,
                     content_type='application/json; charset=utf-8',
@@ -641,6 +644,7 @@ class userREST(http.Controller):
         except Exception as e:
             return self._json_response(f"Erreur lors de la mise à jour du compte: {str(e)}", status=400)
 
+
     def _json_response(self, message, status=200):
         return werkzeug.wrappers.Response(
             status=status,
@@ -649,3 +653,75 @@ class userREST(http.Controller):
             response=json.dumps({"message": message})
         )
     
+
+    # url pour generer un code otp
+    @http.route('/api/partner/<int:partner_id>/otp-code', methods=['GET'], type='http', auth='none', cors="*")
+    def api_partner_otp(self, partner_id, **kw):
+
+        user = request.env['res.users'].sudo().browse(request.env.uid)
+        if not user or user._is_public():
+            admin_user = request.env.ref('base.user_admin')
+            request.env = request.env(user=admin_user.id)
+
+        
+        partner = request.env['res.partner'].sudo().browse(partner_id)
+        if not partner:
+            return self._json_response("Compte client non trouvé", status=404)
+
+        # Generate OTP code
+        # otp_code = partner.get_otp()
+        otp_code = partner.send_otp()
+
+        return self._json_response(f"Code OTP envoyé avec succès {otp_code} {partner.phone} ", status=200)
+    
+
+    @http.route('/api/partner/<email>/otp-resend', methods=['GET'], type='http', auth='none', cors="*")
+    def api_partner_resend_otp(self, email, **kw):
+
+        user = request.env['res.users'].sudo().browse(request.env.uid)
+        if not user or user._is_public():
+            admin_user = request.env.ref('base.user_admin')
+            request.env = request.env(user=admin_user.id)
+
+        
+        partner = request.env['res.partner'].sudo().search([('email', '=', email)], limit=1)
+        if not partner:
+            return self._json_response("Compte client non trouvé", status=404)
+
+        # Generate OTP code
+        # otp_code = partner.get_otp()
+        otp_code = partner.send_otp()
+
+        return self._json_response(f"Code OTP envoyé avec succès", status=200)
+    
+    # VERIFCATION CODE OTP
+    @http.route('/api/partner/otp-verification', methods=['POST'], type='http', auth='none', cors="*", csrf=False)
+    def api_partner_otp_verify(self, **kw):
+
+        data = json.loads(request.httprequest.data)
+        if not data:
+            return werkzeug.wrappers.Response(
+                status=400,
+                content_type='application/json; charset=utf-8',
+                headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                response=json.dumps("Données invalides")
+            )
+        
+        otp_code = data.get('code')
+        email = data.get('email')
+
+        user = request.env['res.users'].sudo().browse(request.env.uid)
+        if not user or user._is_public():
+            admin_user = request.env.ref('base.user_admin')
+            request.env = request.env(user=admin_user.id)
+
+        partner = request.env['res.partner'].sudo().search([('email', '=', email)], limit=1)
+        if not partner:
+            return self._json_response("Compte client non trouvé", status=404)
+
+        # Verify OTP code
+        if not partner.verify_otp(otp_code):
+            return self._json_response("Code OTP invalide", status=400)
+        else :
+            partner.write({'is_verified': True})
+            return self._json_response("Code OTP valide", status=200)
