@@ -214,7 +214,7 @@ class ResetPasswordREST(http.Controller):
             request.env = request.env(user=admin_user.id)
 
 
-        partner = request.env['res.partner'].sudo().search([ ('email', '=', email) , ( 'role','=','main_user' ) ], limit=1)
+        partner = request.env['res.partner'].sudo().search([ ('email', '=', email)  ], limit=1)
         company = partner.company_id
 
         if partner:
@@ -385,8 +385,8 @@ class ResetPasswordREST(http.Controller):
             token = self.generate_token(email)
             # Construire le contenu de l'e-mail
             subject = 'Réinitialiser votre mot de passe'
-            # reset_url = f'https://africatransit.sn/new-password?mail={partner.email}&token={token}'
-            reset_url = f'http://localhost:3000/new-password?mail={partner.email}&token={token}'
+            reset_url = f'https://grh.ccbme.sn/new-password?mail={partner.email}&token={token}'
+            # reset_url = f'http://localhost:3000/new-password?mail={partner.email}&token={token}'
             body_html = f'''
             <table border="0" cellpadding="0" cellspacing="0" style="padding-top: 16px; background-color: #FFFFFF; font-family:Verdana, Arial,sans-serif; color: #454748; width: 100%; border-collapse:separate;">
                 <tr>
