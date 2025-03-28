@@ -14,6 +14,10 @@ import time
 
 from functools import wraps
 
+import urllib.parse
+from werkzeug.urls import url_encode
+
+
 _logger = logging.getLogger(__name__)
 
 
@@ -197,7 +201,7 @@ class ResetPasswordREST(http.Controller):
 
         
 
-    @http.route('/api/reset-password/<email>', methods=['GET'], type='http', auth='none', cors='*', csrf=False)
+    @http.route('/api/reset-password-email/<email>', methods=['GET'], type='http', auth='none', cors='*', csrf=False)
     def reset_password_request(self,email, **kwargs):
 
         if not email:
@@ -359,7 +363,76 @@ class ResetPasswordREST(http.Controller):
                 headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
                 response=json.dumps({'status': 'error', 'message': 'Utilisateur ou compte non existant'})
             )
+        
+    @http.route('/api/reset-password-sms/<phone>', methods=['GET'], type='http', auth='none', cors='*', csrf=False)
+    def reset_password_request_phone(self, phone, **kwargs):
+        if not phone:
+            return werkzeug.wrappers.Response(
+                status=400,
+                content_type='application/json; charset=utf-8',
+                headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                response=json.dumps({'status': 'error', 'message': f'Numéro de téléphone non valide'})
+            )
 
+        user = request.env['res.users'].sudo().search([('id', '=', request.env.uid)], limit=1)
+        if not user or user._is_public():
+            admin_user = request.env.ref('base.user_admin')
+            request.env = request.env(user=admin_user.id)
+
+        partner = request.env['res.partner'].sudo().search([('phone', '=', phone)], limit=1)
+        
+        if partner:
+            # Générer un token de réinitialisation de mot de passe
+            token = self.generate_token(partner.email)
+            # Construire l'URL de réinitialisation
+            # reset_url = f'https://ccbme.sn/new-password?mail={partner.email}&token={token}'
+            # reset_url = f'https://localhost:5173/new-password?mail={partner.email}&token={token}'
+
+            query_params = {'mail': partner.email, 'token': token}
+            reset_url = f"https://ccbme.sn/new-password?{url_encode(query_params)}"
+
+            reset_url = reset_url.replace("%40", "@")
+            # reset_url = reset_url.encode('utf-8').decode('utf-8')
+            message = f"Bonjour {partner.name}, utilisez ce lien pour réinitialiser votre mot de passe: {reset_url}"
+            # message = message.encode('utf-8').decode('utf-8')
+            # message = urllib.parse.quote(message.encode('utf-8'))
+            try:
+                # Créer et envoyer le SMS
+                sms_record = request.env['send.sms'].sudo().create({
+                    'recipient': phone,
+                    'message': message,
+                })
+                sms_result = sms_record.send_sms()
+                
+                # Enregistrer le token
+                partner.write({
+                    'signup_type': 'reset',
+                    'signup_token': token,
+                    'signup_expiration': datetime.datetime.now() + datetime.timedelta(days=1),
+                })
+                
+                return werkzeug.wrappers.Response(
+                    status=200,
+                    content_type='application/json; charset=utf-8',
+                    headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                    response=json.dumps({'status': 'success', 'message': f'Un lien de réinitialisation du mot de passe a été envoyé par SMS'})
+                )
+                
+            except Exception as e:
+                _logger.error(f'Error sending SMS: {str(e)}')
+                return werkzeug.wrappers.Response(
+                    status=200,
+                    content_type='application/json; charset=utf-8',
+                    headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                    response=json.dumps({'status': 'error', 'message': str(e)})
+                )
+        else:
+            return werkzeug.wrappers.Response(
+                status=400,
+                content_type='application/json; charset=utf-8',
+                headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                response=json.dumps({'status': 'error', 'message': 'Utilisateur ou compte non existant'})
+            )
 
     @http.route('/api/rh/reset-password/<email>', methods=['GET'], type='http', auth='none', cors='*', csrf=False)
     def reset_password_request_rh(self,email, **kwargs):
