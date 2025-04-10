@@ -614,8 +614,6 @@ class userREST(http.Controller):
             )
 
 
-
-
     @http.route('/api/partner/<int:partner_id>/update', methods=['POST'], type='http', auth='none', cors="*", csrf=False)
     def api_partner_update(self, partner_id, **kw):
         try:

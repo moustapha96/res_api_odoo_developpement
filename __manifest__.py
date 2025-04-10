@@ -8,6 +8,7 @@
     'license': 'OPL-1',
     'website': 'https://app.swaggerhub.com/apis-docs/avs3/odoo_rest_api/1',
     'price': 55.00,
+    'category': 'CCBM/',
     'currency': 'EUR',
     'summary': """Enhanced RESTful API access to Odoo resources with (optional) predefined and tree-like schema of response Odoo fields
         ============================

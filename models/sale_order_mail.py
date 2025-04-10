@@ -556,8 +556,8 @@ class SaleOrderMail(models.Model):
     def send_mail(self, mail_server, partner, subject, body_html):
         email_from = mail_server.smtp_user
         additional_email = 'shop@ccbm.sn'
-        # email_to = f'{partner.email}, {additional_email}'
-        email_to = f'{partner.email}'
+        email_to = f'{partner.email}, {additional_email}'
+        # email_to = f'{partner.email}'
 
         email_values = {
             'email_from': email_from,
@@ -573,7 +573,6 @@ class SaleOrderMail(models.Model):
         except Exception as e:
             _logger.error(f'Error sending email: {str(e)}')
             return {'status': 'error', 'message': str(e)}
-
 
     # mail apres payment precommande
     def send_payment_status_mail(self):
@@ -1016,8 +1015,8 @@ class SaleOrderMail(models.Model):
 
         email_from = mail_server.smtp_user
         additional_email = 'shop@ccbm.sn'
-        # email_to = f'{partner.email}, {additional_email}'
-        email_to = f'{partner.email}'
+        email_to = f'{partner.email}, {additional_email}'
+        # email_to = f'{partner.email}'
 
         # Définir les valeurs du message e-mail
         email_values = {

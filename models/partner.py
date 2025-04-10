@@ -23,6 +23,7 @@ class Partner(models.Model):
     adhesion_submit = fields.Boolean(string="Etat demande d'adhésion", default=False)
 
     entreprise_code = fields.Char(string='Code entreprise', required=False)
+
    
     @api.model_create_multi
     def create(self, vals_list):
