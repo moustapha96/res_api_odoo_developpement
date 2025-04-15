@@ -760,5 +760,6 @@ else:
 
         from . import gestionnaire_controller
         # from . import service_controller
+        # from . import abonnement_controller
 
 
