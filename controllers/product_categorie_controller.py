@@ -73,6 +73,7 @@ class ProductCategorieControllerREST(http.Controller):
                 'categ_id': p.categ_id.name,
                 'type': p.type,
                 'description': p.product_tmpl_id.description,
+                'rang': p.product_tmpl_id.rang or 0,
                 'en_promo' : p.product_tmpl_id.en_promo,
                 'list_price': p.list_price,
                 'volume': p.volume,
@@ -125,6 +126,7 @@ class ProductCategorieControllerREST(http.Controller):
                 'categ_id': p.categ_id.name,
                 'type': p.type,
                 'description': p.product_tmpl_id.description,
+                'rang': p.product_tmpl_id.rang or 0,
                 'en_promo' : p.product_tmpl_id.en_promo,
                 'list_price': p.list_price,
                 'volume': p.volume,
@@ -171,6 +173,7 @@ class ProductCategorieControllerREST(http.Controller):
                 'quanitty_virtuelle_disponible': p.free_qty,
                 'quanitty_commande': p.outgoing_qty,
                 'quanitty_prevu': p.virtual_available,
+                'rang': p.product_tmpl_id.rang or 0,
                 # 'image_1920': p.image_1920,
                 # 'image_128' : p.image_128,
                 # 'image_1024': p.image_1024,
@@ -247,6 +250,7 @@ class ProductCategorieControllerREST(http.Controller):
                 'standard_price': p.standard_price,
                 'active': p.active,
                 'en_promo' : p.product_tmpl_id.en_promo,
+                'rang': p.product_tmpl_id.rang or 0,
                 'is_preorder': p.product_tmpl_id.is_preorder,
                 'preorder_price': p.product_tmpl_id.preorder_price,
                 'display_name': p.display_name,
@@ -303,6 +307,7 @@ class ProductCategorieControllerREST(http.Controller):
                 'type': p.type,
                 'description': p.product_tmpl_id.description,
                 'en_promo' : p.product_tmpl_id.en_promo,
+                'rang': p.product_tmpl_id.rang or 0,
                 'list_price': p.list_price,
                 'volume': p.volume,
                 'weight': p.weight,
@@ -364,6 +369,7 @@ class ProductCategorieControllerREST(http.Controller):
                 'standard_price': p.standard_price,
                 'active': p.active,
                 'en_promo' : p.product_tmpl_id.en_promo,
+                'rang': p.product_tmpl_id.rang or 0,
                 'is_preorder': p.product_tmpl_id.is_preorder,
                 'preorder_price': p.product_tmpl_id.preorder_price,
                 'is_creditorder': p.product_tmpl_id.is_creditorder or None,
@@ -404,6 +410,7 @@ class ProductCategorieControllerREST(http.Controller):
                 'type': p.type,
                 'description': p.product_tmpl_id.description,
                 'en_promo' : p.product_tmpl_id.en_promo,
+                'rang': p.product_tmpl_id.rang or 0,
                 'list_price': p.list_price,
                 'volume': p.volume,
                 'weight': p.weight,
@@ -479,7 +486,8 @@ class ProductCategorieControllerREST(http.Controller):
 
         # Recherche et tri direct dans la requête
         products = request.env['product.product'].sudo().search(domain, order='list_price asc', offset=offset, limit=limit)
-
+        # je veux le trier en fonction de rang
+        # products = sorted(products, key=lambda p: p.product_tmpl_id.rang or 0)
 
         product_data = []
         for p in products:
@@ -493,6 +501,7 @@ class ProductCategorieControllerREST(http.Controller):
                 'id': p.id,
                 'tags': tags_data,
                 'name': p.name,
+                'rang': p.product_tmpl_id.rang or 0,
                 'display_name': p.display_name,
                 'quantite_en_stock': p.qty_available,
                 'quantity_reception':p.incoming_qty,
@@ -615,7 +624,8 @@ class ProductCategorieControllerREST(http.Controller):
                 'preorder_price': p.product_tmpl_id.preorder_price,
                 'promo_price': p.product_tmpl_id.promo_price,
                 'is_creditorder': p.product_tmpl_id.is_creditorder or None,
-                'creditorder_price': p.product_tmpl_id.creditorder_price or None,
+                'creditorder_price': p.product_tmpl_id.creditorder_price or None, 
+                'rang': p.product_tmpl_id.rang or 0,
             })
         
 
@@ -656,6 +666,7 @@ class ProductCategorieControllerREST(http.Controller):
                         'promo_price': p.product_tmpl_id.promo_price,
                         'is_creditorder': p.product_tmpl_id.is_creditorder or None,
                         'creditorder_price': p.product_tmpl_id.creditorder_price or None,
+                        'rang': p.product_tmpl_id.rang or 0,
                         'tags': tags_data
                     })
 
@@ -755,6 +766,7 @@ class ProductCategorieControllerREST(http.Controller):
                 'promo_price': p.product_tmpl_id.promo_price,
                 'is_creditorder': p.product_tmpl_id.is_creditorder or None,
                 'creditorder_price': p.product_tmpl_id.creditorder_price or None,
+                'rang': p.product_tmpl_id.rang or 0,
             })
         
         response_data = {
@@ -830,6 +842,7 @@ class ProductCategorieControllerREST(http.Controller):
                 'id': p.id,
                 'tags': tags_data,
                 'name': p.name,
+                'rang': p.product_tmpl_id.rang or 0,
                 'display_name': p.display_name,
                 'quantite_en_stock': p.qty_available,
                 'quantity_reception':p.incoming_qty,
@@ -852,7 +865,7 @@ class ProductCategorieControllerREST(http.Controller):
                 'preorder_price': p.product_tmpl_id.preorder_price,
                 'promo_price': p.product_tmpl_id.promo_price,
                 'is_creditorder': p.product_tmpl_id.is_creditorder or None,
-                'creditorder_price': p.product_tmpl_id.creditorder_price or None,
+                'creditorder_price': p.product_tmpl_id.creditorder_price or None, 
             })
         
         response_data = {

@@ -752,7 +752,7 @@ else:
         from . import module_dev_controller
         from . import entreprise_controller
         from . import creditcommande_controller
-        # from . import scriping
+        from . import scriping
         from . import commentaire_controller
         from . import pack_product_controller
         from . import partner_controller
@@ -760,5 +760,6 @@ else:
 
         from . import gestionnaire_controller
         # from . import service_controller
+        # from . import abonnement_controller
 
 

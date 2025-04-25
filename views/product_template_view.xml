@@ -11,10 +11,19 @@
                     <page name="images" string="Images du produit">
                         <group string="Images">
                             <!-- Champs pour les images -->
+                            <field name="rang" />
                             <field name="image_1" widget="image" class="oe_avatar" />
                             <field name="image_2" widget="image" class="oe_avatar" />
                             <field name="image_3" widget="image" class="oe_avatar" />
                             <field name="image_4" widget="image" class="oe_avatar" />
+                        </group>
+                    </page>
+                </xpath>
+
+                <xpath expr="//page[@name='variants']" position="after">
+                    <page name="rang" string="Rand du produit">
+                        <group string="Rang">
+                            <field name="rang" />
                         </group>
                     </page>
                 </xpath>

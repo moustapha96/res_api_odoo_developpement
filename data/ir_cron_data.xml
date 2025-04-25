@@ -4,7 +4,7 @@
 
         <record model="ir.cron" forcecreate="True" id="rest_api_delete_expired_tokens">
             <field name="name">rest_api: Delete expired tokens</field>
-            <field name="model_id" ref="model_rest_api_access_token"/>
+            <field name="model_id" ref="model_rest_api_access_token" />
             <field name="state">code</field>
             <field name="code">model._cron_delete_expired_tokens()</field>
             <field name="interval_number">10</field>
@@ -12,7 +12,7 @@
             <field name="numbercall">-1</field>
             <field name="priority">3</field>
             <field name="doall" eval="False" />
-            <field name="active" eval="True"/>
+            <field name="active" eval="True" />
         </record>
 
     </data>

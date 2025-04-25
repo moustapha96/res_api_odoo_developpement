@@ -10,6 +10,7 @@
                 <xpath expr="//page[@name='variants']" position="after">
                     <page name="images" string="Images du produit">
                         <group string="Images">
+
                             <field name="image_1" widget="image" class="oe_avatar" />
                             <field name="image_2" widget="image" class="oe_avatar" />
                             <field name="image_3" widget="image" class="oe_avatar" />
