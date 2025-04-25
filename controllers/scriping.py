@@ -39,9 +39,10 @@ class ScraperController(http.Controller):
                 title = product.select_one("h2.woocommerce-loop-product__title")
                 link = product.select_one("a.woocommerce-LoopProduct-link")
                 image = product.select_one("img")
+                title_text = title.text.replace('  ', ' ') 
 
                 product_info = {
-                    "title": title.text.strip() if title else None,
+                    "title": title_text.strip() if title else None,
                     "link": link["href"] if link else None,
                     "image" : image.get("src") if image else None,
                 }
