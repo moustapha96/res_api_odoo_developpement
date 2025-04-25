@@ -18,3 +18,5 @@ from .import sale_credit_order_mail
 from .import commentaire
 from .import crm_model
 from .import pack_product
+
+from . import product

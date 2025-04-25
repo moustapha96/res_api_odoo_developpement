@@ -29,7 +29,6 @@ class CRMUpdateController(http.Controller):
                 return json.dumps({"status": "error", "message": "Les données sont vides ou invalides."})
             
     
-
             # Vérifiez les champs requis
             if not all(key in crm_data for key in ['total', 'type', 'date', 'location', 'produits']):
                 return json.dumps({"status": "error", "message": "Certains champs obligatoires sont manquants dans les données CRM."})
@@ -48,7 +47,6 @@ class CRMUpdateController(http.Controller):
             CRM = request.env['crm.lead'].sudo()
             Partner = request.env['res.partner'].sudo()
             LeadLine = request.env['crm.lead.line'].sudo()
-
 
             # Recherche d'un CRM existant
             existing_crm = CRM.search([
