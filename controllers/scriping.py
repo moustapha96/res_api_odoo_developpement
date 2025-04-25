@@ -70,14 +70,20 @@ class ScraperController(http.Controller):
                 "produits": product_data
             }
 
-            # je veux verifier les produits qui existe ou pas dans la base de donnee
-            product_ids = request.env['product.product'].sudo().search([('name', 'in', [p['title'] for p in product_data])]).ids
-            for product in product_data:
-                if product['title'] in product_ids:
-                    product['exists_in_db'] = True
-                else:
-                    product['exists_in_db'] = False
+            # # je veux verifier les produits qui existe ou pas dans la base de donnee
+            # product_ids = request.env['product.product'].sudo().search([('name', 'in', [p['title'] for p in product_data])]).name
+            # for product in product_data:
+            #     if product['title'] in product_ids:
+            #         product['exists_in_db'] = True
+            #     else:
+            #         product['exists_in_db'] = False
 
+            product_titles = [p['title'] for p in product_data]
+            existing_products = request.env['product.product'].sudo().search([('name', 'in', product_titles)])
+            existing_product_titles = set(existing_products.mapped('name'))
+
+            for product in product_data:
+                product['exists_in_db'] = product['title'] in existing_product_titles
 
             file_path = None
             if save_to_file:
