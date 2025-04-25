@@ -91,8 +91,14 @@ class ScraperController(http.Controller):
                 os.makedirs(data_dir, exist_ok=True)
 
                 domain = urllib.parse.urlparse(target_url).netloc.replace('.', '_')
+
+                parsed_url = urllib.parse.urlparse(target_url)
+                category = parsed_url.path.split('/')[-2] if parsed_url.path.count('/') > 1 else 'uncategorized'
+             
+                domain = parsed_url.netloc.replace('.', '_')
                 timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                filename = f"products_{domain}_{timestamp}.json"
+                filename = f"products_{domain}_{category}.json"
+                # filename = f"products_{domain}_{category}_{timestamp}.json"
                 file_path = os.path.join(data_dir, filename)
 
                 with open(file_path, 'w', encoding='utf-8') as f:
