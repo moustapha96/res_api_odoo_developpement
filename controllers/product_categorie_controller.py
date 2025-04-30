@@ -792,13 +792,13 @@ class ProductCategorieControllerREST(http.Controller):
             response=json.dumps(response_data)
         )
     
-    @http.route('/api/produits-filtrer-korite', methods=['GET'], type='http', auth='none', cors="*")
-    def api__products__promo_korite_GET_per_page(self, **kw):
+    @http.route('/api/produits-filtrer-tabaski', methods=['GET'], type='http', auth='none', cors="*")
+    def api__products__promo_tabaski_GET_per_page(self, **kw):
         page = int(kw.get('page', 1))
         limit = int(kw.get('limit', 10))
         offset = (page - 1) * limit
         
-        domain = [('sale_ok', '=', True), ('en_promo', '=', True),('product_tmpl_id.product_tag_ids.name', 'ilike', 'Korité')]
+        domain = [('sale_ok', '=', True), ('en_promo', '=', True),('product_tmpl_id.product_tag_ids.name', 'ilike', 'Tabaski')]
         
         list_of_category_exclude = ["Services" , "service" , "Expenses" , "Internal" , "Consumable" , "Saleable" , "Software" , "All"]
         
@@ -832,6 +832,15 @@ class ProductCategorieControllerREST(http.Controller):
                 domain.append(('product_tmpl_id.creditorder_price', '<=', max_price))
             except ValueError:
                 _logger.error("Invalid max price value: %s", kw.get('max'))
+                
+        if kw.get('productType') and kw.get('productType') != 'All':
+            if kw.get('productType') == 'credit':
+                domain.append(('is_creditorder', '=', True))
+            if kw.get('productType') == 'promo':
+                domain.append(('en_promo', '=', True))
+
+        if kw.get('tag') and kw.get('tag') != 'All':
+            domain.append(('product_tmpl_id.product_tag_ids.name', 'ilike', kw.get('tag')))
 
 
             
@@ -903,7 +912,7 @@ class ProductCategorieControllerREST(http.Controller):
             })
             # par ordre du name
             tags_data = sorted(tags_data, key=lambda x: x['name'])
-            
+
         return werkzeug.wrappers.Response(
             status=200,
             content_type='application/json; charset=utf-8',
