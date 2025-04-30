@@ -901,6 +901,9 @@ class ProductCategorieControllerREST(http.Controller):
                 'id': tag.id,
                 'name': tag.name
             })
+            # par ordre du name
+            tags_data = sorted(tags_data, key=lambda x: x['name'])
+            
         return werkzeug.wrappers.Response(
             status=200,
             content_type='application/json; charset=utf-8',
