@@ -465,6 +465,16 @@ class ProductCategorieControllerREST(http.Controller):
         if kw.get('category') and kw.get('category') != 'All':
             domain.append(('categ_id.name', '=', kw.get('category')))
 
+        if kw.get('productType') and kw.get('productType') != 'All':
+            if kw.get('productType') == 'credit':
+                domain.append(('is_creditorder', '=', True))
+            if kw.get('productType') == 'promo':
+                domain.append(('en_promo', '=', True))
+
+        if kw.get('tag') and kw.get('tag') != 'All':
+            domain.append(('product_tmpl_id.product_tag_ids.name', 'ilike', kw.get('tag')))
+            
+
         # Vérification sécurisée des valeurs numériques
         min_price = kw.get('min')
         max_price = kw.get('max')
@@ -879,6 +889,22 @@ class ProductCategorieControllerREST(http.Controller):
             status=200,
             content_type='application/json; charset=utf-8',
             response=json.dumps(response_data)
+        )
+
+    #  une methode pour retourner les tags
+    @http.route('/api/tags', methods=['GET'], type='http', auth='none', cors="*")
+    def api__tags_GET(self, **kw):
+        tags = request.env['product.tag'].sudo().search([])
+        tags_data = []
+        for tag in tags:
+            tags_data.append({
+                'id': tag.id,
+                'name': tag.name
+            })
+        return werkzeug.wrappers.Response(
+            status=200,
+            content_type='application/json; charset=utf-8',
+            response=json.dumps(tags_data)
         )
     
 
