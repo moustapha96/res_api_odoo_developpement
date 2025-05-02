@@ -27,9 +27,9 @@ class SaleCreditOrderMail(models.Model):
         total_amount = self.amount_total
         payments = [
             ('Paiement initial', total_amount * 0.5, '50%', premier_paiement),
-            ('Deuxième paiement', total_amount * 0.15, '15%', dexieme_paiement),
+            ('Deuxième paiement', total_amount * 0.20, '20%', dexieme_paiement),
             ('Troisième paiement', total_amount * 0.15, '15%', troisieme_paiement),
-            ('Quatrième paiement', total_amount * 0.20, '20%', quatrieme_paiement)
+            ('Quatrième paiement', total_amount * 0.15, '15%', quatrieme_paiement)
         ]
 
         payment_info = self._generate_payment_info_html(payments)
@@ -165,7 +165,7 @@ class SaleCreditOrderMail(models.Model):
                 'content': f"""
                     <p>Félicitations {partner.name},</p>
                     <p>Votre commande à crédit numéro {self.name} a été créée avec succès.</p>
-                    <p>Détails de la commande :</p>
+                    <p>Détails des échéances :</p>
                 """
             },
             'rejection': {
