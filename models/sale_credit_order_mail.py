@@ -164,7 +164,7 @@ class SaleCreditOrderMail(models.Model):
                 'title': 'Validation de votre commande à crédit',
                 'content': f"""
                     <p>Félicitations {partner.name},</p>
-                    <p>Votre commande à crédit numéro {self.name} a été créer avec succès.</p>
+                    <p>Votre commande à crédit numéro {self.name} a été créée avec succès.</p>
                     <p>Détails de la commande :</p>
                 """
             },
@@ -197,7 +197,7 @@ class SaleCreditOrderMail(models.Model):
                 'content': f"""
                     <p>Cher(e) {partner.name},</p>
                     <p>Nous avons le plaisir de vous informer que votre commande à crédit numéro {self.name} a été validée par notre administration.</p>
-                    <p>Cette étape marque une avancée importante dans le processus de validation de votre commande.</p>
+                    <p>Nous vous invitons à vous connecter dès maintenant à la plateforme afin d’effectuer le paiement de 50% du montant de la commande.</p>
                     <p>Nous vous tiendrons informé des prochaines étapes.</p>
                 """
             },
@@ -206,7 +206,7 @@ class SaleCreditOrderMail(models.Model):
                 'content': f"""
                     <p>Cher(e) {partner.name},</p>
                     <p>Nous avons le plaisir de vous informer que votre commande à crédit numéro {self.name} a été validée par votre service des Ressources Humaines.</p>
-                    <p>Cette étape marque une avancée importante dans le processus de validation de votre commande.</p>
+                    <p>Vous pouvez à présent attendre la validation finale de CCBM Shop avant de procéder au paiement.</p>
                     <p>Nous vous tiendrons informé des prochaines étapes.</p>
                 """
             },
@@ -521,18 +521,7 @@ class SaleCreditOrderMail(models.Model):
         </table>
         '''
         return self.send_mail(mail_server, admin_user.partner_id, subject, body_html)
-        # mail_values = {
-        #     'subject': subject,
-        #     'body_html': body_html,
-        #     'email_to': admin_user.email,
-        #     'email_from': mail_server.smtp_user if mail_server else 'noreply@ccbme.sn',
-        # }
-
-        # mail = self.env['mail.mail'].sudo().create(mail_values)
-        # mail.send()
-        # _logger.info(f'Email sent to admin: {admin_user.email} for order {self.name}')
-        # return {'status': 'success', 'message': 'Email sent successfully'}
-
+       
 
     def send_mail(self, mail_server, partner, subject, body_html):
         email_from = mail_server.smtp_user
@@ -558,15 +547,15 @@ class SaleCreditOrderMail(models.Model):
 
     def send_sms_notification(self, notification_type):
         message_templates = {
-            'validation': f"Bonjour {self.partner_id.name},\nVotre précommande à crédit numéro {self.name} a été validée avec succès.",
+            'validation': f"Bonjour {self.partner_id.name},\nVotre commande à crédit numéro {self.name} a été créée avec succès.",
             'rejection': f"Bonjour {self.partner_id.name},\nNous regrettons de vous informer que votre commande à crédit numéro {self.name} a été rejetée.",
             'rh_rejection': f"Bonjour {self.partner_id.name},\nNous regrettons de vous informer que votre commande à crédit numéro {self.name} a été rejetée par votre service des Ressources Humaines.",
             'admin_rejection': f"Bonjour {self.partner_id.name},\nNous regrettons de vous informer que votre commande à crédit numéro {self.name} a été rejetée par notre administration.",
             'admin_validation': f"Bonjour {self.partner_id.name},\nNous avons le plaisir de vous informer que votre commande à crédit numéro {self.name} a été validée par notre administration.",
             'rh_validation': f"Bonjour {self.partner_id.name},\nNous avons le plaisir de vous informer que votre commande à crédit numéro {self.name} a été validée par votre service des Ressources Humaines.",
-            'request': f"Bonjour {self.partner_id.name},\nNous avons bien reçu votre demande de commande à crédit numéro {self.name}. Elle est actuellement en cours de validation par nos services.",
+            'request': f"Bonjour {self.partner_id.name},\nNous avons bien reçu votre demande de commande à crédit numéro {self.name} .Elle est actuellement en cours de validation par nos services.",
             'creation': f"Bonjour {self.partner_id.name},\nVotre commande à crédit numéro {self.name} a été créée avec succès. Elle est actuellement en attente de validation par votre service des ressources humaines.",
-            'hr_notification': f"Bonjour,\nUne nouvelle demande de commande à crédit numéro {self.name} nécessite votre validation."
+            'hr_notification': f"Bonjour,\nUne nouvelle demande de validation de commande à crédit numéro {self.name} nécessite votre validation."
         }
 
         message = message_templates.get(notification_type, "")
