@@ -98,7 +98,7 @@ class EntrepriseController(http.Controller):
             request.env = request.env(user=admin_user.id)
 
         # type sociéte
-        companies = request.env['res.company'].sudo().search([])
+        companies = request.env['res.partner'].sudo().search([('is_company', '=', True)])
 
         resultats = []
 
