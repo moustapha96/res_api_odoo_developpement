@@ -561,43 +561,12 @@ class SaleCreditOrderMail(models.Model):
         message = message_templates.get(notification_type, "")
         if message:
             recipient = self.partner_id.phone
-            self.env['send.sms'].create({
-                'recipient': recipient,
-                'message': message,
-            }).send_sms()
+            result = self.env['orange.sms.sender'].sudo().send_sms(recipient, message)
+            # self.env['send.sms'].create({
+            #     'recipient': recipient,
+            #     'message': message,
+            # }).send_sms()
 
-    # @api.onchange('validation_rh_state', 'validation_admin_state')
-    # def onchange_validation(self):
-    #     if self.validation_rh_state == 'validated':
-    #         self.send_credit_order_rh_validation()
-    #     elif self.validation_rh_state == 'rejected':
-    #         self.send_credit_order_rh_rejected()
-
-    #     if self.validation_admin_state == 'validated':
-    #         self.send_credit_order_admin_validation()
-    #     elif self.validation_admin_state == 'rejected':
-    #         self.send_credit_order_admin_rejected()
-
-    # # envoi du mail de validation de la commande à crédit par le RH
-    # @api.model
-    # def send_credit_order_rh_validation(self):
-    #     self.send_sms_notification('rh_validation')
-
-    # def write(self, vals):
-    #     result = super(SaleCreditOrderMail, self).write(vals)
-    #     if 'validation_rh_state' in vals:
-    #         if vals['validation_rh_state'] == 'validated':
-    #             self.send_credit_order_rh_validation()
-    #             self.send_credit_order_to_admin_for_validation()
-    #         elif vals['validation_rh_state'] == 'rejected':
-    #             self.send_credit_order_rh_rejected()
-        
-    #     if 'validation_admin_state' in vals:
-    #         if vals['validation_admin_state'] == 'validated':
-    #             self.send_credit_order_admin_validation()
-    #         elif vals['validation_admin_state'] == 'rejected':
-    #             self.send_credit_order_admin_rejected()
-    #     return result
      
     @api.model
     def action_validation_rh_state(self):

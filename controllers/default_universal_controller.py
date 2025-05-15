@@ -222,7 +222,7 @@ class ControllerREST(http.Controller):
     
     # Create one:
     @http.route('/api/<string:model_name>', methods=['POST'], type='http', auth='none', cors=rest_cors_value, csrf=False)
-    @check_permissions
+    # @check_permissions
     def api__model_name__POST(self, model_name, **kw):
         model_available, schema, _, default_vals = self.define_schema_params(request, model_name, 'create_one')
         if not model_available:

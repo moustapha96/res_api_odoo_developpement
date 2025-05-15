@@ -35,3 +35,6 @@ class AbonnementControllerREST(http.Controller):
         partner.write({'subscribed': True})
 
         return request.make_response(json.dumps({'status': 'success', 'message': 'Abonnement activé'}), headers={'Content-Type': 'application/json'})
+    
+
+    

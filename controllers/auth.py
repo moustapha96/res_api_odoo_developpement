@@ -374,7 +374,7 @@ class ControllerREST(http.Controller):
         jdata.update(body)
         return jdata
     
-    @http.route('/api/auth/get_tokens', methods=['GET', 'POST'], type='http', auth='none', cors="*", csrf=False)
+    @http.route('/api/auth/get_tokens', methods=['GET', 'POST'], type='http', auth='public', cors="*", csrf=False)
     def api_auth_gettokens(self, **kw):
         try:
             jdata = self._get_request_data()

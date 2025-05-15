@@ -669,6 +669,7 @@ class userREST(http.Controller):
         # Generate OTP code
         # otp_code = partner.get_otp()
         otp_code = partner.send_otp()
+        _logger.info(otp_code)
 
         return self._json_response(f"Code OTP envoyé avec succès {otp_code} {partner.phone} ", status=200)
     

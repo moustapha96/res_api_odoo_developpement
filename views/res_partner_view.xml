@@ -35,17 +35,24 @@
             </field>
         </record>
 
-        <!-- adhesion -->
-        <!-- <record id="view_partner_form_inherit_password" model="ir.ui.view">
-            <field name="name">res.partner.form.inherit.password</field>
+
+        <record id="view_partner_form_with_otp" model="ir.ui.view">
+            <field name="name">res.partner.form.otp</field>
             <field name="model">res.partner</field>
             <field name="inherit_id" ref="base.view_partner_form" />
             <field name="arch" type="xml">
-                <xpath expr="//field[@name='role']" position="after">
-                    <field name="password" widget="password" />
-                </xpath>
+                <notebook position="inside">
+                    <page string="Codes OTP">
+                        <field name="otp_code_ids">
+                            <tree editable="bottom">
+                                <field name="code" />
+                                <field name="expiration" />
+                            </tree>
+                        </field>
+                    </page>
+                </notebook>
             </field>
-        </record> -->
+        </record>
 
     </data>
 </odoo>
