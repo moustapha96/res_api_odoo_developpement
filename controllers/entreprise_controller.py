@@ -97,6 +97,7 @@ class EntrepriseController(http.Controller):
             admin_user = request.env.ref('base.user_admin')
             request.env = request.env(user=admin_user.id)
 
+        # type sociéte
         companies = request.env['res.company'].sudo().search([])
 
         resultats = []
@@ -106,7 +107,11 @@ class EntrepriseController(http.Controller):
                 'id': company.id,
                 'name': company.name,
                 'email': company.email,
-                'phone': company.phone
+                'phone': company.phone,
+                'mobile': company.mobile,
+                'website': company.website,
+                'street': company.street,
+                'city': company.city
             })
         if companies:
             return  werkzeug.wrappers.Response(
