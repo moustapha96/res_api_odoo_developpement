@@ -450,37 +450,130 @@ class Partner(models.Model):
         except Exception as e:
             _logger.error(f'Error sending email to client: {str(e)}')
         
+    # def send_mail_create_account(self, partner, password):
+    #     mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
+    #     if not mail_server:
+    #         raise UserError(_("Veuillez configurer un serveur de messagerie."))
+        
+    #     email_from = mail_server.smtp_user
+    #     additional_email = 'shop@ccbm.sn'
+        
+    #     subject = 'Votre compte CCBM SHOP'
+    #     body_html_client = f'''
+    #     <table border="0" cellpadding="0" cellspacing="0" width="100%" style="min-width: 590px; background-color: #F1F1F1; color: #454748; padding: 8px; border-collapse:separate;">
+    #         <tr>
+    #             <td align="center" style="min-width: 590px;">
+    #                 <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;">
+    #                     <tr>
+    #                         <td align="center" style="min-width: 590px;">
+    #                             <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;">
+    #                                 <tr>
+    #                                     <td>
+    #                                         <p>Cher(e) {partner.name},</p>
+    #                                         <p>Votre compte a bien créé un compte sur CCBM SHOP.</p>
+    #                                         <p>Voici vos identifiants de connexion:</p>
+    #                                         <p>Identifiant: {partner.email}</p>
+    #                                         <p>Mot de passe: {password}</p>
+    #                                         <p>Cordialement,</p>
+    #                                         <p>L'équipe CCBM Shop</p>
+    #                                     </td>
+    #                                 </tr>
+    #                             </table>
+    #                         </td>
+    #                     </tr>
+    #                 </table>
+    #             </td>
+    #         </tr>
+    #         <tr>
+    #             <td align="center" style="min-width: 590px;">
+    #                 <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: #F1F1F1; color: #454748; padding: 8px; border-collapse:separate;">
+    #                     <tr>
+    #                         <td style="text-align: center; font-size: 13px;">
+    #                             Généré par <a target="_blank" href="https://ccbme.sn" style="color: #875A7B;">CCBM SHOP</a>
+    #                         </td>
+    #                     </tr>
+    #                 </table>
+    #             </td>
+    #         </tr>
+    #     </table>
+    #     '''
+
+
+    #     email_to_client = f'{partner.email}, {additional_email}'
+    #     email_values_client = {
+    #         'email_from': email_from,
+    #         'email_to': email_to_client,
+    #         'subject': subject,
+    #         'body_html': body_html_client,
+    #         'state': 'outgoing',
+    #     }
+    #     mail_mail_client = self.env['mail.mail'].sudo().create(email_values_client)
+        
+    #     try:
+    #         mail_mail_client.send()
+    #         _logger.info(f'Email sent successfully to client: {self.email}')
+    #     except Exception as e:
+    #         _logger.error(f'Error sending email to client: {str(e)}')
+    #     pass 
     def send_mail_create_account(self, partner, password):
         mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
         if not mail_server:
             raise UserError(_("Veuillez configurer un serveur de messagerie."))
-        
+
         email_from = mail_server.smtp_user
         additional_email = 'shop@ccbm.sn'
-        
-        subject = 'Votre compte CCBM SHOP'
+        subject = 'Votre compte CCBM SHOP a été créé'
+
         body_html_client = f'''
-        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="min-width: 590px; background-color: #F1F1F1; color: #454748; padding: 8px; border-collapse:separate;">
+        <table border="0" cellpadding="0" cellspacing="0" style="padding-top: 16px; background-color: #FFFFFF; font-family:Verdana, Arial,sans-serif; color: #454748; width: 100%; border-collapse:separate;">
             <tr>
-                <td align="center" style="min-width: 590px;">
-                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;">
-                        <tr>
-                            <td align="center" style="min-width: 590px;">
-                                <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;">
-                                    <tr>
-                                        <td>
-                                            <p>Cher(e) {partner.name},</p>
-                                            <p>Votre compte a bien créé un compte sur CCBM SHOP.</p>
-                                            <p>Voici vos identifiants de connexion:</p>
-                                            <p>Identifiant: {partner.email}</p>
-                                            <p>Mot de passe: {password}</p>
-                                            <p>Cordialement,</p>
-                                            <p>L'équipe CCBM Shop</p>
-                                        </td>
-                                    </tr>
-                                </table>
-                            </td>
-                        </tr>
+                <td align="center">
+                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="padding: 16px; background-color: #FFFFFF; color: #454748; border-collapse:separate;">
+                        <tbody>
+                            <tr>
+                                <td align="center" style="min-width: 590px;">
+                                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;">
+                                        <tr>
+                                            <td valign="middle">
+                                                <span style="font-size: 10px;">Création de compte</span><br/>
+                                                <span style="font-size: 20px; font-weight: bold;">
+                                                    Bienvenue sur CCBM SHOP
+                                                </span>
+                                            </td>
+                                            <td valign="middle" align="right">
+                                                <img style="padding: 0px; margin: 0px; height: auto; width: 120px;" src="https://ccbmshop.sn/logo.png" alt="logo CCBM SHOP"/>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="2" style="text-align:center;">
+                                                <hr width="100%" style="background-color:rgb(204,204,204);border:medium none;clear:both;display:block;font-size:0px;min-height:1px;line-height:0; margin: 16px 0px 16px 0px;"/>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td align="center" style="min-width: 590px;">
+                                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;">
+                                        <tr>
+                                            <td>
+                                                <p>Bonjour {partner.name},</p>
+                                                <p>Votre compte a été créé avec succès sur la plateforme <strong>CCBM SHOP</strong>.</p>
+                                                <p>Voici vos identifiants de connexion :</p>
+                                                <ul>
+                                                    <li><strong>Email :</strong> {partner.email}</li>
+                                                    <li><strong>Mot de passe :</strong> {password}</li>
+                                                </ul>
+                                                <p>Vous pouvez dès à présent vous connecter et accéder à votre espace personnel.</p>
+                                                <p>Si vous avez des questions, n’hésitez pas à nous contacter.</p>
+                                                <p>Cordialement,</p>
+                                                <p>L'équipe CCBM SHOP</p>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </tbody>
                     </table>
                 </td>
             </tr>
@@ -491,13 +584,18 @@ class Partner(models.Model):
                             <td style="text-align: center; font-size: 13px;">
                                 Généré par <a target="_blank" href="https://ccbme.sn" style="color: #875A7B;">CCBM SHOP</a>
                             </td>
+                            <td style="text-align: center; font-size: 13px;">
+                                TEL :  <p style="color: #875A7B;"> +221 33 849 65 49 / +221 70 922 17 75 </p>
+                            </td>
+                            <td style="text-align: center; font-size: 13px;">
+                                Adresse :  <p style="color: #875A7B;"> Ouest foire , aprés la fédération </p>
+                            </td>
                         </tr>
                     </table>
                 </td>
             </tr>
         </table>
         '''
-
 
         email_to_client = f'{partner.email}, {additional_email}'
         email_values_client = {
@@ -508,10 +606,9 @@ class Partner(models.Model):
             'state': 'outgoing',
         }
         mail_mail_client = self.env['mail.mail'].sudo().create(email_values_client)
-        
+
         try:
             mail_mail_client.send()
-            _logger.info(f'Email sent successfully to client: {self.email}')
+            _logger.info(f'Email sent successfully to client: {partner.email}')
         except Exception as e:
             _logger.error(f'Error sending email to client: {str(e)}')
-        pass 
