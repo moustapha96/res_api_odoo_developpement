@@ -24,7 +24,6 @@ class GestionnaireController(http.Controller):
             admin_user = request.env.ref('base.user_admin')
             request.env = request.env(user=admin_user.id)
 
-
         partners = request.env['res.partner'].sudo().search([])
 
         resultats = []
@@ -171,12 +170,6 @@ class GestionnaireController(http.Controller):
             )
     
 
-
-    
-
-
-
-    
     @http.route('/api/gestion/commande/changeStateRH/<int:id>',  methods=['PUT'], type='http', auth='none', cors="*",  csrf=False )
     def api_change_state_rh_validation(self,id , **kw):
         # requets state in body 
@@ -600,6 +593,8 @@ class GestionnaireController(http.Controller):
         )
         return resp
           
+
+
     # une fonction pour reccupere les données dans le fichier data/terme_recherche.json
     FILE_PATH = os.path.join(os.path.dirname(__file__), "../data/termes_recherche.json")
 
@@ -634,4 +629,6 @@ class GestionnaireController(http.Controller):
             response=json.dumps(data, ensure_ascii=False, indent=4)
         )
         return resp
+    
+   
             

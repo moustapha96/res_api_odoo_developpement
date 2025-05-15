@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data>
+        <!-- Vue Liste pour la Configuration SMS -->
+        <record id="view_orange_sms_config_tree" model="ir.ui.view">
+            <field name="name">orange.sms.config.tree</field>
+            <field name="model">orange.sms.config</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="login" />
+                    <field name="subject" />
+                    <field name="api_key" />
+                </tree>
+            </field>
+        </record>
+
+        <!-- Vue Formulaire pour la Configuration SMS -->
+        <record id="view_orange_sms_config_form" model="ir.ui.view">
+            <field name="name">orange.sms.config.form</field>
+            <field name="model">orange.sms.config</field>
+            <field name="arch" type="xml">
+                <form string="Configuration SMS Orange">
+                    <sheet>
+                        <group>
+                            <group>
+                                <field name="login" />
+                                <field name="token" />
+                                <field name="api_key" />
+                            </group>
+                            <group>
+                                <field name="signature" />
+                                <field name="subject" />
+                            </group>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <!-- Vue Formulaire pour l'envoi de SMS -->
+        <record id="view_orange_sms_send_form" model="ir.ui.view">
+            <field name="name">orange.sms.send.form</field>
+            <field name="model">orange.sms.sender</field>
+            <field name="arch" type="xml">
+                <form string="Envoi de SMS">
+                    <sheet>
+                        <group>
+                            <field name="recipient" />
+                            <field name="message" />
+                        </group>
+                        <footer>
+                            <button name="send_sms_action" string="Envoyer" type="object"
+                                class="btn-primary" />
+                            <button string="Annuler" class="btn-secondary" special="cancel" />
+                        </footer>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <!-- Action fenêtre pour la Configuration SMS -->
+        <record id="action_orange_sms_config" model="ir.actions.act_window">
+            <field name="name">Configuration SMS</field>
+            <field name="res_model">orange.sms.config</field>
+            <field name="view_mode">tree,form</field>
+            <field name="view_id" ref="view_orange_sms_config_tree" />
+        </record>
+
+        <!-- Action fenêtre pour l'envoi de SMS -->
+        <record id="action_orange_sms_send" model="ir.actions.act_window">
+            <field name="name">Envoi de SMS</field>
+            <field name="res_model">orange.sms.sender</field>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="view_orange_sms_send_form" />
+            <field name="target">new</field>
+        </record>
+
+        <!-- Menu principal -->
+        <menuitem id="menu_orange_sms_root" name="SMS Orange" sequence="10" />
+
+        <!-- Sous-menu pour la configuration -->
+        <menuitem
+            id="menu_orange_sms_config"
+            parent="menu_orange_sms_root"
+            name="Configuration"
+            action="action_orange_sms_config"
+            sequence="10" />
+
+        <!-- Sous-menu pour l'envoi de SMS -->
+        <menuitem
+            id="menu_orange_sms_send"
+            parent="menu_orange_sms_root"
+            name="Envoyer un SMS"
+            action="action_orange_sms_send"
+            sequence="20" />
+    </data>
+</odoo>

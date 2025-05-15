@@ -1,33 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-    <!-- <record id="view_order_form_inherit" model="ir.ui.view">
-        <field name="name">sale.order.form.inherit</field>
-        <field name="model">sale.order</field>
-        <field name="inherit_id" ref="sale.view_order_form" />
-        <field name="arch" type="xml">
-            <xpath expr="//field[@name='partner_id']" position="after">
-                <field name="validation_rh_state" />
-
-            </xpath>
-
-            <xpath expr="//field[@name='validation_rh_state']" position="after">
-                <field name="validation_admin_state" />
-            </xpath>
-        </field>
-    </record> -->
 
 
-    <record id="view_order_form_inherit_payment" model="ir.ui.view">
-        <field name="name">sale.order.form.inherit.payment</field>
-        <field name="model">sale.order</field>
-        <field name="inherit_id" ref="sale.view_order_form" />
-        <field name="arch" type="xml">
-            <xpath expr="//label[@for='partner_id']" position="after">
-                <label t-att-for="pm" t-raw="pm.name" t-att-name="payment_mode_label" />
-            </xpath>
-            <xpath expr="//field[@name='partner_id']" position="after">
-                <field name="payment_mode" />
-            </xpath>
-        </field>
-    </record>
 </odoo>

@@ -8,3 +8,11 @@ access_crm_lead_line_user,crm.lead.line.user,model_crm_lead_line,base.group_user
 access_pack_produit,pack.produit,model_pack_produit,base.group_user,1,1,1,1
 access_pack_produit_line,access.pack.produit.line,model_pack_produit_line,,1,1,1,1
 
+
+
+
+access_res_partner_otp,res.partner OTP Access,model_res_partner,base.group_user,1,1,1,1
+access_orange_sms_config_admin,orange.sms.config Admin Access,model_orange_sms_config,base.group_system,1,1,1,1
+access_otp_code_user,otp.code User Access,model_otp_code,base.group_user,1,1,1,1
+
+

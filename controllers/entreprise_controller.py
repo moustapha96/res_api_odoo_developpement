@@ -4,7 +4,11 @@ import pdb
 import datetime
 import logging
 # import json
+import random
+import string
 import json
+
+import werkzeug.wrappers
 _logger = logging.getLogger(__name__)
 from odoo.http import request, Response
 
@@ -1218,7 +1222,12 @@ class EntrepriseController(http.Controller):
             'function': client.function or None,
             'title': client.title or None,
             'adhesion': client.adhesion or None,
-            'function': client.function
+            'function': client.function,
+            'parent_id': client.parent_id.id or None,
+            'company': {
+                'id': client.company_id.id or None,
+                'name': client.company_id.name or None
+            }
         }
 
         resp = werkzeug.wrappers.Response(
@@ -1481,10 +1490,321 @@ class EntrepriseController(http.Controller):
             headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
             response=json.dumps({ 'status': "success", "message": "entreprise_code exist", "entreprise_code_exist": True})
         )
-        
-        
-
-
 
 
     
+    @http.route('/api/companies/new_compte', methods=['POST'], type='http', auth='none', cors="*", csrf=False)
+    def api_companies_new_compte(self, **kw):
+        data = json.loads(request.httprequest.data)
+        if not data:
+            return werkzeug.wrappers.Response(
+                status=400,
+                content_type='application/json; charset=utf-8',
+                headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                response=json.dumps("Données invalides")
+            )
+
+        name = data.get('name')
+        email = data.get('email')
+        password = data.get('password')
+        city = data.get('city')
+        phone = data.get('phone')
+        # company_id = data.get('company_id')
+
+        # company = request.env['res.company'].sudo().search([('id', '=', 1)], limit=1)
+        country = request.env['res.country'].sudo().search([('id', '=', 204)], limit=1)
+        partner_email = request.env['res.partner'].sudo().search([('email', '=', email)], limit=1)
+
+        if partner_email:
+            return werkzeug.wrappers.Response(
+                status=400,
+                content_type='application/json; charset=utf-8',
+                headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                response=json.dumps("Utilisateur avec cet adresse mail existe déjà")
+            )
+        
+        company_choice = None
+        # if company_id:
+        #     company_choice = request.env['res.company'].sudo().search([('id', '=', int(company_id))], limit=1)
+        # else:
+        company_choice = request.env['res.company'].sudo().search([('id', '=', 1)], limit=1)
+
+
+        if not partner_email :
+            user = request.env['res.users'].sudo().search([('id', '=', request.env.uid)], limit=1)
+            if not user or user._is_public():
+                admin_user = request.env.ref('base.user_admin')
+                request.env = request.env(user=admin_user.id)
+
+            partner = request.env['res.partner'].sudo().create({
+                'name': name,
+                'email': email,
+                'customer_rank': 1,
+                'company_id': company_choice.id,
+                'city': city,
+                'phone': phone,
+                'is_company': False,
+                'active': True,
+                'type': 'contact',
+                'company_name': company_choice.name,
+                'country_id': country.id or None,
+                'password': password,
+                'is_verified': False,
+                'role' : 'main_user'
+            })
+            if partner:
+                # self.send_verification_mail(partner.email)
+                otp_code = partner.send_otp()
+
+                return werkzeug.wrappers.Response(
+                    status=201,
+                    content_type='application/json; charset=utf-8',
+                    headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                    response=json.dumps({
+                        'id': partner.id,
+                        'name': partner.name,
+                        'email': partner.email,
+                        'partner_id':partner.id,
+                        'company_id': partner.company_id.id,
+                        'company_name': partner.company_id.name,
+                        'partner_city': partner.city,
+                        'partner_phone': partner.phone,
+                        'country_id': partner.country_id.id or None,
+                        'country_name': partner.country_id.name or None,
+                        'country_code': partner.country_id.code,
+                        'country_phone_code': partner.country_id.phone_code,
+                        'is_verified': partner.is_verified,
+                        'avatar': partner.avatar or None,
+                        'image_1920': partner.image_1920 or None
+                    })
+                    )
+
+        return werkzeug.wrappers.Response(
+            status=400,
+            content_type='application/json; charset=utf-8',
+            headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+            response=json.dumps("Compte client non créer, veuillez reessayer")
+        )
+    
+    @http.route('/api/companies/clients/set_compte', methods=['POST'], type='http', auth='none', cors="*", csrf=False)
+    def api_companies_client_set_compte(self, **kw):
+        data = json.loads(request.httprequest.data)
+
+        if not data:
+            return werkzeug.wrappers.Response(
+                status=400,
+                content_type='application/json; charset=utf-8',
+                headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                response=json.dumps("Données invalides")
+            )
+
+        company_id = data.get('company_id')
+        client_id = data.get('client_id')
+
+        compagny = request.env['res.company'].sudo().search([('id', '=', int(company_id))], limit=1)
+        partner = request.env['res.partner'].sudo().search([('id', '=', int(client_id))], limit=1)
+
+        if compagny and partner:
+
+            partner.write({
+                'parent_id': compagny.id
+            })
+            # lui envoyé un message sms pour lui dire qu'il est le rh de la compagny
+            message = (
+                f"Bonjour ,\n"
+                f"Vous avez été assigné comme Responsable des Ressources Humaines de la société {compagny.name} .\n"
+                f"Merci de ne pas répondre à ce message.\n"
+                f"Equipe de CCBM Shop"
+            )
+            resul = request.env['orange.sms.sender'].sudo().send_sms(partner.phone, message)
+        
+            return werkzeug.wrappers.Response(
+                status=200,
+                content_type='application/json; charset=utf-8',
+                headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                response=json.dumps("Assignation effectuée avec succès !")
+            )
+        
+        return werkzeug.wrappers.Response(
+            status=400,
+            content_type='application/json; charset=utf-8',
+            headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+            response=json.dumps("Données invalides")
+        )
+    
+
+    @http.route('/api/companies/create-compte', methods=['POST'], type='http', auth='none', cors="*", csrf=False)
+    def api_companies_create_compte(self, **kw):
+        data = json.loads(request.httprequest.data)
+        if not data:
+            return werkzeug.wrappers.Response(
+                status=400,
+                content_type='application/json; charset=utf-8',
+                headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                response=json.dumps("Données invalides")
+            )
+
+        name = data.get('name')
+        email = data.get('email')
+        password = data.get('password')
+        city = data.get('city')
+        phone = data.get('phone')
+        parent_id = data.get('parent_id')
+        pass_claire = data.get('password')
+
+        country = request.env['res.country'].sudo().search([('id', '=', 204)], limit=1)
+        partner_email = request.env['res.partner'].sudo().search([('email', '=', email)], limit=1)
+
+        if partner_email:
+            return werkzeug.wrappers.Response(
+                status=400,
+                content_type='application/json; charset=utf-8',
+                headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                response=json.dumps("Utilisateur avec cet adresse mail existe déjà")
+            )
+        
+        company_choice = request.env['res.company'].sudo().search([('id', '=', int(parent_id))], limit=1)
+        if not company_choice:
+            return werkzeug.wrappers.Response(
+                status=400,
+                content_type='application/json; charset=utf-8',
+                headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                response=json.dumps("Société parent non trouvée")
+            )
+
+
+        if not partner_email :
+            user = request.env['res.users'].sudo().search([('id', '=', request.env.uid)], limit=1)
+            if not user or user._is_public():
+                admin_user = request.env.ref('base.user_admin')
+                request.env = request.env(user=admin_user.id)
+
+     
+        # passwordg = self.generate_password()
+        password = self.hash_password(pass_claire)
+    
+        partner = request.env['res.partner'].sudo().create({
+            'name': name,
+            'email': email,
+            'customer_rank': 1,
+            'parent_id': company_choice.id,
+            # 'company_id': company_choice.id,
+            'city': city,
+            'phone': phone,
+            'is_company': False,
+            'active': True,
+            'type': 'contact',
+            'company_name': company_choice.name,
+            'country_id': country.id or None,
+            'password': password,
+            'is_verified': False,
+            'role' : 'main_user'
+        })
+        if partner:
+            # self.send_verification_mail(partner.email)
+            otp_code = partner.send_otp()
+            partner.send_mail_create_account(partner, pass_claire)
+
+            return werkzeug.wrappers.Response(
+                status=201,
+                content_type='application/json; charset=utf-8',
+                headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                response=json.dumps({
+                    'id': partner.id,
+                    'name': partner.name,
+                    'email': partner.email,
+                    'partner_id':partner.id,
+                    'company_id': partner.company_id.id,
+                    'company_name': partner.company_id.name,
+                    'partner_city': partner.city,
+                    'partner_phone': partner.phone,
+                    'country_id': partner.country_id.id or None,
+                    'country_name': partner.country_id.name or None,
+                    'country_code': partner.country_id.code,
+                    'country_phone_code': partner.country_id.phone_code,
+                    'is_verified': partner.is_verified,
+                    'avatar': partner.avatar or None,
+                    'image_1920': partner.image_1920 or None
+                })
+                )
+
+
+        return werkzeug.wrappers.Response(
+            status=400,
+            content_type='application/json; charset=utf-8',
+            headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+            response=json.dumps("Compte client non créer, veuillez reessayer")
+        )
+    
+    @http.route('/api/companies/<id>/otp-resend', methods=['GET'], type='http', auth='none', cors="*")
+    def api_companie_partner_resend_otp(self, id, **kw):
+
+        user = request.env['res.users'].sudo().browse(request.env.uid)
+        if not user or user._is_public():
+            admin_user = request.env.ref('base.user_admin')
+            request.env = request.env(user=admin_user.id)
+
+        
+        partner = request.env['res.partner'].sudo().search([('id', '=', id)], limit=1)
+        if not partner:
+            
+            return self._json_response("Compte client non trouvé", status=404)
+
+        # Generate OTP code
+        # otp_code = partner.get_otp()
+        otp_code = partner.send_otp()
+        return self._json_response("Code OTP envoyé avec succès", status=200)
+      
+
+    
+
+    @http.route('/api/companies/otp-verification-compte', methods=['POST'], type='http', auth='none', cors="*", csrf=False)
+    def api_companie_partner_otp_verify(self, **kw):
+
+        data = json.loads(request.httprequest.data)
+        if not data:
+            return werkzeug.wrappers.Response(
+                status=400,
+                content_type='application/json; charset=utf-8',
+                headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                response=json.dumps("Données invalides")
+            )
+        
+        otp_code = data.get('otp_code')
+        client_id = data.get('client_id')
+
+        user = request.env['res.users'].sudo().browse(request.env.uid)
+        if not user or user._is_public():
+            admin_user = request.env.ref('base.user_admin')
+            request.env = request.env(user=admin_user.id)
+
+        partner = request.env['res.partner'].sudo().search([('id', '=', client_id)], limit=1)
+        if not partner:
+            return self._json_response("Compte client non trouvé", status=404)
+
+        # Verify OTP code
+        if not partner.verify_otp(otp_code):
+            return self._json_response("Code OTP invalide", status=400)
+        else :
+            partner.write({'is_verified': True})
+            return self._json_response("Code OTP valide", status=200)
+
+        
+
+    def generate_password(self):
+        characters = string.ascii_letters + string.digits
+        return ''.join(random.choice(characters) for _ in range(8))
+
+    def hash_password(self, password):
+        # Remplace cette logique par celle utilisée dans ton projet (ex: bcrypt, passlib, etc.)
+        import hashlib
+        return hashlib.sha256(password.encode('utf-8')).hexdigest()
+    
+
+    def _json_response(self, message, status=200):
+        return werkzeug.wrappers.Response(
+            status=status,
+            content_type='application/json; charset=utf-8',
+            headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+            response=json.dumps({"message": message})
+        )

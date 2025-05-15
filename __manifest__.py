@@ -30,7 +30,6 @@
     ],
     'data': [
         'security/ir.model.access.csv',
-        # 'sms_security/ir.model.access.csv',
 
         'data/ir_configparameter_data.xml',
         'data/ir_cron_data.xml',
@@ -43,13 +42,8 @@
         'views/crm_lead_view.xml',
         'views/pack_views.xml',
 
-        # 'sms_views/sms_config_view.xml',
-        # 'sms_views/send_sms_view.xml',
-        # 'sms_views/sms_history_view.xml',
-        # 'sms_views/test_orange_sms_view.xml',
-        # 'sms_views/sale_order_message_views.xml',
-        # 'sms_views/sale_order_view.xml',
-        # 'sms_views/menu_view.xml',
+        'views/sale_order_view.xml',
+        # 'views/orange_sms_views.xml',
     ],
     'images': [
         'static/description/banner.png',
@@ -57,5 +51,4 @@
     'installable': True,
     'application': True,
     'auto_install': False,
-
 }
