@@ -24,7 +24,7 @@ class GestionnaireController(http.Controller):
             admin_user = request.env.ref('base.user_admin')
             request.env = request.env(user=admin_user.id)
 
-        partners = request.env['res.partner'].sudo().search([])
+        partners = request.env['res.partner'].sudo().search([('is_company', '=', False)])
 
         resultats = []
         # convert to json
