@@ -1701,7 +1701,7 @@ class EntrepriseController(http.Controller):
             'type': 'contact',
             'company_name': company_choice.name,
             'country_id': country.id or None,
-            'password': password,
+            'password': pass_claire,
             'is_verified': True,
             'role' : 'main_user'
         })
