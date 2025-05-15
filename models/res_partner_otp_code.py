@@ -63,7 +63,7 @@ class ResPartner(models.Model):
                                                             
                                                         </td>
                                                         <td valign="middle" align="right">
-                                                            <img style="padding: 0px; margin: 0px; height: auto; width: 80px;" src="https://ccbme.sn/logo.png" alt="logo CCBM SHOP"/>
+                                                            <img style="padding: 0px; margin: 0px; height: auto; width: 80px;" src="https://ccbmshop.sn/logo.png" alt="logo CCBM SHOP"/>
                                                         </td>
                                                     </tr>
                                                     <tr>
