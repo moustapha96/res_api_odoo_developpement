@@ -1529,9 +1529,7 @@ class EntrepriseController(http.Controller):
             )
         
         company_choice = None
-        # if company_id:
-        #     company_choice = request.env['res.company'].sudo().search([('id', '=', int(company_id))], limit=1)
-        # else:
+      
         company_choice = request.env['res.company'].sudo().search([('id', '=', 1)], limit=1)
 
 
@@ -1805,8 +1803,13 @@ class EntrepriseController(http.Controller):
 
     def hash_password(self, password):
         # Remplace cette logique par celle utilisée dans ton projet (ex: bcrypt, passlib, etc.)
-        import hashlib
-        return hashlib.sha256(password.encode('utf-8')).hexdigest()
+        from passlib.context import CryptContext
+
+        # Créez un contexte de hachage similaire à celui d'Odoo
+        pwd_context = CryptContext(schemes=["pbkdf2_sha512", "md5_crypt"], deprecated="md5_crypt")
+        # Hache le mot de passe
+        hashed_password = pwd_context.hash(password)
+        return hashed_password
     
 
     def _json_response(self, message, status=200):
