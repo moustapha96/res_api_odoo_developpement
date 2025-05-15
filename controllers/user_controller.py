@@ -37,7 +37,7 @@ class userREST(http.Controller):
         # Construire le contenu de l'e-mail
         subject = 'Vérifiez votre compte'
         # url = f"http://localhost:5173/login?mail={partner.email}&isVerified=1&token={partner.id}"
-        url = f"https://ccbme.sn/login?mail={partner.email}&isVerified=1&token={partner.id}"
+        url = f"https://ccbmshop.sn/login?mail={partner.email}&isVerified=1&token={partner.id}"
 
         body_html = f'''
         <table border="0" cellpadding="0" cellspacing="0" style="padding-top: 16px; background-color: #FFFFFF; font-family:Verdana, Arial,sans-serif; color: #454748; width: 100%; border-collapse:separate;">
@@ -56,7 +56,7 @@ class userREST(http.Controller):
                                                 </span>
                                             </td>
                                             <td valign="middle" align="right">
-                                                <img style="padding: 0px; margin: 0px; height: auto; width: 80px;" src="https://ccbme.sn/logo.png" alt="logo CCBM SHOP"/>
+                                                <img style="padding: 0px; margin: 0px; height: auto; width: 80px;" src="https://ccbmshop.sn/logo.png" alt="logo CCBM SHOP"/>
                                             </td>
                                         </tr>
                                         <tr>

@@ -29,9 +29,9 @@ class SaleOrderMail(models.Model):
         create_account_section = ""
         if not partner.password:
             # Générer le lien pour créer un compte
-            # create_account_link = f"https://ccbme.sn/mail={partner.email}?create-compte"
+            # create_account_link = f"https://ccbmshop.sn/mail={partner.email}?create-compte"
             # create_account_link = f"http://localhost:5173/create-compte?mail={partner.email}"
-            create_account_link = f"https://ccbme.sn/create-compte?mail={partner.email}"
+            create_account_link = f"https://ccbmshop.sn/create-compte?mail={partner.email}"
             create_account_section = f'''
                 <tr>
                     <td align="center" style="min-width: 590px; padding-top: 20px;">
@@ -59,7 +59,7 @@ class SaleOrderMail(models.Model):
                                                 </span>
                                             </td>
                                             <td valign="middle" align="right">
-                                                <img style="padding: 0px; margin: 0px; height: auto; width: 120px;" src="https://ccbme.sn/logo.png" alt="logo CCBM SHOP"/>
+                                                <img style="padding: 0px; margin: 0px; height: auto; width: 120px;" src="https://ccbmshop.sn/logo.png" alt="logo CCBM SHOP"/>
                                             </td>
                                         </tr>
                                         <tr>
@@ -199,8 +199,8 @@ class SaleOrderMail(models.Model):
         if not partner.password:
             # Générer le lien pour créer un compte
             # create_account_link = f"http://localhost:5173/create-compte?mail={partner.email}"
-            create_account_link = f"https://ccbme.sn/create-compte?mail={partner.email}"
-            # create_account_link = f"https://ccbme.sn/mail={partner.email}?create-compte"
+            create_account_link = f"https://ccbmshop.sn/create-compte?mail={partner.email}"
+            # create_account_link = f"https://ccbmshop.sn/mail={partner.email}?create-compte"
             create_account_section = f'''
                 <tr>
                     <td align="center" style="min-width: 590px; padding-top: 20px;">
@@ -251,7 +251,7 @@ class SaleOrderMail(models.Model):
                                                 </span>
                                             </td>
                                             <td valign="middle" align="right">
-                                                <img style="padding: 0px; margin: 0px; height: auto; width: 120px;" src="https://ccbme.sn/logo.png" alt="logo CCBM SHOP"/>
+                                                <img style="padding: 0px; margin: 0px; height: auto; width: 120px;" src="https://ccbmshop.sn/logo.png" alt="logo CCBM SHOP"/>
                                             </td>
                                         </tr>
                                         <tr>
@@ -388,7 +388,7 @@ class SaleOrderMail(models.Model):
         
         create_account_section = ""
         if not partner.password:
-            create_account_link = f"https://ccbme.sn/create-compte?mail={partner.email}"
+            create_account_link = f"https://ccbmshop.sn/create-compte?mail={partner.email}"
             create_account_section = self._generate_create_account_section(create_account_link)
         
         body_html = self._generate_email_body_html(partner, 'request', create_account_section)
@@ -512,7 +512,7 @@ class SaleOrderMail(models.Model):
                                                 </span>
                                             </td>
                                             <td valign="middle" align="right">
-                                                <img style="padding: 0px; margin: 0px; height: auto; width: 120px;" src="https://ccbme.sn/logo.png" alt="logo CCBM SHOP"/>
+                                                <img style="padding: 0px; margin: 0px; height: auto; width: 120px;" src="https://ccbmshop.sn/logo.png" alt="logo CCBM SHOP"/>
                                             </td>
                                         </tr>
                                         <tr>
@@ -630,7 +630,7 @@ class SaleOrderMail(models.Model):
                                                 </span>
                                             </td>
                                             <td valign="middle" align="right">
-                                                <img style="padding: 0px; margin: 0px; height: auto; width: 120px;" src="https://ccbme.sn/logo.png" alt="logo CCBM SHOP"/>
+                                                <img style="padding: 0px; margin: 0px; height: auto; width: 120px;" src="https://ccbmshop.sn/logo.png" alt="logo CCBM SHOP"/>
                                             </td>
                                         </tr>
                                         <tr>
@@ -876,7 +876,7 @@ class SaleOrderMail(models.Model):
                                                 </span>
                                             </td>
                                             <td valign="middle" align="right">
-                                                <img style="padding: 0px; margin: 0px; height: auto; width: 120px;" src="https://ccbme.sn/logo.png" alt="logo CCBM SHOP"/>
+                                                <img style="padding: 0px; margin: 0px; height: auto; width: 120px;" src="https://ccbmshop.sn/logo.png" alt="logo CCBM SHOP"/>
                                             </td>
                                         </tr>
                                         <tr>
