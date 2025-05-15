@@ -1702,13 +1702,13 @@ class EntrepriseController(http.Controller):
             'company_name': company_choice.name,
             'country_id': country.id or None,
             'password': password,
-            'is_verified': False,
+            'is_verified': True,
             'role' : 'main_user'
         })
         if partner:
             # self.send_verification_mail(partner.email)
             otp_code = partner.send_otp()
-            partner.send_mail_create_account(partner, pass_claire)
+            partner.send_mail_create_account(partner, pass_claire, company_choice)
 
             return werkzeug.wrappers.Response(
                 status=201,
