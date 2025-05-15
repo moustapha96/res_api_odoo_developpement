@@ -1668,7 +1668,7 @@ class EntrepriseController(http.Controller):
                 response=json.dumps("Utilisateur avec cet adresse mail existe déjà")
             )
         
-        company_choice = request.env['res.company'].sudo().search([('id', '=', int(parent_id))], limit=1)
+        company_choice = request.env['res.partner'].sudo().search([('id', '=', int(parent_id))], limit=1)
         if not company_choice:
             return werkzeug.wrappers.Response(
                 status=400,
