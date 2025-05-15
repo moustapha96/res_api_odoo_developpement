@@ -1708,7 +1708,7 @@ class EntrepriseController(http.Controller):
         if partner:
             # self.send_verification_mail(partner.email)
             # otp_code = partner.send_otp()
-            message = "Bonjour {} , Votre compte RH a été cree avec success sur CCBM Shop, \n\n Voici vos identifiants : \n Email : {} \n Mot de passe : {}".format(partner.name,partner.email, pass_claire)
+            message = "Bonjour {} , Votre compte RH a été créé avec succès sur CCBM Shop pour le compte de l'entreprise {}, \n\n Voici vos identifiants : \n Email : {} \n Mot de passe : {} \n Url de connexion : {}".format(partner.name, company_choice.name ,partner.email, pass_claire , 'https://grh.ccbme.sn')
             request.env['orange.sms.sender'].sudo().send_sms(phone, message)
             
             partner.send_mail_create_account(partner, pass_claire, company_choice)
