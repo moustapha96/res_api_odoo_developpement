@@ -43,7 +43,7 @@
         'views/pack_views.xml',
 
         'views/sale_order_view.xml',
-        # 'views/orange_sms_views.xml',
+        'views/orange_sms_views.xml',
     ],
     'images': [
         'static/description/banner.png',
