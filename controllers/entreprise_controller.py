@@ -1593,47 +1593,50 @@ class EntrepriseController(http.Controller):
     def api_companies_client_set_compte(self, **kw):
         data = json.loads(request.httprequest.data)
 
-        if not data:
+        company_id = data.get('company_id')
+        client_id = data.get('client_id')
+
+        if not company_id or not client_id:
             return werkzeug.wrappers.Response(
                 status=400,
                 content_type='application/json; charset=utf-8',
                 headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
                 response=json.dumps("Données invalides")
             )
+        try:
+            compagny = request.env['res.company'].sudo().search([('id', '=', int(company_id))], limit=1)
+            partner = request.env['res.partner'].sudo().search([('id', '=', int(client_id))], limit=1)
 
-        company_id = data.get('company_id')
-        client_id = data.get('client_id')
+            if compagny and partner:
 
-        compagny = request.env['res.company'].sudo().search([('id', '=', int(company_id))], limit=1)
-        partner = request.env['res.partner'].sudo().search([('id', '=', int(client_id))], limit=1)
-
-        if compagny and partner:
-
-            partner.write({
-                'parent_id': compagny.id
-            })
-            # lui envoyé un message sms pour lui dire qu'il est le rh de la compagny
-            message = (
-                f"Bonjour ,\n"
-                f"Vous avez été assigné comme Responsable des Ressources Humaines de la société {compagny.name} .\n"
-                f"Merci de ne pas répondre à ce message.\n"
-                f"Equipe de CCBM Shop"
-            )
-            resul = request.env['orange.sms.sender'].sudo().send_sms(partner.phone, message)
-        
+                partner.write({
+                    'parent_id': compagny.id
+                })
+                # lui envoyé un message sms pour lui dire qu'il est le rh de la compagny
+                message = (
+                    f"Bonjour ,\n"
+                    f"Vous avez été assigné comme Responsable des Ressources Humaines de la société {compagny.name} .\n"
+                    f"Merci de ne pas répondre à ce message.\n"
+                    f"Equipe de CCBM Shop"
+                )
+                resul = request.env['orange.sms.sender'].sudo().send_sms(partner.phone, message)
+            
+                return werkzeug.wrappers.Response(
+                    status=200,
+                    content_type='application/json; charset=utf-8',
+                    headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                    response=json.dumps("Assignation effectuée avec succès !")
+                )
+        except Exception as e:
+            _logger.error(f"Error while assigning client to company: {e}")
             return werkzeug.wrappers.Response(
-                status=200,
+                status=400,
                 content_type='application/json; charset=utf-8',
                 headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
-                response=json.dumps("Assignation effectuée avec succès !")
+                response=json.dumps( f"Assignation non effectuée, veuillez reessayer :  {e}" )
             )
         
-        return werkzeug.wrappers.Response(
-            status=400,
-            content_type='application/json; charset=utf-8',
-            headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
-            response=json.dumps("Données invalides")
-        )
+    
     
 
     @http.route('/api/companies/create-compte', methods=['POST'], type='http', auth='none', cors="*", csrf=False)
@@ -1818,4 +1821,79 @@ class EntrepriseController(http.Controller):
             content_type='application/json; charset=utf-8',
             headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
             response=json.dumps({"message": message})
+        )
+
+    # update avatar
+    @http.route('/api/companies/clients/compte/avatar/<int:id>', methods=['PUT'], type='http', auth='none', cors="*")
+    def update_avatar_partner(self, id):
+        data = json.loads(request.httprequest.data)
+        avatar_url = data.get('avatar')
+
+        partner = request.env['res.partner'].sudo().search([('id', '=', id)], limit=1)
+        if not partner:
+            return werkzeug.wrappers.Response(
+                status=400,
+                content_type='application/json; charset=utf-8',
+                headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                response=json.dumps({'status': 'error', 'message': 'Utilisateur non trouvé pour l\'e-mail donné'})
+            )
+
+        if avatar_url and partner:
+            partner.write({
+               'avatar': avatar_url
+            })
+            user_data = {
+                'id': partner.id,
+                'name': partner.name,
+                'email': partner.email,
+                'company_id': partner.company_id.id,
+                'partner_id':partner.id,
+                'company_id': partner.company_id.id,
+                'company_name': partner.company_id.name,
+                'partner_city':partner.city,
+                'partner_phone':partner.phone,
+                'country_id':partner.country_id.id,
+                'country_name':partner.country_id.name,
+                'country_code':partner.country_id.code,
+                'country_phone_code':partner.country_id.phone_code,
+                'is_verified' : partner.is_verified,
+                'avatar': partner.avatar
+            }
+            return werkzeug.wrappers.Response(
+                status=200,
+                content_type='application/json; charset=utf-8',
+                headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                response=json.dumps(user_data)
+            )
+
+    @http.route('/api/companies/new-password', methods=['POST'], type='http', auth='none', cors="*", csrf=False )
+    def api_companies_new_password(self, **kw):
+        data = json.loads(request.httprequest.data)
+        if not data:
+            return werkzeug.wrappers.Response(
+                status=400,
+                content_type='application/json; charset=utf-8',
+                headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                response=json.dumps("Données invalides")
+            )
+
+        email = data.get('email')
+        password = data.get('password')
+
+        partner = request.env['res.partner'].sudo().search([('email', '=', email)], limit=1)
+        if not partner:
+            return werkzeug.wrappers.Response(
+                status=400,
+                content_type='application/json; charset=utf-8',
+                headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                response=json.dumps("Utilisateur non trouvé")
+            )
+
+        partner.write({'password': self.hash_password(password)})
+
+        return werkzeug.wrappers.Response(
+            status=200,
+            content_type='application/json; charset=utf-8',
+            headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+            response=json.dumps("Mot de passe mis à jour")
         )
