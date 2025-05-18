@@ -459,7 +459,7 @@ class Partner(models.Model):
         additional_email = 'shop@ccbm.sn'
         subject = f'🎉 Bienvenue {partner.name} sur CCBM SHOP - Accès RH activé'
 
-        site_grh_url = 'https://grh.ccbme.sn'
+        site_grh_url = 'https://grh.ccbme.sn?mail={}'.format(partner.email)
 
         body_html_client = f'''
         <table cellpadding="0" cellspacing="0" style="width: 100%; background-color: #F9F9F9; font-family: Arial, sans-serif; padding: 20px;">
@@ -468,7 +468,7 @@ class Partner(models.Model):
                     <table cellpadding="0" cellspacing="0" width="600" style="background-color: #FFFFFF; border-radius: 8px; overflow: hidden;">
                         <tr style="background-color: #003366; color: white;">
                             <td style="padding: 20px; font-size: 18px;">
-                                🎉 Création de votre compte RH
+                                Création de votre compte RH
                             </td>
                             <td style="padding: 20px;" align="right">
                                 <img src="https://ccbmshop.sn/logo.png" alt="CCBM SHOP" width="120" style="vertical-align: middle;">
@@ -482,15 +482,16 @@ class Partner(models.Model):
                                 <p>Voici vos informations de connexion :</p>
                                 <ul style="padding-left: 20px;">
                                     <li><strong>Email :</strong> {partner.email}</li>
-                                    <li><strong>Mot de passe :</strong> {password}</li>
+                                    <li><strong>Mot de passe par défaut :</strong> {password}</li>
                                 </ul>
-                                <p>📌 <strong>Fonctionnalités disponibles :</strong></p>
+                                <strong> Merci de changer votre mot de passe ! </strong>
+                                <p> <strong>Fonctionnalités disponibles :</strong></p>
                                 <ul style="padding-left: 20px;">
                                     <li>Gérer les demandes d’adhésion des employés</li>
                                     <li>Valider les commandes passées par vos collaborateurs</li>
                                     <li>Accéder à votre tableau de bord RH</li>
                                 </ul>
-                                <p>🔗 <a href="{site_grh_url}" style="color: #007BFF;">Accéder à votre espace RH : grh.ccbme.sn</a></p>
+                                <p> <a href="{site_grh_url}" style="color: #007BFF;">Accéder à votre espace RH : grh.ccbme.sn</a></p>
                                 <p>Si vous avez des questions, n’hésitez pas à nous contacter.</p>
                                 <p>Cordialement,<br>L’équipe <strong>CCBM SHOP</strong></p>
                             </td>
@@ -498,7 +499,7 @@ class Partner(models.Model):
                         <tr style="background-color: #F1F1F1; font-size: 13px; color: #555555;">
                             <td colspan="2" style="padding: 12px; text-align: center;">
                                 <p>📞 +221 33 849 65 49 / +221 70 922 17 75 | 📍 Ouest foire, après la fédération</p>
-                                <p>🛍️ <a href="https://ccbme.sn" style="color: #875A7B;">www.ccbme.sn</a></p>
+                                <p>🛍️ <a href="https://ccbmshop.sn" style="color: #875A7B;">www.ccbmshop.sn</a></p>
                             </td>
                         </tr>
                     </table>

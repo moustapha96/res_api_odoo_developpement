@@ -1679,11 +1679,10 @@ class EntrepriseController(http.Controller):
             )
 
 
-        if not partner_email :
-            user = request.env['res.users'].sudo().search([('id', '=', request.env.uid)], limit=1)
-            if not user or user._is_public():
-                admin_user = request.env.ref('base.user_admin')
-                request.env = request.env(user=admin_user.id)
+        user = request.env['res.users'].sudo().search([('id', '=', request.env.uid)], limit=1)
+        if not user or user._is_public():
+            admin_user = request.env.ref('base.user_admin')
+            request.env = request.env(user=admin_user.id)
 
      
         # passwordg = self.generate_password()
@@ -1694,7 +1693,6 @@ class EntrepriseController(http.Controller):
             'email': email,
             'customer_rank': 1,
             'parent_id': company_choice.id,
-            # 'company_id': company_choice.id,
             'city': city,
             'phone': phone,
             'is_company': False,
@@ -1709,7 +1707,7 @@ class EntrepriseController(http.Controller):
         if partner:
             # self.send_verification_mail(partner.email)
             # otp_code = partner.send_otp()
-            message = "Bonjour {} , Votre compte RH a été créé avec succès sur CCBM Shop pour le compte de l'entreprise {}, \n\n Voici vos identifiants : \n Email : {} \n Mot de passe : {} \n Url de connexion : {}".format(partner.name, company_choice.name ,partner.email, pass_claire , 'https://grh.ccbme.sn')
+            message = "Bonjour {} , Votre compte RH a été créé avec succès sur CCBM Shop pour le compte de l'entreprise {}, \n\n Voici vos identifiants : \n Email : {} \n Mot de passe : {} \n Url de connexion : {}".format(partner.name, company_choice.name ,partner.email, pass_claire , 'https://grh.ccbme.sn?mail='+partner.email )
             request.env['orange.sms.sender'].sudo().send_sms(phone, message)
             
             partner.send_mail_create_account(partner, pass_claire, company_choice)
