@@ -28,8 +28,8 @@ from . import res_partner_otp_code
 from . import sms_service
 
 
-from . import sms_res_partner
-from . import sms_sale_order
+# from . import sms_res_partner
+# from . import sms_sale_order
 
 
 # from . import scraped_product
