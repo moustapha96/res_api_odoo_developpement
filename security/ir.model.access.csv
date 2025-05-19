@@ -16,3 +16,5 @@ access_orange_sms_config_admin,orange.sms.config Admin Access,model_orange_sms_c
 access_otp_code_user,otp.code User Access,model_otp_code,base.group_user,1,1,1,1
 
 
+
+access_orange_sms_sender_user,orange.sms.sender user,model_orange_sms_sender,base.group_user,1,1,1,0
