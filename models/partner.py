@@ -457,7 +457,7 @@ class Partner(models.Model):
 
         email_from = mail_server.smtp_user
         additional_email = 'shop@ccbm.sn'
-        subject = f'🎉 Bienvenue {partner.name} sur CCBM SHOP - Accès RH activé'
+        subject = f'Bienvenue {partner.name} sur CCBM SHOP - Accès RH activé'
 
         site_grh_url = 'https://grh.ccbme.sn?mail={}'.format(partner.email)
 
