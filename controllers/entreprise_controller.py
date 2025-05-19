@@ -1604,13 +1604,16 @@ class EntrepriseController(http.Controller):
                 response=json.dumps("Données invalides")
             )
         try:
-            compagny = request.env['res.company'].sudo().search([('id', '=', int(company_id))], limit=1)
+            compagny = request.env['res.partner'].sudo().search([('id', '=', int(company_id))], limit=1)
             partner = request.env['res.partner'].sudo().search([('id', '=', int(client_id))], limit=1)
 
             if compagny and partner:
 
                 partner.write({
-                    'parent_id': compagny.id
+                    'parent_id': compagny.id,
+                    'adhesion': 'accepted',
+                    'adhesion_submit': False,
+                    'role': 'main_user'
                 })
                 # lui envoyé un message sms pour lui dire qu'il est le rh de la compagny
                 message = (
@@ -1636,8 +1639,7 @@ class EntrepriseController(http.Controller):
                 response=json.dumps( f"Assignation non effectuée, veuillez reessayer :  {e}" )
             )
         
-    
-    
+
 
     @http.route('/api/companies/create-compte', methods=['POST'], type='http', auth='none', cors="*", csrf=False)
     def api_companies_create_compte(self, **kw):
