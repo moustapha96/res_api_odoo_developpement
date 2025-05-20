@@ -1229,9 +1229,16 @@ class EntrepriseController(http.Controller):
             'adhesion': client.adhesion or None,
             'function': client.function,
             'parent_id': client.parent_id.id or None,
-            'company': {
-                'id': client.company_id.id or None,
-                'name': client.company_id.name or None
+            # 'company': {
+            #     'id': client.company_id.id or None,
+            #     'name': client.company_id.name or None
+            # },
+            'parent':{
+                'id': client.parent_id.id,
+                'name': client.parent_id.name or None,
+                'city': client.parent_id.city or None,
+                'phone': client.parent_id.phone or None,
+                'email': client.parent_id.email or None,
             }
         }
 
