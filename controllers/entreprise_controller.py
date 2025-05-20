@@ -1225,7 +1225,6 @@ class EntrepriseController(http.Controller):
             'mobile': client.mobile or None,
             'phone': client.phone or None,
             'function': client.function or None,
-            'title': client.title or None,
             'adhesion': client.adhesion or None,
             'function': client.function,
             'parent_id': client.parent_id.id or None,
