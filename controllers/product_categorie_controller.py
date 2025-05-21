@@ -798,7 +798,8 @@ class ProductCategorieControllerREST(http.Controller):
         limit = int(kw.get('limit', 10))
         offset = (page - 1) * limit
         
-        domain = [('sale_ok', '=', True), ('en_promo', '=', True),('product_tmpl_id.product_tag_ids.name', 'ilike', 'Tabaski')]
+        # domain = [('sale_ok', '=', True), ('en_promo', '=', True),('product_tmpl_id.product_tag_ids.name', 'ilike', 'Tabaski')]
+        domain = [('sale_ok', '=', True), ('product_tmpl_id.product_tag_ids.name', 'ilike', 'Tabaski')]
         
         list_of_category_exclude = ["Services" , "service" , "Expenses" , "Internal" , "Consumable" , "Saleable" , "Software" , "All"]
         
