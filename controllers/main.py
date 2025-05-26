@@ -764,3 +764,5 @@ else:
         # from . import abonnement_controller
         from . import sms_controller
 
+        from . import product_duplicate_controller
+
