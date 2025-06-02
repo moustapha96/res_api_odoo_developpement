@@ -22,18 +22,15 @@
                 <page string="Détails Paiements" name="payment_details">
                     <field name="payment_details_ids">
                         <tree>
-                            <field name="payment_state" />
-                            <field name="amount" />
-                            <field name="payment_date" />
 
                             <field name="payment_state" />
                             <field name="amount" />
                             <field name="payment_date" />
-
                             <field name="customer_name" />
                             <field name="customer_email" />
                             <field name="customer_phone" />
-                            <field name="url_facture" />
+                            <field name="url_facture" widget="url" />
+
                         </tree>
                     </field>
                 </page>
