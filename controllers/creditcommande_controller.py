@@ -193,7 +193,7 @@ class CreditCommandeREST(http.Controller):
                 _logger.info("Ligne de commande ajoutée avec successe: %s", order_line.name)
 
             if order:
-                order.action_confirm_credit_order()
+                # order.action_confirm_credit_order()
                 order.send_credit_order_validation_mail()
                 order.send_credit_order_to_rh_for_confirmation()
                 order.state = "validation"
