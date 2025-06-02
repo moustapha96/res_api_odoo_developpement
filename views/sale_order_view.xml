@@ -1,5 +1,47 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <odoo>
+    <record id="view_order_form_inherit" model="ir.ui.view">
+        <field name="name">sale.order.form.inherit</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form" />
+        <field name="arch" type="xml">
+            <!-- Ajouter type_order après le champ date_order -->
+            <xpath expr="//field[@name='date_order']" position="after">
+                <field name="type_order" readonly="1" />
+                <field name="payment_mode" />
+            </xpath>
+        </field>
+    </record>
 
 
+    <record id="view_order_form_inherit" model="ir.ui.view">
+        <field name="name">sale.order.form.inherit</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//notebook/page[@name='order_lines']" position="after">
+                <page string="Payment Details" name="payment_details">
+                    <field name="payment_details_ids">
+                        <tree>
+                            <field name="payment_state" />
+                            <field name="amount" />
+                            <field name="payment_date" />
+
+                            <field name="payment_state" />
+                            <field name="amount" />
+                            <field name="payment_date" />
+
+                            <field name="customer_name" />
+                            <field name="customer_email" />
+                            <field name="customer_phone" />
+                            <field name="url_facture" />
+                        </tree>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
 </odoo>
+
+
+
+  
