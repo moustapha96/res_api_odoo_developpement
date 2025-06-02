@@ -176,8 +176,8 @@ class CreditCommandeREST(http.Controller):
                         headers={'Content-Type': 'application/json'}
                     )
 
-                if is_first_order and not le_produit.product_tmpl_id.en_promo:
-                    price_unit *= 0.97  # Réduction de 3 %
+                # if is_first_order and not le_produit.product_tmpl_id.en_promo:
+                #     price_unit *= 0.97  # Réduction de 3 %
                 
 
                 order_line = request.env['sale.order.line'].sudo().create({
@@ -196,7 +196,12 @@ class CreditCommandeREST(http.Controller):
                 # order.action_confirm_credit_order()
                 order.send_credit_order_validation_mail()
                 order.send_credit_order_to_rh_for_confirmation()
-                order.state = "validation"
+                order.write({
+                    'validation_rh_state': 'pending',
+                    'validation_admin_state': 'pending',
+                    'state' : 'validation'
+                })
+              
                 _logger.info("Commande validée : %s", order.state)
 
                 resp = werkzeug.wrappers.Response(

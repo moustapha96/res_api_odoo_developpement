@@ -966,7 +966,7 @@ class PaymentREST(http.Controller):
                             if account_payment:
                                 account_payment.action_post()
                             
-                            if order.state == "draft":
+                            if order.state == "draft" or order.state == "validation" :
                                 order.action_confirm()
                                 
                             payment_details.write({
