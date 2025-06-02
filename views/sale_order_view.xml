@@ -19,7 +19,7 @@
         <field name="inherit_id" ref="sale.view_order_form" />
         <field name="arch" type="xml">
             <xpath expr="//notebook/page[@name='order_lines']" position="after">
-                <page string="Payment Details" name="payment_details">
+                <page string="Détails Paiements" name="payment_details">
                     <field name="payment_details_ids">
                         <tree>
                             <field name="payment_state" />
