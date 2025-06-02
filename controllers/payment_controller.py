@@ -966,8 +966,8 @@ class PaymentREST(http.Controller):
                             if account_payment:
                                 account_payment.action_post()
                             
-                            if order.state == "draft" or order.state == "validation" :
-                                order.action_confirm()
+                            # if order.state == "draft" or order.state == "validation" :
+                            #     order.action_confirm()
                                 
                             payment_details.write({
                                 'token_status': True,
