@@ -264,6 +264,13 @@ class PaymentREST(http.Controller):
                 )
 
             order = request.env['sale.order'].sudo().search([('id','=', order_id )], limit=1)
+            if not order:
+                return request.make_response(
+                    json.dumps({"error": "Order not found"}),
+                    status=404,
+                    headers={'Content-Type': 'application/json'}
+                )
+             
             if order.type_sale == "order":
                 payment_details_existe = request.env['payment.details'].sudo().search([('transaction_id', '=', transaction_id)], limit=1)
                 if payment_details_existe:
@@ -283,6 +290,7 @@ class PaymentREST(http.Controller):
                             'payment_date': payment_details_existe.payment_date.isoformat(),
                             'order_id': payment_details_existe.order_id,
                             'order_name': payment_details_existe.order_name,
+                            'type_sale' : order.type_sale,
                             'order_type': payment_details_existe.order_type,
                             'partner_id': payment_details_existe.partner_id,
                             'payment_token': payment_details_existe.payment_token,
@@ -353,6 +361,7 @@ class PaymentREST(http.Controller):
                                 'order_id': payment_details_existe.order_id,
                                 'order_name': payment_details_existe.order_name,
                                 'order_type': payment_details_existe.order_type,
+                                'type_sale' : order.type_sale,
                                 'partner_id': payment_details_existe.partner_id,
                                 'payment_token': payment_details_existe.payment_token,
                                 'url_facture': payment_details_existe.url_facture,
@@ -365,6 +374,40 @@ class PaymentREST(http.Controller):
                             headers={'Content-Type': 'application/json'}
                         )
                     
+
+            if order.type_sale == "creditorder":
+                payment_details_existe = request.env['payment.details'].sudo().search([('transaction_id', '=', transaction_id)], limit=1)
+                if payment_details_existe:
+                    payment_details_existe.write({
+                        'amount': amount,
+                        'payment_date': payment_date,
+                        'payment_token': payment_token,
+                        'payment_state': payment_state
+                    })
+                    return request.make_response(
+                        json.dumps({
+                            'id': payment_details_existe.id,
+                            'transaction_id': payment_details_existe.transaction_id,
+                            'amount': payment_details_existe.amount,
+                            'currency': payment_details_existe.currency,
+                            'payment_method': payment_details_existe.payment_method,
+                            'payment_date': payment_details_existe.payment_date.isoformat(),
+                            'order_id': payment_details_existe.order_id,
+                            'order_name': payment_details_existe.order_name,
+                            'order_type': payment_details_existe.order_type,
+                            'type_sale' : order.type_sale,
+                            'partner_id': payment_details_existe.partner_id.id,
+                            'payment_token': payment_details_existe.payment_token,
+                            'url_facture': payment_details_existe.url_facture,
+                            'customer_name' : payment_details_existe.customer_name,
+                            'customer_email' : payment_details_existe.customer_email,
+                            'customer_phone' : payment_details_existe.customer_phone,
+                            'payment_state': payment_details_existe.payment_state,
+                            'token_status': payment_details_existe.token_status}),
+                        status=200,
+                        headers={'Content-Type': 'application/json'}
+                    )
+
             payment_details = request.env['payment.details'].sudo().set_payment_details(
                 transaction_id=transaction_id,
                 amount=amount,
@@ -388,6 +431,7 @@ class PaymentREST(http.Controller):
                         'order_id': payment_details.order_id,
                         'order_name': payment_details.order_name,
                         'order_type': payment_details.order_type,
+                        'type_sale' : order.type_sale,
                         'partner_id': payment_details.partner_id,
                         'payment_token': payment_details.payment_token,
                         'url_facture': payment_details.url_facture,

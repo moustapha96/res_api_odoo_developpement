@@ -102,3 +102,11 @@ class PaymentDetails(models.Model):
                 })
             return payment_details
         return []
+    
+
+
+
+class SaleOrderInherit(models.Model):
+    _inherit = 'sale.order'
+
+    payment_details_ids = fields.One2many('payment.details', 'order_id', string='Payment Details')

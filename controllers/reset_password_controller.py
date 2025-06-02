@@ -227,6 +227,7 @@ class ResetPasswordREST(http.Controller):
             # Construire le contenu de l'e-mail
             subject = 'Réinitialiser votre mot de passe'
             reset_url = f'https://ccbmshop.sn/new-password?mail={partner.email}&token={token}'
+            _logger.info(reset_url)
             # reset_url = f'https://localhost:5173/new-password?mail={partner.email}&token={token}'
             body_html = f'''
             <table border="0" cellpadding="0" cellspacing="0" style="padding-top: 16px; background-color: #FFFFFF; font-family:Verdana, Arial,sans-serif; color: #454748; width: 100%; border-collapse:separate;">
