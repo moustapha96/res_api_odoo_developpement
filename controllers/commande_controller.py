@@ -533,8 +533,6 @@ class CommandeREST(http.Controller):
             )
 
 
-
-
     @http.route('/api/commande-sans-partner', methods=['POST'], type='http', cors="*", auth='none', csrf=False)
     def api_create_commande_witout_partner(self, **kwargs):
         try:
@@ -544,7 +542,7 @@ class CommandeREST(http.Controller):
             telephone = data.get('telephone')
             adresse = data.get('adresse')
             order_details = data.get('order')
-            type_sale = order_details.get('type_sale')
+            # type_sale = order_details.get('type_sale')
 
             user = request.env['res.users'].sudo().search([('id', '=', request.env.uid)], limit=1)
             if not user or user._is_public():
@@ -575,7 +573,7 @@ class CommandeREST(http.Controller):
                 'company_id': company.id,
                 'commitment_date': datetime.datetime.now() + datetime.timedelta(days=30),
                 'payment_mode': payment_mode,
-                'type_sale': type_sale
+                # 'type_sale': type_sale
             })
 
             # Ajout des lignes de commande
@@ -588,11 +586,18 @@ class CommandeREST(http.Controller):
             if order:
                 order.action_confirm()
 
-            return request.make_response(
-                json.dumps({'status': 'success', 'message': 'Commande created successfully'}),
-                status=201,
-                headers={'Content-Type': 'application/json'}
-            )
+                return request.make_response(
+                    json.dumps({'status': 'success', 'message': 'Commande created successfully'}),
+                    status=201,
+                    headers={'Content-Type': 'application/json'}
+                )
+            else:
+                return request.make_response(
+                    json.dumps({'status': 'error', 'message': 'Commande not created'}),
+                    status=400,
+                    headers={'Content-Type': 'application/json'}
+                )
+
 
         except Exception as e:
             return request.make_response(
