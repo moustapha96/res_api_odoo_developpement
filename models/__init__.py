@@ -9,6 +9,7 @@ from . import partner
 from . import payment_details
 
 from . import sale
+from . import invoice_order
 from . import sale_order_mail
 from . import account_payment_preorder
 from . import sale_credit_order_mail

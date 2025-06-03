@@ -484,7 +484,8 @@ class CommandeREST(http.Controller):
 
             if order:
                 order.action_confirm()
-
+                # order.action_create_invoice_order()
+ 
             resp = werkzeug.wrappers.Response(
                 status=201,
                 content_type='application/json; charset=utf-8',
