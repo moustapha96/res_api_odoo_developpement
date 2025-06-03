@@ -145,7 +145,7 @@ class CreditCommandeREST(http.Controller):
         if  company and partner and partner.adhesion == "accepted" :
             # Création de commande
             order = request.env['sale.order'].sudo().create({
-                'state': "draft",
+                'state': "sale",
                 'partner_id': partner_id,
                 'type_sale': 'creditorder',
                 'company_id': company.id,
@@ -194,6 +194,7 @@ class CreditCommandeREST(http.Controller):
 
             if order:
                 # order.action_confirm_credit_order()
+                # order._create_invoices()
                 order.send_credit_order_validation_mail()
                 order.send_credit_order_to_rh_for_confirmation()
                 order.write({

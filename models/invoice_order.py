@@ -3,17 +3,14 @@ from odoo.exceptions import UserError
 
 class SaleOrderInherit(models.Model):
     _inherit = 'sale.order'
-    
 
     def _get_company_journals(self, company):
         journals = self.env['account.journal'].search([('company_id', '=', company.id), ('type', '=', 'sale')])
+        # journals = self.env['account.journal'].search([('code', '=', 'CSH1'), ('company_id', '=', company.id), ('type', '=', 'sale')])
+        # journals = self.env['account.journal'].search([('code', '=', 'CSH1'), ('company_id', '=', company.id)])
         return journals
-    
-    def action_confirm(self):
-        # Confirmation de la commande
-        res = super(SaleOrderInherit, self).action_confirm()
 
-        # Création de la facture
+    def action_create_invoice_order(self):
         for order in self:
             partner = order.partner_id
             company = partner.company_id or self.env.company
@@ -23,7 +20,7 @@ class SaleOrderInherit(models.Model):
 
             if not journals:
                 raise UserError("Aucun journal de vente trouvé.")
-            
+
             journal = journals[0]
 
             invoice_lines = []
@@ -47,9 +44,8 @@ class SaleOrderInherit(models.Model):
                 'partner_id': partner.id,
                 'company_id': company.id,
                 'currency_id': partner.currency_id.id or company.currency_id.id,
+                
             })
-
-           
             # Validation de la facture
             invoice.action_post()
             order.write({
@@ -57,7 +53,7 @@ class SaleOrderInherit(models.Model):
                 'invoice_status': 'invoiced',
                 'state': 'sale',
             })
-        return res
+            return invoice
 
     def action_confirm_credit_order(self):
         # Confirmation de la commande

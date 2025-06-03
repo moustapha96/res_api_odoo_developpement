@@ -849,152 +849,403 @@ class PaymentREST(http.Controller):
             headers={'Content-Type': 'application/json'}
         )
 
+       
+    @http.route('/api/payment/verify/<token>', methods=['PUT'], type='http', auth='none', cors="*", csrf=False)
+    def api_get_paydunya_by_token(self, token, **kw):
+        try:
+            data = json.loads(request.httprequest.data)
+            url_facture = data.get('url_facture')
+            customer_name = data.get('customer_name')
+            customer_email = data.get('customer_email')
+            customer_phone = data.get('customer_phone')
+            token_status = data.get('token_status')
+            payment_date = datetime.datetime.now()
+            payment_state = data.get('payment_state')
 
-    # function qui a partir du token valide , faire le payment
-    @http.route('/api/payment/verify/<token>', methods=['PUT'], type='http', auth='none', cors="*",csrf=False)
-    def api_get_paydunya_by_token(self,token, **kw):
-        data = json.loads(request.httprequest.data)
-        url_facture = data.get('url_facture')
-        customer_name  = data.get('customer_name') , 
-        customer_email = data.get('customer_email'),
-        customer_phone = data.get('customer_phone'),
-        token_status = data.get('token_status')
-        payment_date = datetime.datetime.now()
-        payment_state = data.get('payment_state')
+            user = request.env['res.users'].sudo().browse(request.env.uid)
+            if not user or user._is_public():
+                admin_user = request.env.ref('base.user_admin')
+                request.env = request.env(user=admin_user.id)
 
-        user = request.env['res.users'].sudo().browse(request.env.uid)
-        if not user or user._is_public():
-            admin_user = request.env.ref('base.user_admin')
-            request.env = request.env(user=admin_user.id)
+            payment_details = request.env['payment.details'].sudo().search([('payment_token', '=', token)], limit=1)
+            if not payment_details:
+                return self._make_response({'message': 'Payment non trouvé'}, 400)
 
-        
-        payment_details = request.env['payment.details'].sudo().search([('payment_token', '=', token)], limit=1)
-        if payment_details:
             total_amount = payment_details.amount
             order_id = payment_details.order_id
-            order = request.env['sale.order'].sudo().search([('id', '=',  order_id )], limit=1)
-            if order:
-                partner = order.partner_id
-                # company = partner.company_id
-                company  = request.env['res.company'].sudo().search([('id', '=', 1)], limit=1)
+            order = request.env['sale.order'].sudo().browse(order_id)
+            if not order:
+                return self._make_response({'message': 'Commande non trouvée'}, 400)
 
-                if payment_details.token_status == False and payment_state == "completed":
-                    facture = f"https://paydunya.com/checkout/receipt/{token}"
-                    url_facture = facture
+            partner = order.partner_id
+            company = request.env['res.company'].sudo().search([('id', '=', 1)], limit=1)
 
-                    if order.type_sale == "order" :
-                        journal = request.env['account.journal'].sudo().search([('code', '=', 'CSH1'), ('company_id', '=', company.id)], limit=1)
-                        payment_method = request.env['account.payment.method'].sudo().search([('payment_type', '=', 'inbound')], limit=1)
-                        payment_method_line = request.env['account.payment.method.line'].sudo().search([('payment_method_id', '=', payment_method.id), ('journal_id', '=', journal.id)], limit=1)
+            if payment_details.token_status == False and payment_state == "completed":
+                facture = f"https://paydunya.com/checkout/receipt/{token}"
+                url_facture = facture
 
-                        if order.advance_payment_status == 'paid':
+                if order.type_sale == "order":
+                    journal = request.env['account.journal'].sudo().search([('code', '=', 'CSH1'), ('company_id', '=', company.id)], limit=1)
+                    payment_method = request.env['account.payment.method'].sudo().search([('payment_type', '=', 'inbound')], limit=1)
+                    payment_method_line = request.env['account.payment.method.line'].sudo().search([('payment_method_id', '=', payment_method.id), ('journal_id', '=', journal.id)], limit=1)
+
+                    if order.advance_payment_status == 'paid':
+                        return self._make_response(self._order_to_dict(order), 200)
+
+                    payment = request.env['account.payment'].sudo().create({
+                        'payment_type': 'inbound',
+                        'partner_type': 'customer',
+                        'partner_id': partner.id,
+                        'amount': total_amount,
+                        'journal_id': journal.id,
+                        'currency_id': partner.currency_id.id,
+                        'payment_method_line_id': payment_method_line.id,
+                        'payment_method_id': payment_method.id,
+                        'ref': order.name,
+                        'destination_account_id': partner.property_account_receivable_id.id,
+                    })
+                    payment.action_post()
+                  
+
+                    payment_details.write({
+                        'token_status': True,
+                        'url_facture': url_facture,
+                        'customer_name': customer_name,
+                        'customer_email': customer_email,
+                        'customer_phone': customer_phone,
+                        'payment_date': payment_date,
+                        'payment_state': "completed"
+                    })
+
+                    if order.payment_mode == "echelonne":
+                        return self._create_payment_and_confirm_order(order, payment_details.amount, partner, journal, payment_method, payment_method_line)
+                    else:
+                        return self._create_payment_and_confirm_order(order, order.amount_total, partner, journal, payment_method, payment_method_line)
+
+                elif order.type_sale == "preorder":
+                    journal = request.env['account.journal'].sudo().search([('code', '=', 'CSH1'), ('company_id', '=', company.id)], limit=1)
+                    payment_method = request.env['account.payment.method'].sudo().search([('payment_type', '=', 'inbound')], limit=1)
+                    payment_method_line = request.env['account.payment.method.line'].sudo().search([('payment_method_id', '=', payment_method.id), ('journal_id', '=', journal.id)], limit=1)
+
+                    if order.amount_residual > 0:
+                        account_payment = request.env['account.payment'].sudo().create({
+                            'payment_type': 'inbound',
+                            'partner_type': 'customer',
+                            'partner_id': partner.id,
+                            'amount': total_amount,
+                            'journal_id': journal.id,
+                            'currency_id': partner.currency_id.id,
+                            'payment_method_line_id': payment_method_line.id,
+                            'payment_method_id': payment_method.id,
+                            'sale_id': order.id,
+                            'is_reconciled': True,
+                        })
+                        if order.state == "draft":
+                            order.action_confirm()
+
+                        payment_details.write({
+                            'token_status': True,
+                            'url_facture': url_facture,
+                            'customer_name': customer_name,
+                            'customer_email': customer_email,
+                            'customer_phone': customer_phone,
+                            'payment_date': payment_date,
+                            'payment_state': "completed"
+                        })
+                        if account_payment:
+                            account_payment.action_post()
                             return self._make_response(self._order_to_dict(order), 200)
-                        else:
-                            payment_details.write({
-                                'token_status': True,
-                                'url_facture': url_facture,
-                                'customer_name': customer_name,
-                                'customer_email': customer_email,
-                                'customer_phone': customer_phone,
-                                'payment_date': payment_date,
-                                'payment_state': "completed"
-                            })
-                            if order.payment_mode == "echelonne":
-                                return self._create_payment_and_confirm_order(order,payment_details.amount , partner, journal, payment_method, payment_method_line)
-                            else:
-                                return self._create_payment_and_confirm_order(order,order.amount_total, partner, journal, payment_method, payment_method_line)
-
-                            
-                        
-                    elif order.type_sale == "preorder":
-                        
-                        journal = request.env['account.journal'].sudo().search([('code', '=', 'CSH1'),( 'company_id', '=', company.id ) ], limit=1)  # type = sale id= 1 & company_id = 1  ==> journal id = 1 / si journal id = 7 : CASH
-                        payment_method = request.env['account.payment.method'].sudo().search([ ( 'payment_type', '=',  'inbound' ) ], limit=1) # payement method : TYPE Inbound & id = 1
-                        payment_method_line = request.env['account.payment.method.line'].sudo().search([('payment_method_id', '=', payment_method.id), ('journal_id', '=', journal.id)], limit=1)
-
-                        if order.amount_residual >  0:
-                            account_payment = request.env['account.payment'].sudo().create({
-                                'payment_type': 'inbound',
-                                'partner_type': 'customer',
-                                'partner_id': partner.id,
-                                'amount': total_amount,
-                                'journal_id': journal.id,
-                                'currency_id': partner.currency_id.id,
-                                'payment_method_line_id': 1,
-                                'payment_method_id': payment_method.id,
-                                'sale_id': order.id,
-                                'is_reconciled': True,
-                            })
-                            if order.state == "draft":
-                                order.action_confirm()
-
-
-                            payment_details.write({
-                                'token_status': True,
-                                'url_facture': url_facture,
-                                'customer_name': customer_name,
-                                'customer_email': customer_email,
-                                'customer_phone': customer_phone,
-                                'payment_date': payment_date,
-                                'payment_state': "completed"
-                            })
-                            if account_payment:
-                                account_payment.action_post()
-                                return self._make_response(self._order_to_dict(order), 200)
-                        else:
-                            return self._make_response(self._order_to_dict(order), 200)
-                    
-                    elif order.type_sale == "creditorder":
-
-                        journal = request.env['account.journal'].sudo().search([('code', '=', 'CSH1'),( 'company_id', '=', company.id ) ], limit=1)  # type = sale id= 1 & company_id = 1  ==> journal id = 1 / si journal id = 7 : CASH
-                        payment_method = request.env['account.payment.method'].sudo().search([ ( 'payment_type', '=',  'inbound' ) ], limit=1) # payement method : TYPE Inbound & id = 1
-                        payment_method_line = request.env['account.payment.method.line'].sudo().search([('payment_method_id', '=', payment_method.id), ('journal_id', '=', journal.id)], limit=1)
-                        
-                        if order.amount_residual > 0 :
-                            account_payment = request.env['account.payment'].sudo().create({
-                                'payment_type': 'inbound',
-                                'partner_type': 'customer',
-                                'partner_id': partner.id,
-                                'amount': total_amount,
-                                'journal_id': journal.id,
-                                'currency_id': partner.currency_id.id,
-                                'payment_method_line_id': 1,
-                                'payment_method_id': payment_method.id,
-                                'sale_id': order.id,
-                                'is_reconciled': True,
-                            })
-                            if account_payment:
-                                account_payment.action_post()
-                            
-                            # if order.state == "draft" or order.state == "validation" :
-                            #     order.action_confirm()
-                                
-                            payment_details.write({
-                                'token_status': True,
-                                'url_facture': url_facture,
-                                'customer_name': customer_name,
-                                'customer_email': customer_email,
-                                'customer_phone': customer_phone,
-                                'payment_date': payment_date,
-                                'payment_state': "completed"
-                            })
-
-                           
-                            return self._make_response(self._order_to_dict(order), 200)
-                            
-                        else:
-                            return self._make_response(self._order_to_dict(order), 200)
-                    
-
                     else:
                         return self._make_response(self._order_to_dict(order), 200)
-                elif payment_details.token_status == True and payment_details.payment_state == "completed":
-                    return self._make_response(self._order_to_dict(order), 200)
-                else:
-                    return self._make_response({'message': 'Payment non valide'}, 200)
-            else:
-                return self._make_response({'message': 'Commande non trouvé'}, 200)
 
-        else:
-            return self._make_response({'message': 'Payment non trouvé'}, 200)
-       
+                elif order.type_sale == "creditorder":
+                    journal = request.env['account.journal'].sudo().search([('code', '=', 'CSH1'), ('company_id', '=', company.id)], limit=1)
+                    payment_method = request.env['account.payment.method'].sudo().search([('payment_type', '=', 'inbound')], limit=1)
+                    payment_method_line = request.env['account.payment.method.line'].sudo().search([('payment_method_id', '=', payment_method.id), ('journal_id', '=', journal.id)], limit=1)
+
+                    if order.amount_residual > 0:
+                        order.write({
+                            'state': "sale"
+                        })
+                        payment = request.env['account.payment'].sudo().create({
+                            'payment_type': 'inbound',
+                            'partner_type': 'customer',
+                            'partner_id': partner.id,
+                            'amount': total_amount,
+                            'journal_id': journal.id,
+                            'currency_id': partner.currency_id.id,
+                            'payment_method_line_id': payment_method_line.id,
+                            'payment_method_id': payment_method.id,
+                            'ref': order.name,
+                            'sale_id': order.id,
+                            'is_reconciled': True,
+                            'destination_account_id': partner.property_account_receivable_id.id,
+                        })
+                       
+                        payment.action_post()
+                        payment_details.write({
+                            'token_status': True,
+                            'url_facture': url_facture,
+                            'customer_name': customer_name,
+                            'customer_email': customer_email,
+                            'customer_phone': customer_phone,
+                            'payment_date': payment_date,
+                            'payment_state': "completed"
+                        })
+
+                        return self._make_response(self._order_to_dict(order), 200)
+                    else:
+                        return self._make_response(self._order_to_dict(order), 200)
+
+                else:
+                    return self._make_response(self._order_to_dict(order), 200)
+
+            elif payment_details.token_status == True and payment_details.payment_state == "completed":
+                return self._make_response(self._order_to_dict(order), 200)
+
+            else:
+                return self._make_response({'message': 'Payment non valide'}, 400)
+
+        except Exception as e:
+            return self._make_response({'message': str(e)}, 400)
+
+
+
+
+
+
+
+
+    # @http.route('/api/payment/verify/<token>', methods=['PUT'], type='http', auth='none', cors="*", csrf=False)
+    # def api_get_paydunya_by_token(self, token, **kw):
+    #     try:
+    #         data = json.loads(request.httprequest.data)
+    #         url_facture = data.get('url_facture')
+    #         customer_name = data.get('customer_name')
+    #         customer_email = data.get('customer_email')
+    #         customer_phone = data.get('customer_phone')
+    #         token_status = data.get('token_status')
+    #         payment_date = datetime.datetime.now()
+    #         payment_state = data.get('payment_state')
+
+    #         # Authentification admin
+    #         user = request.env['res.users'].sudo().browse(request.env.uid)
+    #         if not user or user._is_public():
+    #             admin_user = request.env.ref('base.user_admin')
+    #             request.env = request.env(user=admin_user.id)
+
+    #         # Récupération des détails de paiement
+    #         payment_details = request.env['payment.details'].sudo().search([('payment_token', '=', token)], limit=1)
+    #         if not payment_details:
+    #             return self._make_response({'message': 'Payment non trouvé'}, 400)
+
+    #         # Vérification de la commande
+    #         total_amount = payment_details.amount
+    #         order_id = payment_details.order_id
+    #         order = request.env['sale.order'].sudo().browse(order_id)
+    #         if not order:
+    #             return self._make_response({'message': 'Commande non trouvée'}, 400)
+
+    #         partner = order.partner_id
+    #         company = request.env['res.company'].sudo().search([('id', '=', 1)], limit=1)
+
+    #         # Vérification du statut de paiement
+    #         if payment_details.token_status == True and payment_details.payment_state == "completed":
+    #             return self._make_response(self._order_to_dict(order), 200)
+
+    #         if payment_details.token_status == False and payment_state == "completed":
+    #             facture = f"https://paydunya.com/checkout/receipt/{token}"
+    #             url_facture = facture
+
+    #             # Configuration du journal et méthode de paiement
+    #             journal = request.env['account.journal'].sudo().search([('code', '=', 'CSH1'), ('company_id', '=', company.id)], limit=1)
+    #             if not journal:
+    #                 return self._make_response({'message': 'Journal de paiement non trouvé'}, 400)
+                
+    #             payment_method = request.env['account.payment.method'].sudo().search([('payment_type', '=', 'inbound')], limit=1)
+    #             payment_method_line = request.env['account.payment.method.line'].sudo().search([
+    #                 ('payment_method_id', '=', payment_method.id), 
+    #                 ('journal_id', '=', journal.id)
+    #             ], limit=1)
+
+    #             # Traitement selon le type de commande
+    #             if order.type_sale in ["order", "creditorder"]:
+    #                 return self._process_invoice_payment(order, total_amount, partner, journal, payment_method, payment_method_line, payment_details, url_facture, customer_name, customer_email, customer_phone, payment_date)
+                
+    #             elif order.type_sale == "preorder":
+    #                 return self._process_preorder_payment(order, total_amount, partner, journal, payment_method, payment_method_line, payment_details, url_facture, customer_name, customer_email, customer_phone, payment_date)
+                
+    #             else:
+    #                 return self._make_response(self._order_to_dict(order), 200)
+
+    #         else:
+    #             return self._make_response({'message': 'Payment non valide'}, 400)
+
+    #     except Exception as e:
+    #         _logger.error(f"Erreur dans api_get_paydunya_by_token: {str(e)}")
+    #         return self._make_response({'message': f'Erreur serveur: {str(e)}'}, 500)
+
+    # def _process_invoice_payment(self, order, total_amount, partner, journal, payment_method, payment_method_line, payment_details, url_facture, customer_name, customer_email, customer_phone, payment_date):
+    #     """Traite les commandes nécessitant une facture (order et creditorder)"""
+    #     try:
+    #         # Confirmer la commande si nécessaire
+    #         if order.state == "draft":
+    #             order.action_confirm()
+
+    #         # Forcer la création de facture même si produit non livré
+    #         invoice = self._force_create_invoice(order)
+    #         if not invoice:
+    #             return self._make_response({'message': 'Impossible de créer la facture'}, 400)
+
+    #         # Valider la facture
+    #         if invoice.state != 'posted':
+    #             invoice.action_post()
+
+    #         # Créer le paiement
+    #         payment = self._create_payment(partner, total_amount, journal, payment_method, payment_method_line, order.name)
+    #         if not payment:
+    #             return self._make_response({'message': 'Impossible de créer le paiement'}, 400)
+
+    #         # Réconcilier le paiement avec la facture
+    #         self._reconcile_payment_invoice(invoice, payment)
+
+    #         # Mettre à jour les détails de paiement
+    #         self._update_payment_details(payment_details, url_facture, customer_name, customer_email, customer_phone, payment_date)
+
+    #         # Traitement spécial pour paiement échelonné
+    #         if order.payment_mode == "echelonne":
+    #             return self._create_payment_and_confirm_order(order, payment_details.amount, partner, journal, payment_method, payment_method_line)
+    #         else:
+    #             return self._create_payment_and_confirm_order(order, order.amount_total, partner, journal, payment_method, payment_method_line)
+
+    #     except Exception as e:
+    #         _logger.error(f"Erreur dans _process_invoice_payment: {str(e)}")
+    #         return self._make_response({'message': f'Erreur lors du traitement: {str(e)}'}, 500)
+
+    # def _process_preorder_payment(self, order, total_amount, partner, journal, payment_method, payment_method_line, payment_details, url_facture, customer_name, customer_email, customer_phone, payment_date):
+    #     """Traite les précommandes"""
+    #     try:
+    #         if order.amount_residual > 0:
+    #             # Confirmer la commande si nécessaire
+    #             if order.state == "draft":
+    #                 order.action_confirm()
+
+    #             # Créer le paiement d'acompte
+    #             account_payment = request.env['account.payment'].sudo().create({
+    #                 'payment_type': 'inbound',
+    #                 'partner_type': 'customer',
+    #                 'partner_id': partner.id,
+    #                 'amount': total_amount,
+    #                 'journal_id': journal.id,
+    #                 'currency_id': partner.currency_id.id,
+    #                 'payment_method_line_id': payment_method_line.id,
+    #                 'payment_method_id': payment_method.id,
+    #                 'sale_id': order.id,
+    #                 'is_reconciled': True,
+    #                 'ref': f'Acompte pour {order.name}',
+    #             })
+
+    #             account_payment.action_post()
+
+    #             # Mettre à jour les détails de paiement
+    #             self._update_payment_details(payment_details, url_facture, customer_name, customer_email, customer_phone, payment_date)
+
+    #             return self._make_response(self._order_to_dict(order), 200)
+    #         else:
+    #             return self._make_response(self._order_to_dict(order), 200)
+
+    #     except Exception as e:
+    #         _logger.error(f"Erreur dans _process_preorder_payment: {str(e)}")
+    #         return self._make_response({'message': f'Erreur lors du traitement de la précommande: {str(e)}'}, 500)
+
+    # def _force_create_invoice(self, order):
+    #     """Force la création d'une facture même si les produits ne sont pas livrés"""
+    #     try:
+    #         # Vérifier si une facture existe déjà
+    #         existing_invoice = request.env['account.move'].sudo().search([
+    #             ('invoice_line_ids.sale_line_ids.order_id', '=', order.id),
+    #             ('move_type', '=', 'out_invoice')
+    #         ], limit=1)
+            
+    #         if existing_invoice:
+    #             return existing_invoice
+    #         # Forcer la création de facture en modifiant temporairement la politique de facturation
+    #         original_invoice_policy = {}
+    #         for line in order.order_line:
+    #             original_invoice_policy[line.id] = line.product_id.invoice_policy
+    #             line.product_id.sudo().write({'invoice_policy': 'order'})
+
+    #         try:
+    #             # Créer la facture
+    #             invoice = order._create_invoices()
+    #             if invoice:
+    #                 invoice = invoice[0] if isinstance(invoice, list) else invoice
+    #         finally:
+    #             # Restaurer la politique de facturation originale
+    #             for line in order.order_line:
+    #                 if line.id in original_invoice_policy:
+    #                     line.product_id.sudo().write({'invoice_policy': original_invoice_policy[line.id]})
+
+    #         return invoice
+
+    #     except Exception as e:
+    #         _logger.error(f"Erreur dans _force_create_invoice: {str(e)}")
+    #         return None
+
+    # def _create_payment(self, partner, amount, journal, payment_method, payment_method_line, reference):
+    #     """Crée un paiement"""
+    #     try:
+    #         payment = request.env['account.payment'].sudo().create({
+    #             'payment_type': 'inbound',
+    #             'partner_type': 'customer',
+    #             'partner_id': partner.id,
+    #             'amount': amount,
+    #             'journal_id': journal.id,
+    #             'currency_id': partner.currency_id.id,
+    #             'payment_method_line_id': payment_method_line.id,
+    #             'payment_method_id': payment_method.id,
+    #             'ref': reference,
+    #             'destination_account_id': partner.property_account_receivable_id.id,
+    #         })
+    #         payment.action_post()
+    #         return payment
+    #     except Exception as e:
+    #         _logger.error(f"Erreur dans _create_payment: {str(e)}")
+    #         return None
+
+    # def _reconcile_payment_invoice(self, invoice, payment):
+    #     """Réconcilie le paiement avec la facture"""
+    #     try:
+    #         # Méthode recommandée pour la réconciliation
+    #         invoice.js_assign_outstanding_line(payment.id)
+            
+    #         # Mettre à jour le statut de la facture
+    #         invoice.write({
+    #             'payment_reference': payment.name,
+    #             'payment_state': 'paid',
+    #             'ref': f'Paiement pour {invoice.name}',
+    #         })
+            
+    #     except Exception as e:
+    #         _logger.error(f"Erreur dans _reconcile_payment_invoice: {str(e)}")
+    #         # Méthode alternative de réconciliation
+    #         try:
+    #             (invoice.line_ids + payment.move_id.line_ids).filtered(
+    #                 lambda line: line.account_id == invoice.partner_id.property_account_receivable_id
+    #             ).reconcile()
+    #         except Exception as e2:
+    #             _logger.error(f"Erreur dans la réconciliation alternative: {str(e2)}")
+
+    # def _update_payment_details(self, payment_details, url_facture, customer_name, customer_email, customer_phone, payment_date):
+    #     """Met à jour les détails de paiement"""
+    #     payment_details.write({
+    #         'token_status': True,
+    #         'url_facture': url_facture,
+    #         'customer_name': customer_name,
+    #         'customer_email': customer_email,
+    #         'customer_phone': customer_phone,
+    #         'payment_date': payment_date,
+    #         'payment_state': "completed"
+    #     })
+
+   
