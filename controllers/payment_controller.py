@@ -869,7 +869,7 @@ class PaymentREST(http.Controller):
 
             payment_details = request.env['payment.details'].sudo().search([('payment_token', '=', token)], limit=1)
             if not payment_details:
-                return self._make_response({'message': 'Payment non trouvé'}, 400)
+                return self._make_response({'message': 'Paiement non trouvé'}, 400)
 
             total_amount = payment_details.amount
             order_id = payment_details.order_id
@@ -1004,7 +1004,7 @@ class PaymentREST(http.Controller):
                 return self._make_response(self._order_to_dict(order), 200)
 
             else:
-                return self._make_response({'message': 'Payment non valide'}, 400)
+                return self._make_response({'message': 'Paiement non valide'}, 400)
 
         except Exception as e:
             return self._make_response({'message': str(e)}, 400)
