@@ -1042,6 +1042,10 @@ class SaleOrderMail(models.Model):
             self.send_preorder_confirmation_mail()
         elif self.type_sale == 'order':
             self.send_order_confirmation_mail()
+            self._create_invoices()
+        elif self.type_sale == 'creditorder':
+            # self.send_credit_order_confirmation_mail()
+            self._create_invoices()
        
         return res
 
