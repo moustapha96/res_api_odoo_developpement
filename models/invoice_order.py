@@ -1,143 +1,143 @@
 
+# from odoo import models, fields, api
+# from odoo.exceptions import UserError
 
-from odoo import models, fields, api
-from odoo.exceptions import UserError
+# class AccountMoveInherit(models.Model):
+#     _inherit = 'account.move'
+
+#     @api.model
+#     def _are_all_products_delivered(self, sale_order):
+#         """
+#         Vérifie si tous les produits d'une commande ont été livrés.
+#         """
+#         for line in sale_order.order_line:
+#             delivered_qty = sum(
+#                 move.qty_done
+#                 for picking in sale_order.picking_ids
+#                 if picking.state == 'done'
+#                 for move in picking.move_line_ids_without_package
+#                 if move.product_id == line.product_id
+#             )
+#             if delivered_qty < line.product_uom_qty:
+#                 return False
+#         return True
+
+#     def action_post(self):
+#         for move in self:
+#             if move.move_type == 'out_invoice' and move.invoice_origin:
+#                 sale_orders = self.env['sale.order'].search([('name', '=', move.invoice_origin)])
+#                 for order in sale_orders:
+#                     if order.state == 'cancel':
+#                         raise UserError("Impossible de valider la facture car la commande a été annulée.")
+#                     if not self._are_all_products_delivered(order):
+#                         raise UserError("Impossible de valider la facture car tous les produits n'ont pas encore été livrés.")
+#                     else:
+#                         if order.amount_residual <= 0:
+#                             order.write({
+#                                 'state': 'to_delivered'
+#                             })
+#         return super(AccountMoveInherit, self).action_post()
+
+#     # @api.model
+#     # def action_cancel(self):
+#     #     for move in self:
+#     #         if move.move_type == 'out_invoice' and move.invoice_origin:
+#     #             sale_orders = self.env['sale.order'].search([('name', '=', move.invoice_origin)])
+#     #             for order in sale_orders:
+#     #                 if order.state == 'cancel':
+#     #                     # Annuler les paiements liés à cette facture
+#     #                     for payment in move.payment_ids:
+#     #                         payment.action_draft()
+#     #                         payment.action_cancel()
+#     #     return super(AccountMoveInherit, self).action_cancel()
 
 # class SaleOrderInherit(models.Model):
 #     _inherit = 'sale.order'
 
-
-#     def _get_company_journals(self, company):
-#         journals = self.env['account.journal'].search([('company_id', '=', company.id), ('type', '=', 'sale')])
-#         return journals
-
-#     def action_create_invoice_order(self):
-#         for order in self:
-#             if not order.invoice_status != 'to invoice':
-#                 raise UserError("La livraison n'a pas encore été faite.")
-
-#             if order.invoice_ids:
-#                 raise UserError("La commande a deja une facture.")
-            
-#             if order.state == "sale":
-#                 partner = order.partner_id
-#                 company = partner.company_id or self.env.company
-
-#                 journals = self._get_company_journals(company)
-
-#                 if not journals:
-#                     raise UserError("Aucun journal de vente trouvé.")
-
-#                 journal = journals[0]
-
-#                 invoice_lines = []
-#                 for line in order.order_line:
-#                     invoice_lines.append((0, 0, {
-#                         'product_id': line.product_id.id,
-#                         'quantity': line.product_uom_qty,
-#                         'price_unit': line.price_unit,
-#                         'name': line.name,
-#                         'tax_ids': [(6, 0, [])]
-#                     }))
-
-#                 invoice = self.env['account.move'].create({
-#                     'move_type': 'out_invoice',
-#                     'invoice_origin': order.name,
-#                     'invoice_date': fields.Date.today(),
-#                     'invoice_date_due': fields.Date.today(),
-#                     'invoice_line_ids': invoice_lines,
-#                     'ref': f"Facture {order.name}",
-#                     'journal_id': journal.id,
-#                     'partner_id': partner.id,
-#                     'company_id': company.id,
-#                     'currency_id': partner.currency_id.id or company.currency_id.id,
-#                 })
-
-#                 invoice.action_post()
-#                 order.write({
-#                     'invoice_ids': [(4, invoice.id)],
-#                     'invoice_status': 'invoiced',
-#                     'state': 'to_delivered',
-#                 })
-#                 return invoice
-
-#     def action_confirm_credit_order(self):
-#         res = super(SaleOrderInherit, self).action_confirm()
-#         for order in self:
-#             partner = order.partner_id
-#             company = partner.company_id or self.env.company
-
-#             journals = self._get_company_journals(company)
-
-#             if not journals:
-#                 raise UserError("Aucun journal de vente trouvé.")
-
-#             journal = journals[0]
-
-#             invoice_lines = []
-#             for line in order.order_line:
-#                 invoice_lines.append((0, 0, {
-#                     'product_id': line.product_id.id,
-#                     'quantity': line.product_uom_qty,
-#                     'price_unit': line.price_unit,
-#                     'name': line.name,
-#                     'tax_ids': [(6, 0, [])]
-#                 }))
-
-#             invoice = self.env['account.move'].create({
-#                 'move_type': 'out_invoice',
-#                 'invoice_origin': order.name,
-#                 'invoice_date': fields.Date.today(),
-#                 'invoice_date_due': fields.Date.today(),
-#                 'invoice_line_ids': invoice_lines,
-#                 'ref': f"Facture {order.name}",
-#                 'journal_id': journal.id,
-#                 'partner_id': partner.id,
-#                 'company_id': company.id,
-#                 'currency_id': partner.currency_id.id or company.currency_id.id,
-#                 'amount_total': order.first_payment_amount
-#             })
-
-#             invoice.action_post()
-#             order.write({
-#                 'invoice_ids': [(4, invoice.id)],
-#                 'invoice_status': 'invoiced'
-#             })
-
-#         return res
-
 #     def action_confirm(self):
-#         self._create_invoices()
 #         res = super(SaleOrderInherit, self).action_confirm()
-#         self.action_create_invoice_order()
+#         for order in self:
+#             if order.state == 'sale':
+#                 existing_invoices = self.env['account.move'].search([('invoice_origin', '=', order.name), ('move_type', '=', 'out_invoice')])
+#                 if existing_invoices:
+#                     for invoice in existing_invoices:
+#                         if invoice.state != 'cancel':
+#                             # Annuler les paiements liés à cette facture
+#                             for payment in invoice.payment_ids:
+#                                 payment.action_draft()
+#                                 payment.action_cancel()
+#                             # Mettre à jour les lignes de facture
+#                             invoice.invoice_line_ids.unlink()
+#                             for line in order.order_line:
+#                                 invoice.invoice_line_ids = [(0, 0, {
+#                                     'product_id': line.product_id.id,
+#                                     'quantity': line.product_uom_qty,
+#                                     'price_unit': line.price_unit,
+#                                     'name': line.name,
+#                                 })]
+#                             # Mettre la facture à l'état brouillon
+#                             invoice.state = 'draft'
+#                 else:
+#                     # Créer une nouvelle facture
+#                     invoice_lines = []
+#                     for line in order.order_line:
+#                         invoice_lines.append((0, 0, {
+#                             'product_id': line.product_id.id,
+#                             'quantity': line.product_uom_qty,
+#                             'price_unit': line.price_unit,
+#                             'name': line.name,
+#                         }))
+#                     invoice = self.env['account.move'].create({
+#                         'move_type': 'out_invoice',
+#                         'partner_id': order.partner_id.id,
+#                         'invoice_origin': order.name,
+#                         'invoice_line_ids': invoice_lines,
+#                     })
 #         return res
 
-# class CompanyJournals(models.Model):
-#     _inherit = 'res.company'
+#     def action_cancel(self):
+#         for order in self:
+#             # Annuler la commande
+#             order.state = 'cancel'
+#             # Retourner les produits en stock
+#             for picking in order.picking_ids:
+#                 if picking.state == 'done':
+#                     for move in picking.move_line_ids_without_package:
+#                         move.qty_done = 0
+#                     picking.state = 'cancel'
+#             # Annuler les factures liées à cette commande
+#             invoices = self.env['account.move'].search([('invoice_origin', '=', order.name), ('move_type', '=', 'out_invoice')])
+#             for invoice in invoices:
+#                 if invoice.state != 'cancel':
+#                     # invoice.action_cancel()
+#                     invoice.write({
+#                         'state': 'cancel'
+#                     })
+#                     # Annuler les paiements liés à cette facture
+#                     for payment in invoice.payment_ids:
+#                         payment.action_draft()
+#                         payment.action_cancel()
+#         return True
 
-#     def get_company_journals(self):
-#         company_id = self.id
-#         journals = self.env['account.journal'].search([('company_id', '=', company_id)])
-#         return journals
-
-#     def print_company_journals(self):
-#         journals = self.get_company_journals()
-#         for journal in journals:
-#             print(f"Journal ID: {journal.id}, Journal Name: {journal.name}, Journal Type: {journal.type}")
-
-
-
+from odoo import models, fields, api
+from odoo.exceptions import UserError
+import base64
+import logging
+_logger = logging.getLogger(__name__)
 
 class AccountMoveInherit(models.Model):
     _inherit = 'account.move'
 
     @api.model
-    def _is_delivery_done(self, sale_order):
-        """
-        Vérifie si la livraison est effectuée pour une commande donnée.
-        """
-        for picking in sale_order.picking_ids:
-            if picking.state != 'done':
+    def _are_all_products_delivered(self, sale_order):
+        for line in sale_order.order_line:
+            delivered_qty = sum(
+                move.qty_done
+                for picking in sale_order.picking_ids.filtered(lambda p: p.state == 'done')
+                for move in picking.move_line_ids_without_package
+                if move.product_id == line.product_id
+            )
+            if delivered_qty < line.product_uom_qty:
                 return False
         return True
 
@@ -146,6 +146,109 @@ class AccountMoveInherit(models.Model):
             if move.move_type == 'out_invoice' and move.invoice_origin:
                 sale_orders = self.env['sale.order'].search([('name', '=', move.invoice_origin)])
                 for order in sale_orders:
-                    if not self._is_delivery_done(order):
-                        raise UserError("Impossible de valider la facture car la livraison n'est pas encore effectuée.")
-        return super(AccountMoveInherit, self).action_post()
+                    if order.state == 'cancel':
+                        raise UserError("Impossible de valider la facture car la commande a été annulée.")
+                    if not self._are_all_products_delivered(order):
+                        raise UserError("Impossible de valider la facture car tous les produits n'ont pas encore été livrés.")
+                    if order.amount_residual <= 0:
+                        order.write({'state': 'to_delivered'})
+
+        res = super().action_post()
+        return res
+    
+    def action_send_invoice_email(self):
+        """
+        Envoyer la facture par email.
+        
+        Cette méthode lance un wizard pour envoyer la facture par email. Le wizard utilise le modèle d'email
+        'account.email_template_edi_invoice' pour générer le contenu de l'email. Le modèle est paramétré pour contenir
+        les informations de la facture.
+        
+        Returns:
+            dict: Un dictionnaire qui décrit l'action à lancer pour afficher le wizard.
+        """
+        self.ensure_one()
+        template = self.env.ref('account.email_template_edi_invoice', False)
+        if not template:
+            raise UserError("Template d'email introuvable")
+
+        compose_form = self.env.ref('account.view_account_move_send_wizard', False)
+        ctx = {
+            'default_model': 'account.move',
+            'default_res_id': self.id,
+            'default_use_template': bool(template),
+            'default_template_id': template.id,
+            'default_composition_mode': 'comment',
+            'mark_invoice_as_sent': True,
+        }
+        return {
+            'name': 'Envoyer la facture par email',
+            'type': 'ir.actions.act_window',
+            'view_mode': 'form',
+            'res_model': 'mail.compose.message',
+            'views': [(compose_form.id, 'form')],
+            'view_id': compose_form.id,
+            'target': 'new',
+            'context': ctx,
+        }
+
+class SaleOrderInherit(models.Model):
+    _inherit = 'sale.order'
+
+    def action_confirm(self):
+        res = super().action_confirm()
+        for order in self:
+            if order.state == 'sale':
+                existing_invoices = self.env['account.move'].search([
+                    ('invoice_origin', '=', order.name),
+                    ('move_type', '=', 'out_invoice'),
+                    ('state', '!=', 'cancel')
+                ])
+                for invoice in existing_invoices:
+                    for payment in invoice.payment_ids:
+                        payment.action_draft()
+                        payment.action_cancel()
+                    invoice.invoice_line_ids.unlink()
+                    for line in order.order_line:
+                        invoice.write({'invoice_line_ids': [(0, 0, {
+                            'product_id': line.product_id.id,
+                            'quantity': line.product_uom_qty,
+                            'price_unit': line.price_unit,
+                            'name': line.name,
+                        })]})
+                    invoice.write({'state': 'draft'})
+                if not existing_invoices:
+                    invoice_lines = [(0, 0, {
+                        'product_id': line.product_id.id,
+                        'quantity': line.product_uom_qty,
+                        'price_unit': line.price_unit,
+                        'name': line.name,
+                    }) for line in order.order_line]
+                    self.env['account.move'].create({
+                        'move_type': 'out_invoice',
+                        'partner_id': order.partner_id.id,
+                        'invoice_origin': order.name,
+                        'invoice_line_ids': invoice_lines,
+                    })
+        return res
+
+    def action_cancel(self):
+        for order in self:
+            order.state = 'cancel'
+            for picking in order.picking_ids:
+                if picking.state == 'done':
+                    for move in picking.move_line_ids_without_package:
+                        move.qty_done = 0
+                    picking.write({'state': 'cancel'})
+            invoices = self.env['account.move'].search([
+                ('invoice_origin', '=', order.name),
+                ('move_type', '=', 'out_invoice'),
+                ('state', '!=', 'cancel')
+            ])
+            for invoice in invoices:
+                invoice.write({'state': 'cancel'})
+                for payment in invoice.payment_ids:
+                    payment.action_draft()
+                    payment.action_cancel()
+        return True
+
