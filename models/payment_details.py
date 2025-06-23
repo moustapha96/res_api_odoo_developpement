@@ -25,10 +25,10 @@ class PaymentDetails(models.Model):
     order_type = fields.Char(string='Order type', required=False)
     payment_date = fields.Datetime(string='Payment Date', required=True)
 
-    # order_id = fields.Integer(string='Order ID', required=True)
-    # partner_id = fields.Integer(string='Partner ID', required=True)
-    order_id = fields.Many2one('sale.order', string='Order', required=True)
-    partner_id = fields.Many2one('res.partner', string='Customer', required=True)
+    order_id = fields.Integer(string='Order ID', required=True)
+    partner_id = fields.Integer(string='Partner ID', required=True)
+    # order_id = fields.Many2one('sale.order', string='Order', required=True)
+    # partner_id = fields.Many2one('res.partner', string='Customer', required=True)
 
 
     payment_state = fields.Selection([
