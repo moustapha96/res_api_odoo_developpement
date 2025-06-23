@@ -23,17 +23,6 @@
         </field>
     </record>
 
-    <record id="view_crm_lead_tree_inherit" model="ir.ui.view">
-        <field name="name">crm.lead.tree.inherit</field>
-        <field name="model">crm.lead</field>
-        <field name="inherit_id" ref="crm.crm_case_tree_view_oppor" />
-        <field name="arch" type="xml">
-            <xpath expr="//tree" position="inside">
-                <field name="lead_line_ids" widget="one2many_list" />
-            </xpath>
-        </field>
-    </record>
-
     <record id="view_crm_lead_form_inherit_lines" model="ir.ui.view">
         <field name="name">crm.lead.form.inherit.lines</field>
         <field name="model">crm.lead</field>
