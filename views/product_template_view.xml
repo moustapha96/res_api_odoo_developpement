@@ -1,92 +1,6 @@
-<!-- <odoo>
-    <data>
-        <record id="view_product_form_inherit_images" model="ir.ui.view">
-            <field name="name">product.template.form.inherit.images</field>
-            <field name="model">product.template</field>
-            <field name="inherit_id" ref="product.product_template_only_form_view" />
-            <field name="arch" type="xml">
-
-                <xpath expr="//field[@name='default_code']" position="after">
-                    <field name="reference_auto" readonly="1" />
-                </xpath>
-
-
-                <xpath expr="//page[@name='variants']" position="after">
-                    <page name="images" string="Images du produit">
-                        <group string="Images">
-                            <field name="rang" />
-                            <field name="image_1" widget="image" class="oe_avatar" />
-                            <field name="image_2" widget="image" class="oe_avatar" />
-                            <field name="image_3" widget="image" class="oe_avatar" />
-                            <field name="image_4" widget="image" class="oe_avatar" />
-                        </group>
-                    </page>
-                </xpath>
-
-                <xpath expr="//page[@name='variants']" position="after">
-                    <page name="rang" string="Rand du produit">
-                        <group string="Rang">
-                            <field name="rang" />
-                        </group>
-                    </page>
-                </xpath>
-
-                <xpath expr="//page[@name='images']" position="after">
-                    <page name="comments" string="Commentaires">
-                        <group string="Commentaires">
-                            <field name="comment_ids" widget="one2many_list">
-                                <tree string="Commentaires">
-                                    <field name="author" />
-                                    <field name="text" />
-                                    <field name="date" />
-                                    <field name="review" />
-                                </tree>
-                            </field>
-                        </group>
-                    </page>
-                </xpath>
-
-            </field>
-        </record>
-
-
-        <record id="product_category_form_view_inherit_code" model="ir.ui.view">
-            <field name="name">product.category.form.inherit.code</field>
-            <field name="model">product.category</field>
-            <field name="inherit_id" ref="product.product_category_form_view" />
-            <field name="arch" type="xml">
-                <xpath expr="//field[@name='parent_id']" position="after">
-                    <field name="code" readonly="1" />
-                </xpath>
-            </field>
-        </record>
-
-
-        <record id="view_product_template_form_inherit_ref" model="ir.ui.view">
-            <field name="name">product.template.form.inherit.ref</field>
-            <field name="model">product.template</field>
-            <field name="inherit_id" ref="product.product_template_only_form_view" />
-            <field name="arch" type="xml">
-                <xpath expr="//header" position="inside">
-                    <button name="action_regenerate_structured_reference"
-                        string="Régénérer Réf. Interne"
-                        type="object"
-                        class="btn-primary" />
-                </xpath>
-                <xpath expr="//field[@name='name']" position="after">
-                    <field name="reference_auto" readonly="1" />
-                    <field name="department_code" />
-                </xpath>
-            </field>
-        </record>
-
-    </data>
-</odoo> -->
-
 <odoo>
     <data>
 
-        <!-- Inheritance de la vue formulaire des produits -->
         <record id="view_product_form_inherit_images" model="ir.ui.view">
             <field name="name">product.template.form.inherit.all</field>
             <field name="model">product.template</field>
@@ -94,14 +8,12 @@
             <field name="arch" type="xml">
 
 
-                <!-- Ajout de reference_auto et department_code après le champ name -->
                 <xpath expr="//field[@name='default_code']" position="after">
                     <field name="department_code" />
                     <field name="reference_auto" readonly="1" />
                 </xpath>
 
 
-                <!-- Nouvelle page pour les images -->
                 <xpath expr="//page[@name='variants']" position="after">
                     <page name="images" string="Images du produit">
                         <group string="Images">
@@ -113,7 +25,6 @@
                     </page>
                 </xpath>
 
-                <!-- Nouvelle page pour le rang -->
                 <xpath expr="//page[@name='images']" position="after">
                     <page name="rang" string="Rang du produit">
                         <group string="Rang">
@@ -122,7 +33,6 @@
                     </page>
                 </xpath>
 
-                <!-- Nouvelle page pour les commentaires -->
                 <xpath expr="//page[@name='rang']" position="after">
                     <page name="comments" string="Commentaires">
                         <group string="Commentaires">
@@ -142,7 +52,6 @@
         </record>
 
 
-        <!-- Inheritance de la vue des catégories pour afficher le code -->
         <record id="product_category_form_view_inherit_code" model="ir.ui.view">
             <field name="name">product.category.form.inherit.code</field>
             <field name="model">product.category</field>
@@ -154,5 +63,16 @@
             </field>
         </record>
 
+        <record id="ir_cron_regenerate_product_references" model="ir.cron">
+            <field name="name">Regenerate Product References</field>
+            <field name="model_id" ref="model_product_template" />
+            <field name="state">code</field>
+            <field name="code">model.regenerate_all_references()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="numbercall">-1</field>
+            <field name="doall">False</field>
+            <field name="active">True</field>
+        </record>
     </data>
 </odoo>
