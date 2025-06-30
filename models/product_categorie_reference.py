@@ -179,6 +179,7 @@ class ProductTemplate(models.Model):
                 ref += model_code_clean
 
             record.reference_auto = ref
+            record.default_code = ref
 
     def _extract_brand(self, name):
         """Extract brand from product name"""
