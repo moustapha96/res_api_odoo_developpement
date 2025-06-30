@@ -52,6 +52,7 @@ class MailerRest(http.Controller):
         # Récupérer ou créer une instance de IrMailServer
         mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
         if not mail_server:
+            return True
             mail_server = request.env['ir.mail_server'].sudo().create({
                 'name': 'Gmail',
                 'smtp_host': 'smtp.gmail.com',
@@ -132,6 +133,7 @@ class MailerRest(http.Controller):
         # Récupérer ou créer une instance de IrMailServer
         mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
         if not mail_server:
+            return True
             mail_server = request.env['ir.mail_server'].sudo().create({
                 'name': 'Gmail',
                 'smtp_host': 'smtp.gmail.com',
@@ -199,6 +201,7 @@ class MailerRest(http.Controller):
         # Récupérer ou créer une instance de IrMailServer
         mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
         if not mail_server:
+            return True
             mail_server = request.env['ir.mail_server'].sudo().create({
                 'name': 'Gmail',
                 'smtp_host': 'smtp.gmail.com',
@@ -380,6 +383,7 @@ class MailerRest(http.Controller):
      
         mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
         if not mail_server:
+            return True
             mail_server = request.env['ir.mail_server'].sudo().create({
                 'name': 'My Mail Server',
                 'smtp_host': 'smtp.gmail.com',  # Utilisez le serveur SMTP correct
