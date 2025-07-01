@@ -24,7 +24,7 @@ class PackProduit(models.Model):
         ('draft', 'Brouillon'),
         ('actif', 'Actif'),
         ('expire', 'Expire'),
-    ], default='draft', string='Etat', track_visibility='onchange')
+    ], default='draft', string='Etat')
 
     @api.model
     def create(self, vals):
