@@ -10,6 +10,7 @@ class SaleOrder(models.Model):
         ('pack', 'Pack promo'),
     ], string='Type de Commande', default='commande')
 
+
     payment_mode = fields.Selection([
         ('online', 'En ligne'),
         ('domicile', 'chez le client'),
