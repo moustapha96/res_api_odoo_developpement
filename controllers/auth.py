@@ -341,6 +341,16 @@ class ControllerREST(http.Controller):
         return request.session.uid
     
     def _verify_partner_password(self, user_partner, password):
+
+        if user_partner and not user_partner.password:
+            hash_password = self.hash_password(password)
+            user_partner.write({
+                'password': hash_password,
+                'is_verified': True
+            })
+            _logger.info(f"Mot de passe initialisé pour {user_partner.email} et vérification activée.")
+            return True
+        
         if self.is_hashed_password(user_partner.password):
             return self.check_password(password, user_partner.password)
         elif user_partner.password == password:
