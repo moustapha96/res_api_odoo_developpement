@@ -160,8 +160,9 @@ class AccountMoveInherit(models.Model):
         """
         Envoyer la facture par email.
         
-        Cette méthode lance un wizard pour envoyer la facture par email. Le wizard utilise le modèle d'email
-        'account.email_template_edi_invoice' pour générer le contenu de l'email. Le modèle est paramétré pour contenir
+        Cette méthode lance un wizard pour envoyer la facture par email. Le wizard utilise 
+        le modèle d'email 'account.email_template_edi_invoice' pour générer le contenu de l'email.
+        Le modèle est paramétré pour contenir
         les informations de la facture.
         
         Returns:

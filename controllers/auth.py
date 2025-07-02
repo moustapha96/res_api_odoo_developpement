@@ -396,7 +396,7 @@ class ControllerREST(http.Controller):
             if not user_partner:
                 return error_resp(400, "Email ou mot de passe incorrecte!")
             
-            if not user_partner.is_verified:
+            if not user_partner.is_verified and user_partner.password:
                 return error_resp(400, "Email non verifié!")
             
             is_true_partner = self._verify_partner_password(user_partner, password)
@@ -434,7 +434,7 @@ class ControllerREST(http.Controller):
             if not user_partner:
                 return error_resp(400, "Email ou mot de passe incorrecte!")
             
-            if not user_partner.is_verified:
+            if not user_partner.is_verified and user_partner.password:
                 return error_resp(400, "Email non verifié!")
             
             is_true_partner = self._verify_partner_password(user_partner, password)
