@@ -724,3 +724,22 @@ class userREST(http.Controller):
         else :
             partner.write({'is_verified': True})
             return self._json_response("Code OTP valide", status=200)
+        
+
+
+    #  reccuperer tout les partenaires dont parent_id est defini
+    @http.route('/api/partner/update-partner', methods=['GET'], type='http', auth='none', cors="*")
+    def api_partner_get_by_parent(self, **kw):
+
+        user = request.env['res.users'].sudo().browse(request.env.uid)
+        if not user or user._is_public():
+            admin_user = request.env.ref('base.user_admin')
+            request.env = request.env(user=admin_user.id)
+
+        partners = request.env['res.partner'].sudo().search([('parent_id', '!=', False)])
+        if partners:
+            for partner in partners:
+                partner.write({'is_verified': True ,  'adhesion' : 'accepted'})
+                _logger.info(f"Partenaire mis à jour : {partner.name}")
+
+        return self._json_response('Partenaires mis à jour', status=200)
