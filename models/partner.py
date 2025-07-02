@@ -8,21 +8,21 @@ _logger = logging.getLogger(__name__)
 class Partner(models.Model):
     _inherit = 'res.partner'
 
-    # password = fields.Char(string='Mot de passe de connexion sur la partie web',  required=False)
-    # is_verified = fields.Boolean(string='Etat verification compte mail', default=False)
-    # avatar = fields.Char(string='Photo profil Client', required=False)
-    # role = fields.Selection([
-    #     ('main_user', 'Utilisateur Principal'),
-    #     ('secondary_user', 'Utilisateur Secondaire')
-    # ], string='Rôle', default='secondary_user')
-    # adhesion = fields.Selection([
-    #     ('pending', 'En cours de validation'),
-    #     ('accepted', 'Accepté'),
-    #     ('rejected', 'Rejeté')
-    # ], string='Adhésion', default='pending')
-    # adhesion_submit = fields.Boolean(string="Etat demande d'adhésion", default=False)
+    password = fields.Char(string='Mot de passe de connexion sur la partie web',  required=False)
+    is_verified = fields.Boolean(string='Etat verification compte mail', default=False)
+    avatar = fields.Char(string='Photo profil Client', required=False)
+    role = fields.Selection([
+        ('main_user', 'Utilisateur Principal'),
+        ('secondary_user', 'Utilisateur Secondaire')
+    ], string='Rôle', default='secondary_user')
+    adhesion = fields.Selection([
+        ('pending', 'En cours de validation'),
+        ('accepted', 'Accepté'),
+        ('rejected', 'Rejeté')
+    ], string='Adhésion', default='pending')
+    adhesion_submit = fields.Boolean(string="Etat demande d'adhésion", default=False)
 
-    # entreprise_code = fields.Char(string='Code entreprise', required=False)
+    entreprise_code = fields.Char(string='Code entreprise', required=False)
 
    
     @api.model_create_multi
