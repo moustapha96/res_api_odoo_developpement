@@ -19,6 +19,7 @@ class ProductCategorieControllerREST(http.Controller):
                 categories_data.append({
                     'id': category.id,
                     'name': category.name,
+                    'image': category.image,
                 })
 
             resp = werkzeug.wrappers.Response(
