@@ -10,6 +10,10 @@ _logger = logging.getLogger(__name__)
 class CategorieReference(models.Model):
     _inherit = 'product.category'
 
+
+    image = fields.Binary(string='Image', attachment=True)
+
+    
     code = fields.Char(
         string="Code Référence Catégorie", 
         compute='_compute_code', 
