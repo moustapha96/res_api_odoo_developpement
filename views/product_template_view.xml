@@ -59,6 +59,11 @@
             <field name="arch" type="xml">
                 <xpath expr="//field[@name='parent_id']" position="after">
                     <field name="code" readonly="1" />
+
+                    <group>
+                        <field name="image" widget="image" class="oe_avatar"
+                            string="Image Catégorie" />
+                    </group>
                 </xpath>
             </field>
         </record>
