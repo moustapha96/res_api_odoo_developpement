@@ -4,6 +4,7 @@
 from odoo import models, fields, api, _
 import re
 import logging
+from odoo.exceptions import UserError
 
 _logger = logging.getLogger(__name__)
 
@@ -457,35 +458,92 @@ class ProductTemplate(models.Model):
     @api.model
     def create(self, vals):
         """Auto-generate reference on product creation"""
+        # result = super(ProductTemplate, self).create(vals)
+        # for record in result:
+        #     record._onchange_compute_all_codes()
+        # return result
         result = super(ProductTemplate, self).create(vals)
         for record in result:
             record._onchange_compute_all_codes()
+            record.generate_unique_reference()
         return result
 
     def write(self, vals):
+        # """Update reference when product data changes"""
+        # result = super(ProductTemplate, self).write(vals)
+        # if any(field in vals for field in ['name', 'categ_id', 'product_tag_ids','department_code']):
+        #     for record in self:
+        #         record._onchange_compute_all_codes()
+        # return result
         """Update reference when product data changes"""
         result = super(ProductTemplate, self).write(vals)
-        if any(field in vals for field in ['name', 'categ_id', 'product_tag_ids','department_code']):
+        if any(field in vals for field in ['name', 'categ_id', 'product_tag_ids', 'department_code']):
             for record in self:
                 record._onchange_compute_all_codes()
+                record.generate_unique_reference()
         return result
 
+    # def generate_unique_reference(self):
+    #     """Generate a unique reference by checking for duplicates"""
+    #     for record in self:
+    #         base_ref = record.reference_auto
+    #         if not base_ref:
+    #             record._onchange_compute_all_codes()
+    #             base_ref = record.reference_auto
+            
+    #         # Check for duplicates and add suffix if needed
+    #         counter = 1
+    #         unique_ref = base_ref
+    #         while self.search([('reference_auto', '=', unique_ref), ('id', '!=', record.id)]):
+    #             unique_ref = f"{base_ref}{counter:02d}"
+    #             counter += 1
+            
+    #         record.reference_auto = unique_ref
+
+    # def generate_unique_reference(self):
+    #     """Generate a unique reference by checking for duplicates"""
+    #     for record in self:
+    #         base_ref = record.reference_auto
+    #         if not base_ref:
+    #             record._onchange_compute_all_codes()
+    #             base_ref = record.reference_auto
+
+    #         # Check for duplicates and add suffix if needed
+    #         counter = 1
+    #         unique_ref = base_ref
+    #         while self.search([('reference_auto', '=', unique_ref), ('id', '!=', record.id)]):
+    #             unique_ref = f"{base_ref}{counter}"
+    #             counter += 1
+
+    #         record.reference_auto = unique_ref
+    #         record.default_code = unique_ref
     def generate_unique_reference(self):
-        """Generate a unique reference by checking for duplicates"""
+        """Generate a unique reference by checking for duplicates and block the creation if a duplicate is found"""
         for record in self:
             base_ref = record.reference_auto
             if not base_ref:
                 record._onchange_compute_all_codes()
                 base_ref = record.reference_auto
-            
-            # Check for duplicates and add suffix if needed
+
+            # Check for duplicates
+            existing_product = self.search([('reference_auto', '=', base_ref), ('id', '!=', record.id)], limit=1)
+
+            if existing_product:
+                # Block the creation/update and raise an error
+                raise UserError(_('Un produit avec la même référence existe déjà: %s (ID: %s)') % (existing_product.name, existing_product.id))
+
+            # If no duplicate is found, proceed with the unique reference generation
             counter = 1
             unique_ref = base_ref
             while self.search([('reference_auto', '=', unique_ref), ('id', '!=', record.id)]):
-                unique_ref = f"{base_ref}{counter:02d}"
+                unique_ref = f"{base_ref}{counter}"
                 counter += 1
-            
+
+            # Update both reference_auto and default_code
             record.reference_auto = unique_ref
+            record.default_code = unique_ref
+
+
 
     def action_regenerate_references(self):
         """Action to regenerate all references for selected products"""
