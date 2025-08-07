@@ -8,33 +8,12 @@
                 <xpath expr="//field[@name='function']" position="before">
                     <field name="is_verified" />
                 </xpath>
-            </field>
-        </record>
-
-        <record id="view_partner_form_inherit_role" model="ir.ui.view">
-            <field name="name">res.partner.form.inherit.role</field>
-            <field name="model">res.partner</field>
-            <field name="inherit_id" ref="base.view_partner_form" />
-            <field name="arch" type="xml">
                 <xpath expr="//field[@name='is_verified']" position="after">
                     <field name="role" />
-                </xpath>
-            </field>
-        </record>
-
-        <record id="view_partner_form_inherit_adhesion" model="ir.ui.view">
-            <field name="name">res.partner.form.inherit.adhesion</field>
-            <field name="model">res.partner</field>
-            <field name="inherit_id" ref="base.view_partner_form" />
-            <field name="arch" type="xml">
-                <xpath expr="//field[@name='role']" position="after">
                     <field name="adhesion" />
                     <field name="entreprise_code" />
-
                 </xpath>
             </field>
         </record>
-
-
     </data>
 </odoo>
