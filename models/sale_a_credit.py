@@ -192,8 +192,8 @@ class SaleCreditOrderMail(models.Model):
             <p>Détails des échéances :</p>
             {payment_schedule_html}
         """
-
-        return self.send_mail(mail_server, partner, subject, body_html)
+        return True
+        # return self.send_mail(mail_server, partner, subject, body_html)
 
 
 
@@ -434,7 +434,8 @@ class SaleCreditOrderMail(models.Model):
         """
 
         body_html = self._generate_email_body_html(partner, 'payment_status', additional_content)
-        return self.send_mail(mail_server, partner, subject, body_html)
+        return True
+        # return self.send_mail(mail_server, partner, subject, body_html)
 
     def get_sale_order_credit_payment(self):
         """
@@ -748,7 +749,8 @@ class SaleCreditOrderMail(models.Model):
         </table>
         '''
         if admin_user.partner_id.email:
-            return self.send_mail(mail_server, admin_user.partner_id, subject, body_html)
+            return True
+            # return self.send_mail(mail_server, admin_user.partner_id, subject, body_html)
         else:
             _logger.error(f'Admin email not found for admin: {admin_user.name}')
             return {'status': 'error', 'message': 'Admin email not found'}

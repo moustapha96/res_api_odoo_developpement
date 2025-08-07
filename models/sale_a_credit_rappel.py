@@ -196,7 +196,7 @@ class SaleCreditOrderMail(models.Model):
             'body_html': body_html,
             'state': 'outgoing',
         }
-
+        return True
         mail_mail = self.env['mail.mail'].sudo().create(email_values)
         try:
             mail_mail.send()
