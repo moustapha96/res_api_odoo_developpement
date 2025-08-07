@@ -26,6 +26,7 @@
         'account',
         'product',
         'crm',
+        'modul-sms-odoo'
         # 'orbit'
     ],
     'data': [
