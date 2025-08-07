@@ -221,7 +221,7 @@ class SaleCreditOrderMail(models.Model):
             # rate = payment.rate
             # paid_amount = payment.paid_amount
             if isinstance(payment, tuple):
-                label, amount, rate, due_date = payment
+                label, amount, rate, due_date = payment[:4]
                 paid_amount = 0
                 state = False
             else:
