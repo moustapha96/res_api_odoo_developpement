@@ -11,7 +11,16 @@ class CommandeREST(http.Controller):
     @http.route('/api/commandes/<id>', methods=['GET'], type='http', auth='none', cors="*")
     def api_orders_user_GET(self, id, **kw):
 
-        if id:
+        partner = request.env['res.partner'].sudo().search([('id', '=', id)], limit=1)
+        if not partner:
+            resp = werkzeug.wrappers.Response(
+                    status=400,
+                    content_type='application/json; charset=utf-8',
+                    headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                    response=json.dumps({ "status": "error", "message": "Client non rencontré"})
+                )
+            return resp
+        try:
             orders = request.env['sale.order'].sudo().search([('partner_id.id','=', id ) , ('type_sale' , '=' , 'order' )])
             order_data = []
             if orders:
@@ -71,19 +80,96 @@ class CommandeREST(http.Controller):
                     headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
                     response=json.dumps(order_data)
                 )
-            else:
-                return werkzeug.wrappers.Response(
-                    status=200,
-                    content_type='application/json; charset=utf-8',
-                    headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
-                    response=json.dumps([])
-                )
-        else:
+
+                return resp
+        except Exception as e:
+            _logger.info("Exception : %s", e)
             return werkzeug.wrappers.Response(
                 status=400,
                 content_type='application/json; charset=utf-8',
                 headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
-                response=json.dumps("partner id non valide")
+            )
+
+    @http.route('/api/patner/<id>/commandes', methods=['GET'], type='http', auth='none', cors="*")
+    def api_get_order_partners(self, id, **kw):
+
+        partner = request.env['res.partner'].sudo().search([('id', '=', id)], limit=1)
+        if not partner:
+            resp = werkzeug.wrappers.Response(
+                    status=400,
+                    content_type='application/json; charset=utf-8',
+                    headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                    response=json.dumps({ "status": "error", "message": "Client non rencontré"})
+                )
+            return resp
+        try:
+            orders = request.env['sale.order'].sudo().search([('partner_id.id','=', id ) , ('type_sale' , '=' , 'order' )])
+            order_data = []
+            if orders:
+                for o in orders:
+                    order_data.append({
+                        'id': o.id,
+                        'type_sale':  o.type_sale,
+                        'date_order': o.date_order.isoformat() if o.date_order else None,
+                        'name': o.name,
+                        'payment_mode': o.payment_mode,
+                        'partner_id': o.partner_id.id or None,
+                        'partner_name': o.partner_id.name or None,
+                        'partner_street': o.partner_id.street or None,
+                        'partner_street2': o.partner_id.street2 or None,
+                        'partner_city': o.partner_id.city or None,
+                        'partner_state_id': o.partner_id.state_id.id or None,
+                        'partner_state_name': o.partner_id.state_id.name or None,
+                        'partner_zip': o.partner_id.zip or None,
+                        'partner_country_id': o.partner_id.country_id.id or None,
+                        'partner_country_name': o.partner_id.country_id.name or None,
+                        'partner_vat': o.partner_id.vat or None,
+                        'partner_email': o.partner_id.email or None,
+                        'partner_phone': o.partner_id.phone or None,
+                        'amount_untaxed': o.amount_untaxed or None,
+                        'amount_tax': o.amount_tax or None,
+                        'amount_total': o.amount_total or None,
+                        'amount_residual': o.amount_residual,
+                        'state': o.state or None,
+                        'user_id': o.user_id.id or None,
+                        'user_name': o.user_id.name or None,
+                        'create_date': o.create_date.isoformat() if o.create_date else None,
+                        'payment_term_id': o.payment_term_id.id or None,
+                        'advance_payment_status':o.advance_payment_status,
+                        'commitment_date': o.commitment_date.isoformat() if o.commitment_date else None,
+                        'note': o.note or None,
+                        'type_order': o.type_order,
+                        'order_lines': [{
+                            'id': l.id or None,
+                            'product_id': l.product_id.id or None,
+                            'product_name': l.product_id.name or None,
+                            'product_uom_qty': l.product_uom_qty or None,
+                            'product_uom': l.product_uom.id or None,
+                            'product_uom_name': l.product_uom.name or None,
+                            'price_unit': l.price_unit or None,
+                            'price_subtotal': l.price_subtotal or None,
+                            'price_tax': l.price_tax or None,
+                            'price_total': l.price_total or None,
+                            'qty_delivered': l.qty_delivered or None,
+                            'qty_to_invoice': l.qty_to_invoice or None,
+                            'qty_invoiced': l.qty_invoiced or None
+                        } for l in o.order_line]
+                    })
+
+                resp = werkzeug.wrappers.Response(
+                    status=200,
+                    content_type='application/json; charset=utf-8',
+                    headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                    response=json.dumps(order_data)
+                )
+
+                return resp
+        except Exception as e:
+            _logger.info("Exception : %s", e)
+            return werkzeug.wrappers.Response(
+                status=400,
+                content_type='application/json; charset=utf-8',
+                headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
             )
 
 
