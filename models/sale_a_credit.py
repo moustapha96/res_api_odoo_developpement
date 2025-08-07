@@ -1,7 +1,7 @@
 from odoo import models, fields, api
 from odoo.http import request
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 
 _logger = logging.getLogger(__name__)
 
