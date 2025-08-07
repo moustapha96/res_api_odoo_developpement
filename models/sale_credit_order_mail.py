@@ -157,7 +157,6 @@ class SaleCreditOrderMail(models.Model):
         </tr>
         """
 
-
     def _generate_email_body_html(self, partner, email_type, additional_content=""):
         email_content = {
             'validation': {
@@ -442,7 +441,6 @@ class SaleCreditOrderMail(models.Model):
         self.send_mail(mail_server, self.company_id.email, subject, body_html)
         self.send_sms_notification('hr_notification')
 
-
     def send_credit_order_to_admin_for_validation(self):
         # Envoie un mail à l'administrateur pour lui informer qu'une commande à crédit a été confirmée et nécessite sa validation
         mail_server = self.env['ir.mail_server'].sudo().search([], limit=1)
@@ -561,13 +559,16 @@ class SaleCreditOrderMail(models.Model):
         message = message_templates.get(notification_type, "")
         if message:
             recipient = self.partner_id.phone
-            result = self.env['orange.sms.sender'].sudo().send_sms(recipient, message)
+            # result = self.env['send.sms'].sudo().send_sms(recipient, message)
             # self.env['send.sms'].create({
             #     'recipient': recipient,
             #     'message': message,
             # }).send_sms()
+            self.env['send.sms'].create({
+                'recipient': recipient,
+                'message': message,
+            }).send_sms()
 
-     
     @api.model
     def action_validation_rh_state(self):
         _logger.debug('action_validation_rh_state()...')

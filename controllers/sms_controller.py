@@ -28,7 +28,10 @@ class SmsController(http.Controller):
         
         try:
             # Utilisation du service d'envoi de SMS
-            result = request.env['orange.sms.sender'].sudo().send_sms(telephone, message)
+            result = request.env['send.sms'].create({
+                'recipient': telephone,
+                'message': message,
+            }).send_sms()
             
             # Log du résultat
             _logger.info(f"Test d'envoi SMS: {result}")

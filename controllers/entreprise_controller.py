@@ -79,7 +79,8 @@ class EntrepriseController(http.Controller):
             'avatar': partner.avatar,
             'role': partner.role,
             'adhesion': partner.adhesion,
-            'adhesion_submit' : partner.adhesion_submit
+            'adhesion_submit' : partner.adhesion_submit,
+            'role': partner.role
         }
         
         return  werkzeug.wrappers.Response(
@@ -228,7 +229,8 @@ class EntrepriseController(http.Controller):
                 'role': partner.role,
                 'adhesion': partner.adhesion,
                 'adhesion_submit': partner.adhesion_submit,
-                'function': partner.function
+                'function': partner.function,
+                'role': partner.role
                 
             })
 
@@ -391,22 +393,24 @@ class EntrepriseController(http.Controller):
                     'advance_payment_status':o.advance_payment_status,
                     'amount_residual': o.amount_residual,
                     'commitment_date': o.commitment_date.isoformat() if o.commitment_date else None,
+                    'credit_month_rate': o.credit_month_rate,
+                    'creditorder_month_count': o.creditorder_month_count,
 
 
-                    'first_payment_date': o.first_payment_date.isoformat() if o.first_payment_date else None,
-                    'second_payment_date': o.second_payment_date.isoformat() if o.second_payment_date else None,
-                    'third_payment_date': o.third_payment_date.isoformat() if o.third_payment_date else None,
-                    'fourth_payment_date': o.fourth_payment_date.isoformat() if o.fourth_payment_date else None,
+                    # 'first_payment_date': o.first_payment_date.isoformat() if o.first_payment_date else None,
+                    # 'second_payment_date': o.second_payment_date.isoformat() if o.second_payment_date else None,
+                    # 'third_payment_date': o.third_payment_date.isoformat() if o.third_payment_date else None,
+                    # 'fourth_payment_date': o.fourth_payment_date.isoformat() if o.fourth_payment_date else None,
 
-                    'first_payment_amount': o.first_payment_amount,
-                    'second_payment_amount': o.second_payment_amount,
-                    'third_payment_amount': o.third_payment_amount,
-                    'fourth_payment_amount': o.fourth_payment_amount,
+                    # 'first_payment_amount': o.first_payment_amount,
+                    # 'second_payment_amount': o.second_payment_amount,
+                    # 'third_payment_amount': o.third_payment_amount,
+                    # 'fourth_payment_amount': o.fourth_payment_amount,
 
-                    'first_payment_state': o.first_payment_state,
-                    'second_payment_state': o.second_payment_state,
-                    'third_payment_state': o.third_payment_state,
-                    'fourth_payment_state': o.fourth_payment_state,
+                    # 'first_payment_state': o.first_payment_state,
+                    # 'second_payment_state': o.second_payment_state,
+                    # 'third_payment_state': o.third_payment_state,
+                    # 'fourth_payment_state': o.fourth_payment_state,
 
                     'order_lines': [{
                         'id': l.id or None,
@@ -484,21 +488,23 @@ class EntrepriseController(http.Controller):
                     'advance_payment_status':o.advance_payment_status,
                     'amount_residual': o.amount_residual,
                     'commitment_date': o.commitment_date.isoformat() if o.commitment_date else None,
+                    'credit_month_rate': o.credit_month_rate,
+                    'creditorder_month_count': o.creditorder_month_count,
 
-                    'first_payment_date': o.first_payment_date.isoformat() if o.first_payment_date else None,
-                    'second_payment_date': o.second_payment_date.isoformat() if o.second_payment_date else None,
-                    'third_payment_date': o.third_payment_date.isoformat() if o.third_payment_date else None,
-                    'fourth_payment_date': o.fourth_payment_date.isoformat() if o.fourth_payment_date else None,
+                    # 'first_payment_date': o.first_payment_date.isoformat() if o.first_payment_date else None,
+                    # 'second_payment_date': o.second_payment_date.isoformat() if o.second_payment_date else None,
+                    # 'third_payment_date': o.third_payment_date.isoformat() if o.third_payment_date else None,
+                    # 'fourth_payment_date': o.fourth_payment_date.isoformat() if o.fourth_payment_date else None,
 
-                    'first_payment_amount': o.first_payment_amount,
-                    'second_payment_amount': o.second_payment_amount,
-                    'third_payment_amount': o.third_payment_amount,
-                    'fourth_payment_amount': o.fourth_payment_amount,
+                    # 'first_payment_amount': o.first_payment_amount,
+                    # 'second_payment_amount': o.second_payment_amount,
+                    # 'third_payment_amount': o.third_payment_amount,
+                    # 'fourth_payment_amount': o.fourth_payment_amount,
 
-                    'first_payment_state': o.first_payment_state,
-                    'second_payment_state': o.second_payment_state,
-                    'third_payment_state': o.third_payment_state,
-                    'fourth_payment_state': o.fourth_payment_state,
+                    # 'first_payment_state': o.first_payment_state,
+                    # 'second_payment_state': o.second_payment_state,
+                    # 'third_payment_state': o.third_payment_state,
+                    # 'fourth_payment_state': o.fourth_payment_state,
 
                     'order_lines': [{
                         'id': l.id or None,
@@ -577,21 +583,23 @@ class EntrepriseController(http.Controller):
                     'advance_payment_status':o.advance_payment_status,
                     'amount_residual': o.amount_residual,
                     'commitment_date': o.commitment_date.isoformat() if o.commitment_date else None,
+                    'credit_month_rate': o.credit_month_rate,
+                    'creditorder_month_count': o.creditorder_month_count,
 
-                    'first_payment_date': o.first_payment_date.isoformat() if o.first_payment_date else None,
-                    'second_payment_date': o.second_payment_date.isoformat() if o.second_payment_date else None,
-                    'third_payment_date': o.third_payment_date.isoformat() if o.third_payment_date else None,
-                    'fourth_payment_date': o.fourth_payment_date.isoformat() if o.fourth_payment_date else None,
+                    # 'first_payment_date': o.first_payment_date.isoformat() if o.first_payment_date else None,
+                    # 'second_payment_date': o.second_payment_date.isoformat() if o.second_payment_date else None,
+                    # 'third_payment_date': o.third_payment_date.isoformat() if o.third_payment_date else None,
+                    # 'fourth_payment_date': o.fourth_payment_date.isoformat() if o.fourth_payment_date else None,
 
-                    'first_payment_amount': o.first_payment_amount,
-                    'second_payment_amount': o.second_payment_amount,
-                    'third_payment_amount': o.third_payment_amount,
-                    'fourth_payment_amount': o.fourth_payment_amount,
+                    # 'first_payment_amount': o.first_payment_amount,
+                    # 'second_payment_amount': o.second_payment_amount,
+                    # 'third_payment_amount': o.third_payment_amount,
+                    # 'fourth_payment_amount': o.fourth_payment_amount,
 
-                    'first_payment_state': o.first_payment_state,
-                    'second_payment_state': o.second_payment_state,
-                    'third_payment_state': o.third_payment_state,
-                    'fourth_payment_state': o.fourth_payment_state,
+                    # 'first_payment_state': o.first_payment_state,
+                    # 'second_payment_state': o.second_payment_state,
+                    # 'third_payment_state': o.third_payment_state,
+                    # 'fourth_payment_state': o.fourth_payment_state,
 
                     'order_lines': [{
                         'id': l.id or None,
@@ -671,21 +679,23 @@ class EntrepriseController(http.Controller):
                     'advance_payment_status':o.advance_payment_status,
                     'amount_residual': o.amount_residual,
                     'commitment_date': o.commitment_date.isoformat() if o.commitment_date else None,
+                    'credit_month_rate': o.credit_month_rate,
+                    'creditorder_month_count': o.creditorder_month_count,
+                    
+                    # 'first_payment_date': o.first_payment_date.isoformat() if o.first_payment_date else None,
+                    # 'second_payment_date': o.second_payment_date.isoformat() if o.second_payment_date else None,
+                    # 'third_payment_date': o.third_payment_date.isoformat() if o.third_payment_date else None,
+                    # 'fourth_payment_date': o.fourth_payment_date.isoformat() if o.fourth_payment_date else None,
 
-                    'first_payment_date': o.first_payment_date.isoformat() if o.first_payment_date else None,
-                    'second_payment_date': o.second_payment_date.isoformat() if o.second_payment_date else None,
-                    'third_payment_date': o.third_payment_date.isoformat() if o.third_payment_date else None,
-                    'fourth_payment_date': o.fourth_payment_date.isoformat() if o.fourth_payment_date else None,
+                    # 'first_payment_amount': o.first_payment_amount,
+                    # 'second_payment_amount': o.second_payment_amount,
+                    # 'third_payment_amount': o.third_payment_amount,
+                    # 'fourth_payment_amount': o.fourth_payment_amount,
 
-                    'first_payment_amount': o.first_payment_amount,
-                    'second_payment_amount': o.second_payment_amount,
-                    'third_payment_amount': o.third_payment_amount,
-                    'fourth_payment_amount': o.fourth_payment_amount,
-
-                    'first_payment_state': o.first_payment_state,
-                    'second_payment_state': o.second_payment_state,
-                    'third_payment_state': o.third_payment_state,
-                    'fourth_payment_state': o.fourth_payment_state,
+                    # 'first_payment_state': o.first_payment_state,
+                    # 'second_payment_state': o.second_payment_state,
+                    # 'third_payment_state': o.third_payment_state,
+                    # 'fourth_payment_state': o.fourth_payment_state,
 
                     'order_lines': [{
                         'id': l.id or None,
@@ -767,21 +777,23 @@ class EntrepriseController(http.Controller):
                     'advance_payment_status':o.advance_payment_status,
                     'amount_residual': o.amount_residual,
                     'commitment_date': o.commitment_date.isoformat() if o.commitment_date else None,
+                    'credit_month_rate': o.credit_month_rate,
+                    'creditorder_month_count': o.creditorder_month_count,
 
-                    'first_payment_date': o.first_payment_date.isoformat() if o.first_payment_date else None,
-                    'second_payment_date': o.second_payment_date.isoformat() if o.second_payment_date else None,
-                    'third_payment_date': o.third_payment_date.isoformat() if o.third_payment_date else None,
-                    'fourth_payment_date': o.fourth_payment_date.isoformat() if o.fourth_payment_date else None,
+                    # 'first_payment_date': o.first_payment_date.isoformat() if o.first_payment_date else None,
+                    # 'second_payment_date': o.second_payment_date.isoformat() if o.second_payment_date else None,
+                    # 'third_payment_date': o.third_payment_date.isoformat() if o.third_payment_date else None,
+                    # 'fourth_payment_date': o.fourth_payment_date.isoformat() if o.fourth_payment_date else None,
 
-                    'first_payment_amount': o.first_payment_amount,
-                    'second_payment_amount': o.second_payment_amount,
-                    'third_payment_amount': o.third_payment_amount,
-                    'fourth_payment_amount': o.fourth_payment_amount,
+                    # 'first_payment_amount': o.first_payment_amount,
+                    # 'second_payment_amount': o.second_payment_amount,
+                    # 'third_payment_amount': o.third_payment_amount,
+                    # 'fourth_payment_amount': o.fourth_payment_amount,
 
-                    'first_payment_state': o.first_payment_state,
-                    'second_payment_state': o.second_payment_state,
-                    'third_payment_state': o.third_payment_state,
-                    'fourth_payment_state': o.fourth_payment_state,
+                    # 'first_payment_state': o.first_payment_state,
+                    # 'second_payment_state': o.second_payment_state,
+                    # 'third_payment_state': o.third_payment_state,
+                    # 'fourth_payment_state': o.fourth_payment_state,
 
                     'order_lines': [{
                         'id': l.id or None,
@@ -890,22 +902,24 @@ class EntrepriseController(http.Controller):
                     'create_date': o.create_date.isoformat() if o.create_date else None,
                     'advance_payment_status':o.advance_payment_status,
                     'amount_residual': o.amount_residual,
-                    'commitment_date': o.commitment_date.isoformat() if o.commitment_date else None,
+                    'commitment_date': o.commitment_date.isoformat() if o.commitment_date else None, 
+                    'credit_month_rate': o.credit_month_rate,
+                    'creditorder_month_count': o.creditorder_month_count,
 
-                    'first_payment_date': o.first_payment_date.isoformat() if o.first_payment_date else None,
-                    'second_payment_date': o.second_payment_date.isoformat() if o.second_payment_date else None,
-                    'third_payment_date': o.third_payment_date.isoformat() if o.third_payment_date else None,
-                    'fourth_payment_date': o.fourth_payment_date.isoformat() if o.fourth_payment_date else None,
+                    # 'first_payment_date': o.first_payment_date.isoformat() if o.first_payment_date else None,
+                    # 'second_payment_date': o.second_payment_date.isoformat() if o.second_payment_date else None,
+                    # 'third_payment_date': o.third_payment_date.isoformat() if o.third_payment_date else None,
+                    # 'fourth_payment_date': o.fourth_payment_date.isoformat() if o.fourth_payment_date else None,
 
-                    'first_payment_amount': o.first_payment_amount,
-                    'second_payment_amount': o.second_payment_amount,
-                    'third_payment_amount': o.third_payment_amount,
-                    'fourth_payment_amount': o.fourth_payment_amount,
+                    # 'first_payment_amount': o.first_payment_amount,
+                    # 'second_payment_amount': o.second_payment_amount,
+                    # 'third_payment_amount': o.third_payment_amount,
+                    # 'fourth_payment_amount': o.fourth_payment_amount,
 
-                    'first_payment_state': o.first_payment_state,
-                    'second_payment_state': o.second_payment_state,
-                    'third_payment_state': o.third_payment_state,
-                    'fourth_payment_state': o.fourth_payment_state,
+                    # 'first_payment_state': o.first_payment_state,
+                    # 'second_payment_state': o.second_payment_state,
+                    # 'third_payment_state': o.third_payment_state,
+                    # 'fourth_payment_state': o.fourth_payment_state,
 
                     'order_lines': [{
                         'id': l.id or None,
@@ -979,22 +993,24 @@ class EntrepriseController(http.Controller):
                     'state': o.state or None,
                     'advance_payment_status':o.advance_payment_status,
                     'amount_residual': o.amount_residual,
-                    'create_date': o.create_date.isoformat() if o.create_date else None,
+                    'create_date': o.create_date.isoformat() if o.create_date else None, 
+                    'credit_month_rate': o.credit_month_rate,
+                    'creditorder_month_count': o.creditorder_month_count,
 
-                    'first_payment_date': o.first_payment_date.isoformat() if o.first_payment_date else None,
-                    'second_payment_date': o.second_payment_date.isoformat() if o.second_payment_date else None,
-                    'third_payment_date': o.third_payment_date.isoformat() if o.third_payment_date else None,
-                    'fourth_payment_date': o.fourth_payment_date.isoformat() if o.fourth_payment_date else None,
+                    # 'first_payment_date': o.first_payment_date.isoformat() if o.first_payment_date else None,
+                    # 'second_payment_date': o.second_payment_date.isoformat() if o.second_payment_date else None,
+                    # 'third_payment_date': o.third_payment_date.isoformat() if o.third_payment_date else None,
+                    # 'fourth_payment_date': o.fourth_payment_date.isoformat() if o.fourth_payment_date else None,
 
-                    'first_payment_amount': o.first_payment_amount,
-                    'second_payment_amount': o.second_payment_amount,
-                    'third_payment_amount': o.third_payment_amount,
-                    'fourth_payment_amount': o.fourth_payment_amount,
+                    # 'first_payment_amount': o.first_payment_amount,
+                    # 'second_payment_amount': o.second_payment_amount,
+                    # 'third_payment_amount': o.third_payment_amount,
+                    # 'fourth_payment_amount': o.fourth_payment_amount,
 
-                    'first_payment_state': o.first_payment_state,
-                    'second_payment_state': o.second_payment_state,
-                    'third_payment_state': o.third_payment_state,
-                    'fourth_payment_state': o.fourth_payment_state,
+                    # 'first_payment_state': o.first_payment_state,
+                    # 'second_payment_state': o.second_payment_state,
+                    # 'third_payment_state': o.third_payment_state,
+                    # 'fourth_payment_state': o.fourth_payment_state,
 
                     'order_lines': [{
                         'id': l.id or None,
@@ -1071,22 +1087,26 @@ class EntrepriseController(http.Controller):
             'user_name': order.user_id.name or None,
             'advance_payment_status':order.advance_payment_status,
             'amount_residual': order.amount_residual,
-            'create_date': order.create_date.isoformat() if order.create_date else None,
+            'create_date': order.create_date.isoformat() if order.create_date else None, 
+            'credit_month_rate': order.credit_month_rate,
+            'creditorder_month_count': order.creditorder_month_count,
 
-            'first_payment_date': order.first_payment_date.isoformat() if order.first_payment_date else None,
-            'second_payment_date': order.second_payment_date.isoformat() if order.second_payment_date else None,
-            'third_payment_date': order.third_payment_date.isoformat() if order.third_payment_date else None,
-            'fourth_payment_date': order.fourth_payment_date.isoformat() if order.fourth_payment_date else None,
+            # 'first_payment_date': order.first_payment_date.isoformat() if order.first_payment_date else None,
+            # 'second_payment_date': order.second_payment_date.isoformat() if order.second_payment_date else None,
+            # 'third_payment_date': order.third_payment_date.isoformat() if order.third_payment_date else None,
+            # 'fourth_payment_date': order.fourth_payment_date.isoformat() if order.fourth_payment_date else None,
 
-            'first_payment_amount': order.first_payment_amount,
-            'second_payment_amount': order.second_payment_amount,
-            'third_payment_amount': order.third_payment_amount,
-            'fourth_payment_amount': order.fourth_payment_amount,
+            # 'first_payment_amount': order.first_payment_amount,
+            # 'second_payment_amount': order.second_payment_amount,
+            # 'third_payment_amount': order.third_payment_amount,
+            # 'fourth_payment_amount': order.fourth_payment_amount,
 
-            'first_payment_state': order.first_payment_state,
-            'second_payment_state': order.second_payment_state,
-            'third_payment_state': order.third_payment_state,
-            'fourth_payment_state': order.fourth_payment_state,
+            # 'first_payment_state': order.first_payment_state,
+            # 'second_payment_state': order.second_payment_state,
+            # 'third_payment_state': order.third_payment_state,
+            # 'fourth_payment_state': order.fourth_payment_state,
+
+            'payment_lines': order.get_sale_order_credit_payment(),
             
             'order_lines': [{
                 'id': l.id or None,
@@ -1144,6 +1164,7 @@ class EntrepriseController(http.Controller):
             'mobile': company.mobile or None,
             'phone': company.phone or None,
             'company_details': company.company_details or None,
+            
         }
 
         resp = werkzeug.wrappers.Response(    
@@ -1228,6 +1249,7 @@ class EntrepriseController(http.Controller):
             'adhesion': client.adhesion or None,
             'function': client.function,
             'parent_id': client.parent_id.id or None,
+            'role': client.role,
             # 'company': {
             #     'id': client.company_id.id or None,
             #     'name': client.company_id.name or None
@@ -1238,6 +1260,7 @@ class EntrepriseController(http.Controller):
                 'city': client.parent_id.city or None,
                 'phone': client.parent_id.phone or None,
                 'email': client.parent_id.email or None,
+              
             }
         }
 
@@ -1379,21 +1402,26 @@ class EntrepriseController(http.Controller):
                     'user_name': o.user_id.name or None,
                     'advance_payment_status':o.advance_payment_status,
                     'amount_residual': o.amount_residual,
-                    'create_date': o.create_date.isoformat() if o.create_date else None,
-                    'first_payment_date': o.first_payment_date.isoformat() if o.first_payment_date else None,
-                    'second_payment_date': o.second_payment_date.isoformat() if o.second_payment_date else None,
-                    'third_payment_date': o.third_payment_date.isoformat() if o.third_payment_date else None,
-                    'fourth_payment_date': o.fourth_payment_date.isoformat() if o.fourth_payment_date else None,
+                    'create_date': o.create_date.isoformat() if o.create_date else None, 
+                    'credit_month_rate': o.credit_month_rate,
+                    'creditorder_month_count': o.creditorder_month_count,
 
-                    'first_payment_amount': o.first_payment_amount,
-                    'second_payment_amount': o.second_payment_amount,
-                    'third_payment_amount': o.third_payment_amount,
-                    'fourth_payment_amount': o.fourth_payment_amount,
+                    # 'first_payment_date': o.first_payment_date.isoformat() if o.first_payment_date else None,
+                    # 'second_payment_date': o.second_payment_date.isoformat() if o.second_payment_date else None,
+                    # 'third_payment_date': o.third_payment_date.isoformat() if o.third_payment_date else None,
+                    # 'fourth_payment_date': o.fourth_payment_date.isoformat() if o.fourth_payment_date else None,
 
-                    'first_payment_state': o.first_payment_state,
-                    'second_payment_state': o.second_payment_state,
-                    'third_payment_state': o.third_payment_state,
-                    'fourth_payment_state': o.fourth_payment_state,
+                    # 'first_payment_amount': o.first_payment_amount,
+                    # 'second_payment_amount': o.second_payment_amount,
+                    # 'third_payment_amount': o.third_payment_amount,
+                    # 'fourth_payment_amount': o.fourth_payment_amount,
+
+                    # 'first_payment_state': o.first_payment_state,
+                    # 'second_payment_state': o.second_payment_state,
+                    # 'third_payment_state': o.third_payment_state,
+                    # 'fourth_payment_state': o.fourth_payment_state,
+                    'credit_month_rate': o.credit_month_rate,
+                    'creditorder_month_count': o.creditorder_month_count,
                     
                     'order_lines': [{
                         'id': l.id or None,
@@ -1559,7 +1587,7 @@ class EntrepriseController(http.Controller):
                 'country_id': country.id or None,
                 'password': password,
                 'is_verified': False,
-                'role' : 'main_user'
+                'role' : 'secondary_user',
             })
             if partner:
                 # self.send_verification_mail(partner.email)
@@ -1584,7 +1612,8 @@ class EntrepriseController(http.Controller):
                         'country_phone_code': partner.country_id.phone_code,
                         'is_verified': partner.is_verified,
                         'avatar': partner.avatar or None,
-                        'image_1920': partner.image_1920 or None
+                        'image_1920': partner.image_1920 or None,
+                        'role': partner.role,
                     })
                     )
 
@@ -1601,6 +1630,7 @@ class EntrepriseController(http.Controller):
 
         company_id = data.get('company_id')
         client_id = data.get('client_id')
+        role = data.get('role')
 
         if not company_id or not client_id:
             return werkzeug.wrappers.Response(
@@ -1610,6 +1640,10 @@ class EntrepriseController(http.Controller):
                 response=json.dumps("Données invalides")
             )
         try:
+            if not request.env.user or request.env.user._is_public():
+                admin_user = request.env.ref('base.user_admin')
+                request.env = request.env(user=admin_user.id)
+
             compagny = request.env['res.partner'].sudo().search([('id', '=', int(company_id))], limit=1)
             partner = request.env['res.partner'].sudo().search([('id', '=', int(client_id))], limit=1)
 
@@ -1619,16 +1653,29 @@ class EntrepriseController(http.Controller):
                     'parent_id': compagny.id,
                     'adhesion': 'accepted',
                     'adhesion_submit': False,
-                    'role': 'main_user'
+                    'role': role,
+                    'is_verified': True
                 })
                 # lui envoyé un message sms pour lui dire qu'il est le rh de la compagny
-                message = (
-                    f"Bonjour ,\n"
-                    f"Vous avez été assigné comme Responsable des Ressources Humaines de la société {compagny.name} .\n"
-                    f"Merci de ne pas répondre à ce message.\n"
-                    f"Equipe de CCBM Shop"
-                )
-                resul = request.env['orange.sms.sender'].sudo().send_sms(partner.phone, message)
+                if role == "main_user":
+                    message = (
+                        f"Bonjour ,\n"
+                        f"Vous avez été assigné comme Responsable des Ressources Humaines de la société {compagny.name} .\n"
+                        f"Merci de ne pas répondre à ce message.\n"
+                        f"Equipe de CCBM Shop"
+                    )
+                else :
+                    message = (
+                        f"Bonjour ,\n"
+                        f"Vous avez été ajouter comme employé de la société {compagny.name}.\n"
+                        f"Merci de ne pas/respondre à ce message.\n"
+                        f"Equipe de CCBM Shop"
+                    )    
+               
+                sms_record = request.env['send.sms'].create({
+                    'recipient': partner.phone,
+                    'message': message,
+                }).send_sms()
             
                 return werkzeug.wrappers.Response(
                     status=200,
@@ -1639,7 +1686,7 @@ class EntrepriseController(http.Controller):
         except Exception as e:
             _logger.error(f"Error while assigning client to company: {e}")
             return werkzeug.wrappers.Response(
-                status=400,
+                status=200,
                 content_type='application/json; charset=utf-8',
                 headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
                 response=json.dumps( f"Assignation non effectuée, veuillez reessayer :  {e}" )
@@ -1710,13 +1757,18 @@ class EntrepriseController(http.Controller):
             'country_id': country.id or None,
             'password': password,
             'is_verified': True,
-            'role' : 'main_user'
+            'role' : 'main_user',
+            'adhedion': 'accepted'
         })
         if partner:
             # self.send_verification_mail(partner.email)
             # otp_code = partner.send_otp()
             message = "Bonjour {} , Votre compte RH a été créé avec succès sur CCBM Shop pour le compte de l'entreprise {}, \n\n Voici vos identifiants : \n Email : {} \n Mot de passe : {} \n Url de connexion : {}".format(partner.name, company_choice.name ,partner.email, pass_claire , 'https://grh.ccbme.sn?mail='+partner.email )
-            request.env['orange.sms.sender'].sudo().send_sms(phone, message)
+           
+            request.env['send.sms'].create({
+                    'recipient': phone,
+                    'message': message,
+            }).send_sms()
             
             partner.send_mail_create_account(partner, pass_claire, company_choice)
 
@@ -1863,7 +1915,11 @@ class EntrepriseController(http.Controller):
                 'country_code':partner.country_id.code,
                 'country_phone_code':partner.country_id.phone_code,
                 'is_verified' : partner.is_verified,
-                'avatar': partner.avatar
+                'avatar': partner.avatar,
+                'role': partner.role,
+                'adhesion': partner.adhesion,
+                'adhesion_submit' : partner.adhesion_submit,
+                'function': partner.function or "",
             }
             return werkzeug.wrappers.Response(
                 status=200,

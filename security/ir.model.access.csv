@@ -9,15 +9,5 @@ access_pack_produit,pack.produit,model_pack_produit,base.group_user,1,1,1,1
 access_pack_produit_line,access.pack.produit.line,model_pack_produit_line,,1,1,1,1
 
 
-
-
-access_res_partner_otp,res.partner OTP Access,model_res_partner,base.group_user,1,1,1,1
-access_orange_sms_config_admin,orange.sms.config Admin Access,model_orange_sms_config,base.group_system,1,1,1,1
-access_otp_code_user,otp.code User Access,model_otp_code,base.group_user,1,1,1,1
-
-
-
-access_orange_sms_sender_user,orange.sms.sender user,model_orange_sms_sender,base.group_user,1,1,1,0
-
 access_payment_details_user,payment.details.user,model_payment_details,base.group_user,1,1,1,1
 

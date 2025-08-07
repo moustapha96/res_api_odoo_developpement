@@ -54,21 +54,25 @@ class CreditCommandeREST(http.Controller):
                         'create_date': o.create_date.isoformat() if o.create_date else None,
                         'payment_line_ids': o.payment_term_id or None,
 
-                        'first_payment_date': o.first_payment_date.isoformat() if o.first_payment_date else None,
-                        'second_payment_date': o.second_payment_date.isoformat() if o.second_payment_date else None,
-                        'third_payment_date': o.third_payment_date.isoformat() if o.third_payment_date else None,
+                        # 'first_payment_date': o.first_payment_date.isoformat() if o.first_payment_date else None,
+                        # 'second_payment_date': o.second_payment_date.isoformat() if o.second_payment_date else None,
+                        # 'third_payment_date': o.third_payment_date.isoformat() if o.third_payment_date else None,
 
-                        'first_payment_amount': o.first_payment_amount,
-                        'second_payment_amount': o.second_payment_amount,
-                        'third_payment_amount': o.third_payment_amount,
+                        # 'first_payment_amount': o.first_payment_amount,
+                        # 'second_payment_amount': o.second_payment_amount,
+                        # 'third_payment_amount': o.third_payment_amount,
 
-                        'first_payment_state': o.first_payment_state,
-                        'second_payment_state': o.second_payment_state,
-                        'third_payment_state': o.third_payment_state,
+                        # 'first_payment_state': o.first_payment_state,
+                        # 'second_payment_state': o.second_payment_state,
+                        # 'third_payment_state': o.third_payment_state,
 
-                        'fourth_payment_amount': o.fourth_payment_amount,
-                        'fourth_payment_date': o.fourth_payment_date.isoformat() if o.fourth_payment_date else None,
-                        'fourth_payment_state': o.fourth_payment_state,
+                        # 'fourth_payment_amount': o.fourth_payment_amount,
+                        # 'fourth_payment_date': o.fourth_payment_date.isoformat() if o.fourth_payment_date else None,
+                        # 'fourth_payment_state': o.fourth_payment_state,
+
+                        'credit_month_rate': o.credit_month_rate  if o.credit_month_rate else 0,
+                        'creditorder_month_count': o.creditorder_month_count if o.creditorder_month_count else 0,
+                        'payment_lines': o.get_sale_order_credit_payment(),
                         
                         'advance_payment_status':o.advance_payment_status,
                         'order_lines': [{
@@ -106,6 +110,7 @@ class CreditCommandeREST(http.Controller):
             response=json.dumps("Client et commande invalide")
         )
     
+    
     @http.route('/api/creditcommandes', methods=['POST'], type='http', auth='none', cors="*" , csrf=False)
     def api_create_credit_order(self, **kw):
         data = json.loads(request.httprequest.data)
@@ -116,6 +121,8 @@ class CreditCommandeREST(http.Controller):
         state = data.get('state')
         commitment_date = data.get('commitment_date')
         parent_id = data.get('parent_id')
+        acomptePercentage = data.get('acomptePercentage', 50)
+        nombreMois = data.get('nombreMois', 4)
 
         if not partner_id or not order_lines:
             raise ValueError('Invalid données commande crédit')
@@ -123,7 +130,6 @@ class CreditCommandeREST(http.Controller):
         partner = request.env['res.partner'].sudo().search([('id', '=', partner_id)], limit=1)
         partner_parent = request.env['res.partner'].sudo().search([('id', '=', parent_id)], limit=1)
 
-       
 
         if not partner_parent or (partner_parent.id != partner.parent_id.id):
             return werkzeug.wrappers.Response(
@@ -155,7 +161,9 @@ class CreditCommandeREST(http.Controller):
                 'payment_mode': 'online',
                 'validation_rh_state': 'pending',
                 'validation_admin_state': 'pending',
-                'date_approved_creditorder': datetime.datetime.now()
+                'date_approved_creditorder': datetime.datetime.now(),
+                'credit_month_rate': acomptePercentage,
+                'creditorder_month_count': nombreMois,
             })
             _logger.info("Commande créee avec successe: %s", order.name)
             for item in order_lines:
@@ -196,7 +204,7 @@ class CreditCommandeREST(http.Controller):
                 # order.action_confirm_credit_order()
                 # order._create_invoices()
                 order.send_credit_order_validation_mail()
-                order.send_credit_order_to_rh_for_confirmation()
+                order.send_credit_order_admin_validation()
                 order.write({
                     'validation_rh_state': 'pending',
                     'validation_admin_state': 'pending',
@@ -220,25 +228,31 @@ class CreditCommandeREST(http.Controller):
                         'company_id': order.company_id.id,
                         'commitment_date': order.commitment_date.isoformat(),
                         'state': order.state,
-                        'first_payment_date': order.first_payment_date.isoformat() if order.first_payment_date else None,
-                        'second_payment_date': order.second_payment_date.isoformat() if order.second_payment_date else None,
-                        'third_payment_date': order.third_payment_date.isoformat() if order.third_payment_date else None,
 
-                        'fourth_payment_amount': order.fourth_payment_amount,
-                        'fourth_payment_date': order.fourth_payment_date.isoformat() if order.fourth_payment_date else None,
-                        'fourth_payment_state': order.fourth_payment_state,
+                        # 'first_payment_date': order.first_payment_date.isoformat() if order.first_payment_date else None,
+                        # 'second_payment_date': order.second_payment_date.isoformat() if order.second_payment_date else None,
+                        # 'third_payment_date': order.third_payment_date.isoformat() if order.third_payment_date else None,
 
-                        'first_payment_amount': order.first_payment_amount,
-                        'second_payment_amount': order.second_payment_amount,
-                        'third_payment_amount': order.third_payment_amount,
-                        'first_payment_state': order.first_payment_state,
-                        'second_payment_state': order.second_payment_state,
-                        'third_payment_state': order.third_payment_state,
+                        # 'fourth_payment_amount': order.fourth_payment_amount,
+                        # 'fourth_payment_date': order.fourth_payment_date.isoformat() if order.fourth_payment_date else None,
+                        # 'fourth_payment_state': order.fourth_payment_state,
+
+                        # 'first_payment_amount': order.first_payment_amount,
+                        # 'second_payment_amount': order.second_payment_amount,
+                        # 'third_payment_amount': order.third_payment_amount,
+                        # 'first_payment_state': order.first_payment_state,
+                        # 'second_payment_state': order.second_payment_state,
+                        # 'third_payment_state': order.third_payment_state,
+
+
                         'amount_residual': order.amount_residual,
                         'amount_total' : order.amount_total,
                         'amount_tax': order.amount_tax,
                         'amount_untaxed' : order.amount_untaxed,
                         'advance_payment_status':order.advance_payment_status,
+                        'credit_month_rate': order.credit_month_rate,
+                        'creditorder_month_count': order.creditorder_month_count,
+                        'payment_lines': order.get_sale_order_credit_payment(),
                         'order_lines': [
                             {
                                 'id': order_line.id,
@@ -320,20 +334,21 @@ class CreditCommandeREST(http.Controller):
                                     'commitment_date': order.commitment_date.isoformat(),
                                     'state': order.state,
                                     'invoice_status': order.invoice_status,
-                                    'first_payment_date': order.first_payment_date.isoformat() if order.first_payment_date else None,
-                                    'second_payment_date': order.second_payment_date.isoformat() if order.second_payment_date else None,
-                                    'third_payment_date': order.third_payment_date.isoformat() if order.third_payment_date else None,
-                                    'fourth_payment_date': order.fourth_payment_date.isoformat() if order.fourth_payment_date else None,
 
-                                    'first_payment_amount': order.first_payment_amount,
-                                    'second_payment_amount': order.second_payment_amount,
-                                    'third_payment_amount': order.third_payment_amount,
-                                    'fourth_payment_amount': order.fourth_payment_amount,
+                                    # 'first_payment_date': order.first_payment_date.isoformat() if order.first_payment_date else None,
+                                    # 'second_payment_date': order.second_payment_date.isoformat() if order.second_payment_date else None,
+                                    # 'third_payment_date': order.third_payment_date.isoformat() if order.third_payment_date else None,
+                                    # 'fourth_payment_date': order.fourth_payment_date.isoformat() if order.fourth_payment_date else None,
 
-                                    'first_payment_state': order.first_payment_state,
-                                    'second_payment_state': order.second_payment_state,
-                                    'third_payment_state': order.third_payment_state,
-                                    'fourth_payment_state': order.fourth_payment_state,
+                                    # 'first_payment_amount': order.first_payment_amount,
+                                    # 'second_payment_amount': order.second_payment_amount,
+                                    # 'third_payment_amount': order.third_payment_amount,
+                                    # 'fourth_payment_amount': order.fourth_payment_amount,
+
+                                    # 'first_payment_state': order.first_payment_state,
+                                    # 'second_payment_state': order.second_payment_state,
+                                    # 'third_payment_state': order.third_payment_state,
+                                    # 'fourth_payment_state': order.fourth_payment_state,
 
                                     'invoice_id': account_payment.move_id.id or None ,
                                     'is_reconciled': account_payment.is_reconciled,
@@ -346,6 +361,7 @@ class CreditCommandeREST(http.Controller):
                                     'amount_tax': order.amount_tax or None,
                                     'amount_total': order.amount_total or None,
                                     'amount_residual': order.amount_residual,
+                                    'payment_lines': order.get_sale_order_credit_payment(),
                                     
                                 }),
                                 headers={'Content-Type': 'application/json'}
@@ -386,6 +402,7 @@ class CreditCommandeREST(http.Controller):
         orders = request.env['sale.order'].sudo().search([('partner_id','=', partner.id ) , ('type_sale' , '=' , 'creditorder')  ])
         if orders:
             for o in orders:
+                _logger.info(f"Order ID: {o.get_sale_order_credit_payment()}")
                 order_data.append({
                     'id': o.id,
                     'validation_rh_state': o.validation_rh_state,
@@ -408,22 +425,23 @@ class CreditCommandeREST(http.Controller):
                     'advance_payment_status':o.advance_payment_status,
                     'amount_residual': o.amount_residual,
                     'create_date': o.create_date.isoformat() if o.create_date else None,
+                    'payment_lines': o.get_sale_order_credit_payment(),
 
-                    'first_payment_date': o.first_payment_date.isoformat() if o.first_payment_date else None,
-                    'second_payment_date': o.second_payment_date.isoformat() if o.second_payment_date else None,
-                    'third_payment_date': o.third_payment_date.isoformat() if o.third_payment_date else None,
-                    'fourth_payment_date': o.fourth_payment_date.isoformat() if o.fourth_payment_date else None,
+                    # 'first_payment_date': o.first_payment_date.isoformat() if o.first_payment_date else None,
+                    # 'second_payment_date': o.second_payment_date.isoformat() if o.second_payment_date else None,
+                    # 'third_payment_date': o.third_payment_date.isoformat() if o.third_payment_date else None,
+                    # 'fourth_payment_date': o.fourth_payment_date.isoformat() if o.fourth_payment_date else None,
 
-                    'first_payment_amount': o.first_payment_amount,
-                    'second_payment_amount': o.second_payment_amount,
-                    'third_payment_amount': o.third_payment_amount,
-                    'fourth_payment_amount': o.fourth_payment_amount,
+                    # 'first_payment_amount': o.first_payment_amount,
+                    # 'second_payment_amount': o.second_payment_amount,
+                    # 'third_payment_amount': o.third_payment_amount,
+                    # 'fourth_payment_amount': o.fourth_payment_amount,
 
-                    'first_payment_state': o.first_payment_state,
-                    'second_payment_state': o.second_payment_state,
-                    'third_payment_state': o.third_payment_state,
-                    'fourth_payment_state': o.fourth_payment_state,
-
+                    # 'first_payment_state': o.first_payment_state,
+                    # 'second_payment_state': o.second_payment_state,
+                    # 'third_payment_state': o.third_payment_state,
+                    # 'fourth_payment_state': o.fourth_payment_state,
+                    
                     'order_lines': [{
                         'id': l.id or None,
                         'product_id': l.product_id.id or None,

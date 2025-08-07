@@ -399,7 +399,10 @@ class ResetPasswordREST(http.Controller):
             # message = urllib.parse.quote(message.encode('utf-8'))
             try:
                 # Créer et envoyer le SMS
-                sms_result = request.env['orange.sms.sender'].sudo().send_sms(phone, message)
+                sms_result = request.env['send.sms'].create({
+                    'recipient': phone,
+                    'message': message,
+                }).send_sms()
 
                 # Enregistrer le token
                 partner.write({
