@@ -291,9 +291,7 @@ class SaleCreditOrderMail(models.Model):
                 <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">
                     {amount_fmt} {self.currency_id.name}
                 </td>
-                <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">
-                    {rate}
-                </td>
+               
                 <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">
                     {date_str}
                 </td>
@@ -310,7 +308,6 @@ class SaleCreditOrderMail(models.Model):
                     <tr style="background-color: #f8f9fa;">
                         <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Échéance</th>
                         <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Montant</th>
-                        <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Pourcentage</th>
                         <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Date</th>
                     </tr>
                 </thead>
