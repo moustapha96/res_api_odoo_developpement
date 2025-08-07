@@ -77,7 +77,7 @@ class SaleCreditOrderMail(models.Model):
         return result
     
     
-    def _generate_paymentssss(self, today):
+    def _generate_payments(self, today):
         """
         Génère les informations de paiement en incluant explicitement l'acompte comme première échéance
         """
@@ -196,8 +196,6 @@ class SaleCreditOrderMail(models.Model):
         return self.send_mail(mail_server, partner, subject, body_html)
 
 
-    def _generate_payments(self, today):
-        return self.env['sale.order.credit.payment'].search([('order_id', '=', self.id)]).sorted('sequence')
 
     def _generate_payment_info_html(self, payments):
         """
@@ -222,17 +220,17 @@ class SaleCreditOrderMail(models.Model):
             # order_id = payment.order_id
             # rate = payment.rate
             # paid_amount = payment.paid_amount
-            if not isinstance(payment, tuple) :
-                continue  # ignore les formats invalides
-
-            label, amount, rate, due_date = payment
-
-            # Convertir la date si besoin
-            if isinstance(due_date, str):
-                try:
-                    due_date = datetime.fromisoformat(due_date).date()
-                except ValueError:
-                    pass
+            if isinstance(payment, tuple):
+                label, amount, rate, due_date = payment
+                paid_amount = 0
+                state = False
+            else:
+                label = f"Échéance {payment.sequence}"
+                amount = payment.amount
+                rate = payment.rate
+                due_date = payment.due_date
+                paid_amount = payment.paid_amount
+                state = payment.state
 
 
             date_str = due_date.strftime('%d/%m/%Y') if isinstance(due_date, (datetime, date)) else due_date
