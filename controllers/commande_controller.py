@@ -90,7 +90,7 @@ class CommandeREST(http.Controller):
                 headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
             )
 
-    @http.route('/api/patner/<id>/commandes', methods=['GET'], type='http', auth='none', cors="*")
+    @http.route('/api/partner/<id>/commandes', methods=['GET'], type='http', auth='none', cors="*")
     def api_get_order_partners(self, id, **kw):
 
         partner = request.env['res.partner'].sudo().search([('id', '=', id)], limit=1)
