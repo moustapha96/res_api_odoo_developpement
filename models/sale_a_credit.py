@@ -22,6 +22,7 @@ class SaleCreditOrderMail(models.Model):
         subject = 'Validation de votre commande à crédit'
         today = datetime.now().date()
         payments = self._generate_payments(today)
+        _logger.info("PAYMENTS TYPES: %s", [type(p) for p in payments])
         payment_info = self._generate_payment_info_html(payments)
         body_html = self._generate_email_body_html(partner, 'validation', payment_info)
         self.send_mail(mail_server, partner, subject, body_html)
@@ -76,7 +77,7 @@ class SaleCreditOrderMail(models.Model):
         return result
     
     
-    def _generate_payments(self, today):
+    def _generate_paymentssss(self, today):
         """
         Génère les informations de paiement en incluant explicitement l'acompte comme première échéance
         """
@@ -195,6 +196,9 @@ class SaleCreditOrderMail(models.Model):
         return self.send_mail(mail_server, partner, subject, body_html)
 
 
+    def _generate_payments(self, today):
+        return self.env['sale.order.credit.payment'].search([('order_id', '=', self.id)]).sorted('sequence')
+
     def _generate_payment_info_html(self, payments):
         """
         Génère le HTML pour les informations de paiement avec mise en forme améliorée
@@ -208,13 +212,27 @@ class SaleCreditOrderMail(models.Model):
             # Formatage des données
             # label, amount, rate, due_date = payment
             # label, amount, rate, due_date, *_ = payment
-            label = payment.sequence
-            due_date = payment.due_date
-            amount = payment.amount
-            state = payment.state
-            order_id = payment.order_id
-            rate = payment.rate
-            paid_amount = payment.paid_amount
+            # if isinstance(payment, tuple):
+            #     raise ValueError(f"Expected recordset, got tuple: {payment}")
+            
+            # label = payment.sequence
+            # due_date = payment.due_date
+            # amount = payment.amount
+            # state = payment.state
+            # order_id = payment.order_id
+            # rate = payment.rate
+            # paid_amount = payment.paid_amount
+            if not isinstance(payment, tuple) :
+                continue  # ignore les formats invalides
+
+            label, amount, rate, due_date = payment
+
+            # Convertir la date si besoin
+            if isinstance(due_date, str):
+                try:
+                    due_date = datetime.fromisoformat(due_date).date()
+                except ValueError:
+                    pass
 
 
             date_str = due_date.strftime('%d/%m/%Y') if isinstance(due_date, (datetime, date)) else due_date
