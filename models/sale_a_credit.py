@@ -275,7 +275,8 @@ class SaleCreditOrderMail(models.Model):
         rows = ""
         for payment in payments:
             # Formatage des données
-            label, amount, rate, due_date = payment
+            # label, amount, rate, due_date = payment
+            label, amount, rate, due_date, *_ = payment
             date_str = due_date.strftime('%d/%m/%Y') if isinstance(due_date, (datetime, date)) else due_date
             amount_fmt = f"{amount:,.0f}".replace(',', ' ')
             
