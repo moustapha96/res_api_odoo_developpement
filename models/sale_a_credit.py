@@ -207,19 +207,6 @@ class SaleCreditOrderMail(models.Model):
         
         rows = ""
         for payment in payments:
-            # Formatage des données
-            # label, amount, rate, due_date = payment
-            # label, amount, rate, due_date, *_ = payment
-            # if isinstance(payment, tuple):
-            #     raise ValueError(f"Expected recordset, got tuple: {payment}")
-            
-            # label = payment.sequence
-            # due_date = payment.due_date
-            # amount = payment.amount
-            # state = payment.state
-            # order_id = payment.order_id
-            # rate = payment.rate
-            # paid_amount = payment.paid_amount
             if isinstance(payment, tuple):
                 label, amount, rate, due_date = payment[:4]
                 paid_amount = 0
@@ -828,14 +815,15 @@ class SaleCreditOrderMail(models.Model):
             'body_html': body_html,
             'state': 'outgoing',
         }
+        return True
 
-        mail_mail = self.env['mail.mail'].sudo().create(email_values)
-        try:
-            mail_mail.send()
-            return {'status': 'success', 'message': 'Mail envoyé avec succès'}
-        except Exception as e:
-            _logger.error(f'Error sending email: {str(e)}')
-            return {'status': 'error', 'message': str(e)}
+        # mail_mail = self.env['mail.mail'].sudo().create(email_values)
+        # try:
+        #     mail_mail.send()
+        #     return {'status': 'success', 'message': 'Mail envoyé avec succès'}
+        # except Exception as e:
+        #     _logger.error(f'Error sending email: {str(e)}')
+        #     return {'status': 'error', 'message': str(e)}
 
     
     def send_sms_notification(self, notification_type):
