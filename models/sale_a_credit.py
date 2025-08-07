@@ -8,6 +8,10 @@ _logger = logging.getLogger(__name__)
 class SaleCreditOrderMail(models.Model):
     _inherit = 'sale.order'
 
+
+
+
+
     @api.model
     def send_credit_order_validation_mail(self):
         mail_server = self.env['ir.mail_server'].sudo().search([], limit=1)
@@ -48,19 +52,7 @@ class SaleCreditOrderMail(models.Model):
         return True
     
 
-    # @api.model
-    # def write(self, vals):
-    #     """
-    #     Redéfinition de la méthode `write` pour gérer les notifications
-    #     lors de changements d'état.
-    #     """
-    #     notifications = self.handle_state_change(vals)
-    #     result = super(SaleCreditOrderMail, self).write(vals)
-    #     if 'credit_month_rate' in vals or 'creditorder_month_count' in vals:
-    #         for order in self:
-    #             order.send_credit_order_validation_mail()
-    #     return result
-    
+  
     
     def write(self, vals):
         """
@@ -84,67 +76,6 @@ class SaleCreditOrderMail(models.Model):
         return result
     
     
-    # def _generate_payments(self, today):
-    #     """
-    #     Génère les informations de paiement à partir des payment_lines existantes
-    #     ou calcule les échéances si elles n'existent pas encore
-    #     """
-    #     payments = []
-
-    #     # Essayer d'abord de récupérer les payment_lines existantes
-    #     payment_lines = self.get_sale_order_credit_payment()
-
-    #     if payment_lines:
-    #         # Utiliser les payment_lines existantes
-    #         for payment_line in payment_lines:
-    #             # Convertir la date string en objet datetime si nécessaire
-    #             if isinstance(payment_line['due_date'], str):
-    #                 due_date = datetime.fromisoformat(payment_line['due_date']).date()
-    #             else:
-    #                 due_date = payment_line['due_date']
-
-    #             # Déterminer le label selon la séquence
-    #             if payment_line['sequence'] == 1:
-    #                 label = "Premier Paiement (Acompte)"
-    #             else:
-    #                 label = f"Échéance {payment_line['sequence']}"
-
-    #             payments.append((
-    #                 label,
-    #                 payment_line['amount'],
-    #                 f"{payment_line['rate']:.1f}%",
-    #                 due_date
-    #             ))
-    #     else:
-    #         # Calculer les échéances si les payment_lines n'existent pas encore
-    #         total_amount = self.amount_total
-    #         acompte_amount = total_amount * (self.credit_month_rate / 100)
-    #         remaining_amount = total_amount - acompte_amount
-
-    #         # Le nombre total de paiements inclut l'acompte
-    #         nombre_echeances = self.creditorder_month_count
-    #         monthly_payment = remaining_amount / (nombre_echeances - 1) if nombre_echeances > 1 else 0
-
-    #         # Premier paiement (acompte)
-    #         payments.append((
-    #             "Premier Paiement (Acompte)",
-    #             acompte_amount,
-    #             f"{self.credit_month_rate}%",
-    #             today + timedelta(days=3)
-    #         ))
-
-    #         # Échéances mensuelles
-    #         for i in range(1, nombre_echeances):
-    #             payment_date = today + timedelta(days=30 * i)
-    #             rate_percentage = (monthly_payment / total_amount) * 100 if total_amount > 0 else 0
-    #             payments.append((
-    #                 f"Échéance {i + 1}",  # Commence à Échéance 2
-    #                 monthly_payment,
-    #                 f"{rate_percentage:.1f}%",
-    #                 payment_date
-    #             ))
-
-    #     return payments
     def _generate_payments(self, today):
         """
         Génère les informations de paiement en incluant explicitement l'acompte comme première échéance
@@ -276,7 +207,16 @@ class SaleCreditOrderMail(models.Model):
         for payment in payments:
             # Formatage des données
             # label, amount, rate, due_date = payment
-            label, amount, rate, due_date, *_ = payment
+            # label, amount, rate, due_date, *_ = payment
+            label = payment.sequence
+            due_date = payment.due_date
+            amount = payment.amount
+            state = payment.state
+            order_id = payment.order_id
+            rate = payment.rate
+            paid_amount = payment.paid_amount
+
+
             date_str = due_date.strftime('%d/%m/%Y') if isinstance(due_date, (datetime, date)) else due_date
             amount_fmt = f"{amount:,.0f}".replace(',', ' ')
             
@@ -291,7 +231,9 @@ class SaleCreditOrderMail(models.Model):
                 <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">
                     {amount_fmt} {self.currency_id.name}
                 </td>
-               
+                <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">
+                    {rate}
+                </td>
                 <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">
                     {date_str}
                 </td>
@@ -308,6 +250,7 @@ class SaleCreditOrderMail(models.Model):
                     <tr style="background-color: #f8f9fa;">
                         <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Échéance</th>
                         <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Montant</th>
+                        <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Pourcentage</th>
                         <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Date</th>
                     </tr>
                 </thead>
