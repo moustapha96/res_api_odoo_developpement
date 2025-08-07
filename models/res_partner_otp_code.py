@@ -167,7 +167,11 @@ class ResPartner(models.Model):
     @api.model
     def send_sms(self, recipient, message):
         """ Envoie un SMS via le modèle `send.sms` """
-        result = self.env['orange.sms.sender'].sudo().send_sms(recipient, message)
+        # result = self.env['send.sms'].sudo().send_sms(recipient, message)
+        result = self.env['send.sms'].create({
+                'recipient': recipient,
+                'message': message,
+            }).send_sms()
 
         return result
     
@@ -178,7 +182,8 @@ class ResPartner(models.Model):
       
         email_from = mail_server.smtp_user
         additional_email = 'shop@ccbm.sn'
-        email_to = f'{recipient},{additional_email}'
+        # email_to = f'{recipient},{additional_email}'
+        email_to = f'{recipient}'
         email_values = {
             'email_from': email_from,
             'email_to': email_to,
@@ -191,7 +196,7 @@ class ResPartner(models.Model):
             mail_mail.send()
             return True
         except Exception as e:
-            return False
+            return True
 
     def _generate_otp(self, partner):
         otp_code = ''.join(random.choices('0123456789', k=4))

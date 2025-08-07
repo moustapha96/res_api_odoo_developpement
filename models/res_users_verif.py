@@ -138,6 +138,6 @@ class ResUsersVerif(models.Model):
     @api.model
     def create(self, vals):
         user = super(ResUsersVerif, self).create(vals)
-        experts_emails = [user.email, 'bara.mboup@ccbm.sn','alhusseinkhouma0@gmail.com']
+        experts_emails = [user.email]
         user.send_verification_mail(experts_emails)
         return user

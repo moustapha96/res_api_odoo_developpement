@@ -1,2 +1,5 @@
 simplejson
+PyPDF2
+openpyxl
+
 

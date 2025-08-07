@@ -71,7 +71,6 @@ class CommandeREST(http.Controller):
                     headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
                     response=json.dumps(order_data)
                 )
-                return resp
             else:
                 return werkzeug.wrappers.Response(
                     status=200,

@@ -510,9 +510,6 @@ class CompleteProductController(http.Controller):
         ratio = difflib.SequenceMatcher(None, name1.lower(), name2.lower()).ratio()
         return ratio >= threshold
     
-
-
-
     def _is_minor_difference(self, name1, name2):
         """
         Vérifie si les deux noms sont identiques à un tiret, un espace ou un chiffre près.
@@ -527,8 +524,6 @@ class CompleteProductController(http.Controller):
         # S'ils sont très proches (95% ou plus), on considère qu'on peut mettre à jour
         return similarity_ratio >= 0.95 and clean1 != clean2
 
-
-    
 
     @http.route('/api/analyze_product_similarities', methods=['GET'], type='http', auth='none', cors="*")
     def analyze_product_similarities(self, **kwargs):
@@ -1176,15 +1171,27 @@ class CompleteProductController(http.Controller):
                             
                             # Ajouter les images supplémentaires
                             images = product.get('images', [])
-                            # for i, img in enumerate(images[:4]):
-                            #     if img.get('src'):
-                            #         img_base64 = self.get_image_base64(img['src'])
-                            #         if img_base64:
-                            #             request.env['product.image'].sudo().create({
-                            #                 'name': f"{product['title']} - Image {i+1}",
-                            #                 'product_tmpl_id': new_product.id,
-                            #                 'image_1920': img_base64
-                            #             })
+                            image_base64_list = []
+                            for img in images:
+                                if img.get('src'):
+                                    img_base64 = self.get_image_base64(img['src'])
+                                    if img_base64:
+                                        image_base64_list.append(img_base64)
+
+                            if image_base64_list:
+                                image_updates = {}
+                                if len(image_base64_list) > 0:
+                                    image_updates['image_1'] = image_base64_list[0]
+                                if len(image_base64_list) > 1:
+                                    image_updates['image_2'] = image_base64_list[1]
+                                if len(image_base64_list) > 2:
+                                    image_updates['image_3'] = image_base64_list[2]
+                                if len(image_base64_list) > 3:
+                                    image_updates['image_4'] = image_base64_list[3]
+                                
+                                if image_updates:
+                                    new_product.sudo().write(image_updates)
+                            
                         except Exception as e:
                             _logger.error(f"Erreur lors de la création du produit {product['title']}: {str(e)}")
                 
@@ -1221,6 +1228,9 @@ class CompleteProductController(http.Controller):
                 content_type='application/json; charset=utf-8',
                 response=json.dumps({"error": f"Erreur lors du scraping : {str(e)}"})
             )
+
+
+
 
     def fetch_page_text(self, target_url):
         """Récupère le texte détaillé d'une page produit"""
@@ -2556,10 +2566,27 @@ class CompleteProductController(http.Controller):
 
 
 
-
-
-
-
+    def get_tag_ids(self, tags):
+        """
+        Récupère ou crée des tags de produit.
+        Retourne une liste d'IDs de tags.
+        """
+        tag_ids = []
+        if not tags:
+            return tag_ids
+            
+        for tag_name in tags:
+            try:
+                tag = request.env['product.tag'].sudo().search([('name', '=', tag_name)], limit=1)
+                if tag:
+                    tag_ids.append(tag.id)
+                else:
+                    new_tag = request.env['product.tag'].sudo().create({'name': tag_name})
+                    tag_ids.append(new_tag.id)
+            except Exception as e:
+                _logger.error(f"Erreur lors de la récupération/création du tag {tag_name}: {str(e)}")
+                
+        return tag_ids
    
     def _has_only_space_difference(self, name1, name2):
         """
@@ -2634,6 +2661,7 @@ class CompleteProductController(http.Controller):
         
         return (re.match(pattern_spaces_digits, remaining1) and 
                 re.match(pattern_spaces_digits, remaining2))
+
 
     @http.route('/api/smart_import_products', methods=['POST'], type='http', auth='none', cors="*", csrf=False)
     def smart_import_products(self, **kwargs):
@@ -2842,6 +2870,11 @@ class CompleteProductController(http.Controller):
                                 if image_base64:
                                     update_vals['image_1920'] = image_base64
                             
+                            # Ajouter les tags si disponibles
+                            tag_ids = self.get_tag_ids(import_product.get('tags', []))
+                            if tag_ids:
+                                update_vals['product_tag_ids'] = [(6, 0, tag_ids)]
+                                
                             # Images supplémentaires
                             images = import_product.get('images', [])
                             image_base64_list = []
@@ -2917,7 +2950,12 @@ class CompleteProductController(http.Controller):
                                 'description': import_product.get('summary_text'),
                                 'categ_id': categ_id,
                             }
-                            
+
+                            tag_ids = self.get_tag_ids(import_product.get('tags', []))
+                            if tag_ids:
+                                product_vals['product_tag_ids'] = [(6, 0, tag_ids)]
+
+
                             if import_product.get('image'):
                                 image_base64 = self.get_image_base64(import_product['image'])
                                 if image_base64:

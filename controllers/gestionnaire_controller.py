@@ -15,7 +15,6 @@ from bs4 import BeautifulSoup
 class GestionnaireController(http.Controller):
 
 
-    
 
     # get partner by id
     @http.route('/api/gestion/clients/liste', methods=['GET'], type='http', auth='none', cors="*" )
@@ -122,20 +121,22 @@ class GestionnaireController(http.Controller):
                     'amount_residual': o.amount_residual,
                     'commitment_date': o.commitment_date.isoformat() if o.commitment_date else None,
 
-                    'first_payment_date': o.first_payment_date.isoformat() if o.first_payment_date else None,
-                    'second_payment_date': o.second_payment_date.isoformat() if o.second_payment_date else None,
-                    'third_payment_date': o.third_payment_date.isoformat() if o.third_payment_date else None,
-                    'fourth_payment_date': o.fourth_payment_date.isoformat() if o.fourth_payment_date else None,
+                    # 'first_payment_date': o.first_payment_date.isoformat() if o.first_payment_date else None,
+                    # 'second_payment_date': o.second_payment_date.isoformat() if o.second_payment_date else None,
+                    # 'third_payment_date': o.third_payment_date.isoformat() if o.third_payment_date else None,
+                    # 'fourth_payment_date': o.fourth_payment_date.isoformat() if o.fourth_payment_date else None,
 
-                    'first_payment_amount': o.first_payment_amount,
-                    'second_payment_amount': o.second_payment_amount,
-                    'third_payment_amount': o.third_payment_amount,
-                    'fourth_payment_amount': o.fourth_payment_amount,
+                    # 'first_payment_amount': o.first_payment_amount,
+                    # 'second_payment_amount': o.second_payment_amount,
+                    # 'third_payment_amount': o.third_payment_amount,
+                    # 'fourth_payment_amount': o.fourth_payment_amount,
 
-                    'first_payment_state': o.first_payment_state,
-                    'second_payment_state': o.second_payment_state,
-                    'third_payment_state': o.third_payment_state,
-                    'fourth_payment_state': o.fourth_payment_state,
+                    # 'first_payment_state': o.first_payment_state,
+                    # 'second_payment_state': o.second_payment_state,
+                    # 'third_payment_state': o.third_payment_state,
+                    # 'fourth_payment_state': o.fourth_payment_state,
+
+                    'payment_lines': o.get_sale_order_credit_payment(),
 
                     'order_lines': [{
                         'id': l.id or None,
@@ -269,20 +270,25 @@ class GestionnaireController(http.Controller):
             'amount_residual': order.amount_residual,
             'create_date': order.create_date.isoformat() if order.create_date else None,
 
-            'first_payment_date': order.first_payment_date.isoformat() if order.first_payment_date else None,
-            'second_payment_date': order.second_payment_date.isoformat() if order.second_payment_date else None,
-            'third_payment_date': order.third_payment_date.isoformat() if order.third_payment_date else None,
-            'fourth_payment_date': order.fourth_payment_date.isoformat() if order.fourth_payment_date else None,
+            # 'first_payment_date': order.first_payment_date.isoformat() if order.first_payment_date else None,
+            # 'second_payment_date': order.second_payment_date.isoformat() if order.second_payment_date else None,
+            # 'third_payment_date': order.third_payment_date.isoformat() if order.third_payment_date else None,
+            # 'fourth_payment_date': order.fourth_payment_date.isoformat() if order.fourth_payment_date else None,
 
-            'first_payment_amount': order.first_payment_amount,
-            'second_payment_amount': order.second_payment_amount,
-            'third_payment_amount': order.third_payment_amount,
-            'fourth_payment_amount': order.fourth_payment_amount,
+            # 'first_payment_amount': order.first_payment_amount,
+            # 'second_payment_amount': order.second_payment_amount,
+            # 'third_payment_amount': order.third_payment_amount,
+            # 'fourth_payment_amount': order.fourth_payment_amount,
 
-            'first_payment_state': order.first_payment_state,
-            'second_payment_state': order.second_payment_state,
-            'third_payment_state': order.third_payment_state,
-            'fourth_payment_state': order.fourth_payment_state,
+            # 'first_payment_state': order.first_payment_state,
+            # 'second_payment_state': order.second_payment_state,
+            # 'third_payment_state': order.third_payment_state,
+            # 'fourth_payment_state': order.fourth_payment_state,
+
+
+            'credit_month_rate': order.credit_month_rate,
+            'creditorder_month_count': order.creditorder_month_count,
+            'payment_lines': order.get_sale_order_credit_payment(),
             
             'order_lines': [{
                 'id': l.id or None,
@@ -533,6 +539,9 @@ class GestionnaireController(http.Controller):
                     'second_payment_state': o.second_payment_state,
                     'third_payment_state': o.third_payment_state,
                     'fourth_payment_state': o.fourth_payment_state,
+                    'credit_month_rate': o.credit_month_rate,
+                    'creditorder_month_count': o.creditorder_month_count,
+                    'payment_lines': o.get_sale_order_credit_payment(),
                     
                     'order_lines': [{
                         'id': l.id or None,

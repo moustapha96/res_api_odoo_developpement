@@ -42,8 +42,6 @@
         'views/crm_lead_view.xml',
         'views/pack_views.xml',
 
-        'views/orange_sms_views.xml',
-        'views/sms_function_view.xml',
         'views/sale_order_view.xml',
     ],
     'images': [
