@@ -849,7 +849,7 @@ class EntrepriseController(http.Controller):
             order.write({
                 'validation_rh_state': state
             })
-            order.validate_rh()
+            # order.validate_rh()
             # res = order.action_validation_rh_state()
             _logger.info(res)
             return werkzeug.wrappers.Response(
@@ -1527,7 +1527,7 @@ class EntrepriseController(http.Controller):
             status=200,
             content_type='application/json; charset=utf-8',
             headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
-            response=json.dumps({ 'status': "success", "message": "entreprise_code exist", "entreprise_code_exist": True})
+            response=json.dumps({ 'status': "success", "message": "Entreprise existe", "entreprise_code_exist": True})
         )
 
 
