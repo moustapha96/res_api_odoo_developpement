@@ -1514,7 +1514,7 @@ class EntrepriseController(http.Controller):
             )
         
 
-        company = request.env['res.company'].sudo().search([('entreprise_code', '=', entreprise_code ),('id','=',partner.company_id.id)], limit=1)
+        company = request.env['res.company'].sudo().search([('entreprise_code', '=', entreprise_code )], limit=1)
         if not company:
             return werkzeug.wrappers.Response(
                 status=200,
