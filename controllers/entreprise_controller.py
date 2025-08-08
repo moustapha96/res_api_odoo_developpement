@@ -1522,6 +1522,15 @@ class EntrepriseController(http.Controller):
                 headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
                 response=json.dumps({ 'status': "success", "message": "entreprise_code exist", "entreprise_code_exist": False})
             )
+        
+        partner_comp = request.env['res.partner'].sudo().search([('entreprise_code', '=', entreprise_code)], limit=1)
+        if partner_comp:
+            return werkzeug.wrappers.Response(
+                status=200,
+                content_type='application/json; charset=utf-8',
+                headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                response=json.dumps({ 'status': "success", "message": "entreprise_code exist", "entreprise_code_exist": True})
+        )
 
         return werkzeug.wrappers.Response(
             status=200,
