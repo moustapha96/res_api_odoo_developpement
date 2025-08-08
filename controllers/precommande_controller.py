@@ -162,14 +162,7 @@ class PreCommandeREST(http.Controller):
                 'user_id': order.user_id.id or None,
                 'user_name': order.user_id.name or None,
                 'create_date': order.create_date.isoformat() if order.create_date else None,
-                'payment': [
-                    {
-                        'payment_id' : p.id or None,
-                        'payment_type' : p.payment_type,
-                        'payment_amount' : p.amount,
-                        'is_reconciled': p.is_reconciled
-                    }  for p in payment
-                ],
+                'payment_lines': order.get_sale_order_credit_payment() ,
                 'invoice' : [
                     {
                         'invoice_id' : i.id,

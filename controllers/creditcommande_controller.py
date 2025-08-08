@@ -201,16 +201,13 @@ class CreditCommandeREST(http.Controller):
                 _logger.info("Ligne de commande ajoutée avec successe: %s", order_line.name)
 
             if order:
-                # order.action_confirm_credit_order()
-                # order._create_invoices()
-                order.send_credit_order_validation_mail()
-                order.send_credit_order_admin_validation()
+
                 order.write({
                     'validation_rh_state': 'pending',
                     'validation_admin_state': 'pending',
                     'state' : 'validation'
                 })
-              
+                order.send_credit_order_validation_mail()
                 _logger.info("Commande validée : %s", order.state)
 
                 resp = werkzeug.wrappers.Response(
