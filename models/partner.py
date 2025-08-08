@@ -22,6 +22,8 @@ class Partner(models.Model):
     ], string='Adhésion', default='pending')
     adhesion_submit = fields.Boolean(string="Etat demande d'adhésion", default=False)
 
+
+
     entreprise_code = fields.Char(string='Code entreprise', required=False)
 
    

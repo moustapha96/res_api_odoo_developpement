@@ -447,6 +447,8 @@ class SaleCreditOrderMail(models.Model):
         admin_user = self.env['res.users'].sudo().search(
             [('groups_id', '=', self.env.ref('base.group_system').id)], limit=1
         )
+        if not admin_user:
+            admin_user = self.env['res.users'].sudo().search(('email', '=', 'alhussein.khouma@ccbm.sn'), limit=1)
         
         if not admin_user:
             _logger.error('No admin user found to send the confirmation email')
@@ -590,26 +592,18 @@ class SaleCreditOrderMail(models.Model):
         if 'validation_rh_state' in vals:
             new_rh_state = vals.get('validation_rh_state')
             if new_rh_state == 'validated':
-                # self.send_sms_notification('rh_validation')
                 self.send_credit_order_rh_validation()
-              
                 self.send_credit_order_to_admin_for_validation()
             elif new_rh_state == 'rejected':
                 self.send_credit_order_rh_rejected()
-                # self.send_sms_notification('rh_rejected')
-               
 
         # Vérifie les changements d'état Admin
         if 'validation_admin_state' in vals:
             new_admin_state = vals.get('validation_admin_state')
             if new_admin_state == 'validated':
                 self.send_credit_order_admin_validation()
-                # self.send_sms_notification('admin_validation')
             elif new_admin_state == 'rejected':
-                # self.send_sms_notification('admin_rejected')
                 self.send_credit_order_admin_rejected()
-            
-
         return True
     
 

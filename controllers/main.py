@@ -765,11 +765,11 @@ else:
     
         from . import sms_controller
 
-        # from . import scriping
+        from . import scriping
         # from . import scraper_controller
         # from . import product_duplicate_controller
         
-        from . import complete_scrapper_product_controller
+        # from . import complete_scrapper_product_controller
         
         # from . import service_controller
         # from . import abonnement_controller

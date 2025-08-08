@@ -8,10 +8,6 @@ _logger = logging.getLogger(__name__)
 class SaleCreditOrderMail(models.Model):
     _inherit = 'sale.order'
 
-
-
-
-
     @api.model
     def send_credit_order_validation_mail(self):
         mail_server = self.env['ir.mail_server'].sudo().search([], limit=1)
@@ -23,7 +19,7 @@ class SaleCreditOrderMail(models.Model):
         today = datetime.now().date()
         payments = self._generate_payments(today)
         _logger.info("PAYMENTS TYPES: %s", [type(p) for p in payments])
-        payment_info = self._generate_payment_info_html(payments)
+        payment_info = self.generate_payment_schedule_html(payments)
         body_html = self._generate_email_body_html(partner, 'validation', payment_info)
         self.send_mail(mail_server, partner, subject, body_html)
         self.send_sms_notification('validation')
@@ -51,10 +47,13 @@ class SaleCreditOrderMail(models.Model):
                 self.send_credit_order_admin_rejected()
 
         return True
+    def create(self , vals):
+        res = super(SaleCreditOrderMail, self).create(vals)
+        res.send_credit_order_creation_notification_to_hr()
+        # res.send_credit_order_validation_mail()
+        return res
     
 
-  
-    
     def write(self, vals):
         """
         Redéfinition de la méthode `write` pour gérer les notifications
@@ -66,98 +65,45 @@ class SaleCreditOrderMail(models.Model):
         # Gérer les notifications après la sauvegarde
         self.handle_state_change(vals)
         
-        # Envoyer l'email de validation seulement si les paramètres de crédit ont changé
-        # ET que les payment_lines existent ou peuvent être créées
         if 'credit_month_rate' in vals or 'creditorder_month_count' in vals:
             for order in self:
-                try:
+                try: 
                     order.send_credit_order_validation_mail()
                 except Exception as e:
                     _logger.error(f'Error sending validation mail for order {order.name}: {str(e)}')
         return result
-    
     
     def _generate_payments(self, today):
         """
         Génère les informations de paiement en incluant explicitement l'acompte comme première échéance
         """
         payments = []
-        payment_lines = self.get_sale_order_credit_payment()
+        payment_lines = self.env['sale.order.credit.payment'].search([('order_id', '=', self.id)])
 
-        if payment_lines:
-            # Trier par séquence et formater
-            for pl in sorted(payment_lines, key=lambda x: x['sequence']):
-                due_date = pl['due_date']
-                if isinstance(due_date, str):
-                    due_date = datetime.fromisoformat(due_date).date()
-                
-                label = "Premier Paiement (Acompte)" if pl['sequence'] == 1 else f"Échéance {pl['sequence']}"
-                
-                payments.append((
-                    label,
-                    pl['amount'],
-                    f"{pl['rate']:.1f}%",
-                    due_date
-                ))
-        else:
-            # Calculer les échéances si non existantes
-            total = self.amount_total
-            acompte = total * (self.credit_month_rate / 100)
-            reste = total - acompte
-            nbre_echeances = self.creditorder_month_count
-            
-            # Premier paiement (acompte)
-            payments.append((
-                "Premier Paiement (Acompte)",
-                acompte,
-                f"{self.credit_month_rate}%",
-                today + timedelta(days=3)
-            ))
-            
-            # Échéances suivantes
-            mensualite = reste / max(1, (nbre_echeances - 1))
-            for i in range(1, nbre_echeances):
-                payments.append((
-                    f"Échéance {i+1}",
-                    mensualite,
-                    f"{(mensualite / total * 100):.1f}%",
-                    today + timedelta(days=30 * i)
-                ))
-        
+        for line in payment_lines:
+            label = "Premier Paiement (Acompte)" if line.sequence == 1 else f"ÉCHEANCE {line.sequence}"
+            payments.append((label, line.amount, f"{line.rate:.1f}%", datetime.fromisoformat(line.due_date).date() , line.state))
         return payments
-
-    
-    def generate_payment_schedule_html(self, payments):
+        
+    def generate_payment_schedule_html(self, payments): 
         """
         Génère le HTML pour afficher l'échéancier de paiement dans un email.
         """
-        payment_rows = ""
-        for idx, payment in enumerate(payments, start=1):
-            # Formatage de la date
-            if isinstance(payment[3], datetime):
-                date_str = payment[3].strftime('%d %B %Y')
-            elif hasattr(payment[3], 'strftime'):
-                date_str = payment[3].strftime('%d %B %Y')
-            else:
-                date_str = str(payment[3])
-
-            # Formatage du montant
-            amount_formatted = f"{payment[1]:,.0f}".replace(',', ' ')
-
-            payment_rows += f"""
+        payment_rows = "\n".join([
+            f"""
             <tr>
                 <td style="padding: 8px; border: 1px solid #ddd;">Échéance {idx}</td>
-                <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">{date_str}</td>
-                <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">{amount_formatted} {self.currency_id.name}</td>
-                <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">{payment[2]}</td>
-                <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">En attente</td>
-                <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">{amount_formatted} {self.currency_id.name}</td>
+                <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">{payment[4]}</td>
+                <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">{payment[1]} {self.currency_id.name}</td>
+                <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">{payment[3]}</td>
+                <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">{'Payé' if payment[4] == False  else 'Non Payé'}</td>
             </tr>
             """
+            for idx, payment in enumerate(payments, start=1)
+        ])
 
         return f"""
         <h3 style="color: #333; margin-top: 20px;">Échéancier de Paiement</h3>
-        <p>Détail des échéances de paiement pour cette commande à crédit</p>
         <table border='1' cellpadding='5' cellspacing='0' width='100%' style='min-width: 100%; background-color: white; padding: 0px 8px 0px 8px; border-collapse:collapse; margin-top: 15px;'>
             <thead>
                 <tr style="background-color: #f8f9fa;">
@@ -166,7 +112,7 @@ class SaleCreditOrderMail(models.Model):
                     <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Montant dû</th>
                     <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Taux (%)</th>
                     <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Statut</th>
-                    <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Restant</th>
+                   
                 </tr>
             </thead>
             <tbody>
@@ -182,20 +128,64 @@ class SaleCreditOrderMail(models.Model):
             return {'status': 'error', 'message': 'Partner not found for the given order'}
 
         subject = 'Validation de votre commande à crédit'
-        today = datetime.now().date()
-        payments = self._generate_payments(today)
+        payments = self._generate_payments(datetime.now().date())
         payment_schedule_html = self.generate_payment_schedule_html(payments)
 
         body_html = f"""
-            <p>Félicitations {partner.name},</p>
-            <p>Votre commande à crédit numéro {self.name} a été créée avec succès.</p>
-            <p>Détails des échéances :</p>
-            {payment_schedule_html}
+        <table border="0" cellpadding="0" cellspacing="0" style="padding-top: 16px; background-color: #FFFFFF; font-family: Verdana, Arial, sans-serif; color: #454748; width: 100%; border-collapse: separate;">
+            <tr>
+                <td align="center">
+                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="padding: 16px; background-color: #FFFFFF; color: #454748; border-collapse: separate;">
+                        <tr>
+                            <td align="center" style="min-width: 590px;">
+                                <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse: separate;">
+                                    <tr>
+                                        <td valign="middle">
+                                            <span style="font-size: 10px;">Validation de votre commande à crédit</span><br/>
+                                            <span style="font-size: 20px; font-weight: bold;">{self.name}</span>
+                                        </td>
+                                        <td valign="middle" align="right">
+                                            <img style="padding: 0px; margin: 0px; height: auto; width: 120px;" src="https://ccbmshop.sn/logo.png" alt="logo CCBM SHOP"/>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="2" style="text-align: center;">
+                                            <hr width="100%" style="background-color: rgb(204, 204, 204); border: medium none; clear: both; display: block; font-size: 0px; min-height: 1px; line-height: 0; margin: 16px 0px 16px 0px;"/>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td align="center" style="min-width: 590px;">
+                                <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse: separate;">
+                                    <tr>
+                                        <td>
+                                            <p>Félicitations {partner.name},</p>
+                                            <p>Votre commande à crédit numéro {self.name} a été créée avec succès.</p>
+                                            <p>Détails des échéances :</p>
+                                            {payment_schedule_html}
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                       
+                        <!-- Footer CCBM -->
+                            <tr style="background-color: #F1F1F1; font-size: 13px; color: #555555;">
+                                        <td colspan="2" style="padding: 12px; text-align: center;">
+                                            <p>📞 +221 33 849 65 49 / +221 70 922 17 75 | 📍 Ouest foire, après la fédération</p>
+                                            <p> <a href="https://ccbmshop.sn" style="color: #875A7B;">www.ccbmshop.sn</a></p>
+                                        </td>
+                                    </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
         """
-        return True
-        # return self.send_mail(mail_server, partner, subject, body_html)
 
-
+        self.send_sms_notification('validation')
+        return self.send_mail(mail_server,partner, subject, body_html)
 
     def _generate_payment_info_html(self, payments):
         """
@@ -207,25 +197,22 @@ class SaleCreditOrderMail(models.Model):
         
         rows = ""
         for payment in payments:
-            if isinstance(payment, tuple):
-                label, amount, rate, due_date = payment[:4]
-                paid_amount = 0
-                state = False
+            label, amount, status,rate, due_date = payment[:5]
+
+            # Formatage de la date
+            if isinstance(due_date, (datetime, date)):
+                date_str = due_date.strftime('%d/%m/%Y')
             else:
-                label = f"Échéance {payment.sequence}"
-                amount = payment.amount
-                rate = payment.rate
-                due_date = payment.due_date
-                paid_amount = payment.paid_amount
-                state = payment.state
+                date_str = str(due_date)
 
-
-            date_str = due_date.strftime('%d/%m/%Y') if isinstance(due_date, (datetime, date)) else due_date
+            # Formatage du montant
             amount_fmt = f"{amount:,.0f}".replace(',', ' ')
-            
+
+            status_str = "Payé" if status else "Non Payé"
+
             # Mise en évidence de l'acompte
             bg_color = "#e8f4fd" if "Acompte" in label else ""
-            
+
             rows += f"""
             <tr style="background-color: {bg_color}">
                 <td style="padding: 8px; border: 1px solid #ddd; font-weight: {'bold' if 'Acompte' in label else 'normal'}">
@@ -235,10 +222,10 @@ class SaleCreditOrderMail(models.Model):
                     {amount_fmt} {self.currency_id.name}
                 </td>
                 <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">
-                    {rate}
+                    {status_str}
                 </td>
                 <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">
-                    {date_str}
+                    {date_str} 
                 </td>
             </tr>
             """
@@ -268,13 +255,10 @@ class SaleCreditOrderMail(models.Model):
                 <p style="margin: 5px 0;">
                     <strong>Nombre d'échéances:</strong> {len(payments)}
                 </p>
-                <p style="margin: 5px 0; color: #d9534f;">
-                    <strong>À noter:</strong> Le premier paiement doit être effectué dans les 3 jours suivant la validation
-                </p>
+               
             </div>
         </div>
         """
-
 
     def send_payment_status_mail_creditorder(self):
         """
@@ -325,7 +309,7 @@ class SaleCreditOrderMail(models.Model):
                 <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 15px 8px; border-collapse:separate;">
                     <tr>
                         <td colspan="2">
-                            <h3 style="color: #333; margin-bottom: 15px;">📋 Détails de la commande</h3>
+                            <h3 style="color: #333; margin-bottom: 15px;">Détails de la commande</h3>
                         </td>
                     </tr>
                     <tr>
@@ -366,7 +350,7 @@ class SaleCreditOrderMail(models.Model):
         </tr>
         <tr>
             <td align="center" style="min-width: 590px; padding-top: 20px;">
-                <h3 style="color: #333; margin-bottom: 15px;">🛍️ Produits commandés</h3>
+                <h3 style="color: #333; margin-bottom: 15px;">Produits commandés</h3>
                 <table border="1" cellpadding="5" cellspacing="0" width="590" style="min-width: 590px; background-color: white; border-collapse:collapse;">
                     <thead>
                         <tr style="background-color: #f8f9fa;">
@@ -394,11 +378,11 @@ class SaleCreditOrderMail(models.Model):
         {f'<tr><td align="center" style="min-width: 590px; padding-top: 20px;">{fully_paid_message}</td></tr>' if fully_paid_message else ''}
         <tr>
             <td align="center" style="min-width: 590px; padding-top: 20px;">
-                <h3 style="color: #333; margin-bottom: 15px;">💰 Résumé financier</h3>
+                <h3 style="color: #333; margin-bottom: 15px;">Résumé</h3>
                 <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: #f8f9fa; padding: 15px; border-collapse:separate; border-radius: 5px;">
                     <tr>
                         <td valign="middle" style="width: 50%; padding: 8px 0;">
-                            <span style="font-size: 15px; font-weight: bold;">💳 Prix total :</span>
+                            <span style="font-size: 15px; font-weight: bold;">Prix total :</span>
                         </td>
                         <td valign="middle" align="right" style="width: 50%; padding: 8px 0;">
                             <span style="font-size: 15px; font-weight: bold;">{total_amount:,.0f} {self.currency_id.name}</span>
@@ -406,7 +390,7 @@ class SaleCreditOrderMail(models.Model):
                     </tr>
                     <tr>
                         <td valign="middle" style="width: 50%; padding: 8px 0;">
-                            <span style="font-size: 15px; font-weight: bold; color: #28a745;">✅ Montant payé :</span>
+                            <span style="font-size: 15px; font-weight: bold; color: #28a745;">Montant payé :</span>
                         </td>
                         <td valign="middle" align="right" style="width: 50%; padding: 8px 0;">
                             <span style="font-size: 15px; font-weight: bold; color: #28a745;">{paid_amount:,.0f} {self.currency_id.name}</span>
@@ -414,7 +398,7 @@ class SaleCreditOrderMail(models.Model):
                     </tr>
                     <tr>
                         <td valign="middle" style="width: 50%; padding: 8px 0;">
-                            <span style="font-size: 15px; font-weight: bold; color: #dc3545;">⏳ Somme restante à payer :</span>
+                            <span style="font-size: 15px; font-weight: bold; color: #dc3545;">Somme restante à payer :</span>
                         </td>
                         <td valign="middle" align="right" style="width: 50%; padding: 8px 0;">
                             <span style="font-size: 15px; font-weight: bold; color: #dc3545;">{remaining_amount:,.0f} {self.currency_id.name}</span>
@@ -422,216 +406,26 @@ class SaleCreditOrderMail(models.Model):
                     </tr>
                     <tr>
                         <td valign="middle" style="width: 50%; padding: 8px 0;">
-                            <span style="font-size: 15px; font-weight: bold;">📊 Pourcentage payé :</span>
+                            <span style="font-size: 15px; font-weight: bold;">Pourcentage payé :</span>
                         </td>
                         <td valign="middle" align="right" style="width: 50%; padding: 8px 0;">
                             <span style="font-size: 15px; font-weight: bold;">{paid_percentage:.1f}%</span>
                         </td>
                     </tr>
                 </table>
+                 <!-- Footer CCBM -->
+                            <tr style="background-color: #F1F1F1; font-size: 13px; color: #555555;">
+                                        <td colspan="2" style="padding: 12px; text-align: center;">
+                                            <p>📞 +221 33 849 65 49 / +221 70 922 17 75 | 📍 Ouest foire, après la fédération</p>
+                                            <p> <a href="https://ccbmshop.sn" style="color: #875A7B;">www.ccbmshop.sn</a></p>
+                                        </td>
+                                    </tr>
             </td>
         </tr>
         """
 
         body_html = self._generate_email_body_html(partner, 'payment_status', additional_content)
-        return True
-        # return self.send_mail(mail_server, partner, subject, body_html)
-
-    def get_sale_order_credit_payment(self):
-        """
-        Récupère les lignes de paiement de crédit pour cette commande
-        """
-        payments = self.env['sale.order.credit.payment'].search([('order_id', '=', self.id)])
-        data = []
-        for payment in payments:
-            data.append({
-                'sequence': payment.sequence,
-                'due_date': payment.due_date.isoformat() if hasattr(payment.due_date, 'isoformat') else payment.due_date,
-                'amount': payment.amount,
-                'state': payment.state,
-                'rate': payment.rate,
-                'is_amount_manual': payment.is_amount_manual,
-                'paid_amount': payment.paid_amount
-            })
-        return data
-
-
-    def send_credit_order_creation_notification_to_client(self):
-        mail_server = self.env['ir.mail_server'].sudo().search([], limit=1)
-        if not mail_server:
-            return {'status': 'error', 'message': 'Mail server not configured'}
-
-        partner = self.partner_id
-        if not partner:
-            return {'status': 'error', 'message': 'Partner not found for the given order'}
-
-        subject = 'Votre commande à crédit a été créée'
-
-        create_account_section = ""
-        if not partner.password:
-            create_account_link = f"https://ccbmshop.sn/create-compte?mail={partner.email}"
-            create_account_section = f'''
-                <tr>
-                    <td align="center" style="min-width: 590px; padding-top: 20px;">
-                        <span style="font-size: 14px;">Cliquez sur le lien suivant pour créer un compte et suivre votre commande à crédit :</span><br/>
-                        <a href="{create_account_link}" style="font-size: 16px; font-weight: bold;">Créer un compte</a>
-                    </td>
-                </tr>
-            '''
-
-        body_html = f'''
-        <table border="0" cellpadding="0" cellspacing="0" style="padding-top: 16px; background-color: #FFFFFF; font-family:Verdana, Arial,sans-serif; color: #454748; width: 100%; border-collapse:separate;">
-            <tr>
-                <td align="center">
-                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="padding: 16px; background-color: #FFFFFF; color: #454748; border-collapse:separate;">
-                        <tbody>
-                            <tr>
-                                <td align="center" style="min-width: 590px;">
-                                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;">
-                                        <tr>
-                                            <td valign="middle">
-                                                <span style="font-size: 10px;">Votre commande à crédit</span><br/>
-                                                <span style="font-size: 20px; font-weight: bold;">
-                                                    {self.name}
-                                                </span>
-                                            </td>
-                                            <td valign="middle" align="right">
-                                                <img style="padding: 0px; margin: 0px; height: auto; width: 120px;" src="https://ccbmshop.sn/logo.png" alt="logo CCBM SHOP"/>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td colspan="2" style="text-align:center;">
-                                                <hr width="100%" style="background-color:rgb(204,204,204);border:medium none;clear:both;display:block;font-size:0px;min-height:1px;line-height:0; margin: 16px 0px 16px 0px;"/>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td align="center" style="min-width: 590px;">
-                                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;">
-                                        <tr>
-                                            <td>
-                                                <p>Cher/Chère {partner.name},</p>
-                                                <p>Nous vous informons que votre commande à crédit ({self.name}) a été créée avec succès.</p>
-                                                <p>Votre demande est actuellement en attente de validation par votre service des ressources humaines. Nous vous tiendrons informé de l'avancement de votre demande.</p>
-                                                <p>Merci pour votre confiance.</p>
-                                                <p>Cordialement,<br/>L'équipe {self.company_id.name}</p>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                            {create_account_section}
-                        </tbody>
-                    </table>
-                </td>
-            </tr>
-            <tr>
-                <td align="center" style="min-width: 590px;">
-                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: #F1F1F1; color: #454748; padding: 8px; border-collapse:separate;">
-                        <tr>
-                            <td style="text-align: center; font-size: 13px;">
-                                Généré par <a target="_blank" href="https://www.ccbmshop.sn" style="color: #875A7B;">CCBM SHOP</a>
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-        </table>
-        '''
-
-        if partner.email:
-            self.send_mail(mail_server, partner, subject, body_html)
-        else:
-            _logger.error(f'Partner email not found for partner: {partner.name}')
-
-        if partner.phone:
-            self.send_sms_notification('creation')
-        else:
-            _logger.error(f'Partner phone not found for partner: {partner.name}')
-
-    def send_credit_order_creation_notification_to_hr(self):
-        mail_server = self.env['ir.mail_server'].sudo().search([], limit=1)
-        if not mail_server:
-            return {'status': 'error', 'message': 'Mail server not configured'}
-
-        subject = 'Nouvelle commande à valider'
-
-        body_html = f'''
-        <table border="0" cellpadding="0" cellspacing="0" style="padding-top: 16px; background-color: #FFFFFF; font-family:Verdana, Arial,sans-serif; color: #454748; width: 100%; border-collapse:separate;">
-            <tr>
-                <td align="center">
-                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="padding: 16px; background-color: #FFFFFF; color: #454748; border-collapse:separate;">
-                        <tbody>
-                            <tr>
-                                <td align="center" style="min-width: 590px;">
-                                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;">
-                                        <tr>
-                                            <td valign="middle">
-                                                <span style="font-size: 10px;">Commande à crédit</span><br/>
-                                                <span style="font-size: 20px; font-weight: bold;">
-                                                    {self.name}
-                                                </span>
-                                            </td>
-                                            <td valign="middle" align="right">
-                                                <img style="padding: 0px; margin: 0px; height: auto; width: 120px;" src="https://ccbmshop.sn/logo.png" alt="logo CCBM SHOP"/>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td colspan="2" style="text-align:center;">
-                                                <hr width="100%" style="background-color:rgb(204,204,204);border:medium none;clear:both;display:block;font-size:0px;min-height:1px;line-height:0; margin: 16px 0px 16px 0px;"/>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td align="center" style="min-width: 590px;">
-                                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;">
-                                        <tr>
-                                            <td>
-                                                <p>Bonjour,</p>
-                                                <p>Une nouvelle demande de commande à crédit a été créée et nécessite votre validation :</p>
-                                                <ul>
-                                                    <li>Numéro de commande : {self.name}</li>
-                                                    <li>Client : {self.partner_id.name}</li>
-                                                    <li>Montant total : {self.amount_total} {self.currency_id.name}</li>
-                                                </ul>
-                                                <p>Veuillez examiner cette demande et prendre les mesures appropriées.</p>
-                                                <p>Cordialement,<br/>CCBM Shop</p>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </td>
-            </tr>
-            <tr>
-                <td align="center" style="min-width: 590px;">
-                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: #F1F1F1; color: #454748; padding: 8px; border-collapse:separate;">
-                        <tr>
-                            <td style="text-align: center; font-size: 13px;">
-                                Généré par <a target="_blank" href="https://www.ccbmshop.sn" style="color: #875A7B;">CCBM SHOP</a>
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-        </table>
-        '''
-
-        if self.company_id.email:
-            self.send_mail(mail_server, self.company_id, subject, body_html)
-        else:
-            _logger.error('Company email not found')
-
-        if self.partner_id.phone:
-            self.send_sms_notification('hr_notification')
-        else:
-            _logger.error(f'Partner phone not found for partner: {self.partner_id.name}')
+        return self.send_mail(mail_server, partner, subject, body_html)
 
     def send_credit_order_rh_rejected(self):
         mail_server = self.env['ir.mail_server'].sudo().search([], limit=1)
@@ -735,22 +529,17 @@ class SaleCreditOrderMail(models.Model):
                     </table>
                 </td>
             </tr>
-            <tr>
-                <td align="center" style="min-width: 590px;">
-                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: #F1F1F1; color: #454748; padding: 8px; border-collapse:separate;">
-                        <tr>
-                            <td style="text-align: center; font-size: 13px;">
-                                Généré par <a target="_blank" href="https://www.ccbmshop.sn" style="color: #875A7B;">CCBM SHOP</a>
+            
+           <tr style="background-color: #F1F1F1; font-size: 13px; color: #555555;">
+                            <td colspan="2" style="padding: 12px; text-align: center;">
+                                <p>📞 +221 33 849 65 49 / +221 70 922 17 75 | 📍 Ouest foire, après la fédération</p>
+                                <p> <a href="https://ccbmshop.sn" style="color: #875A7B;">www.ccbmshop.sn</a></p>
                             </td>
                         </tr>
-                    </table>
-                </td>
-            </tr>
         </table>
         '''
         if admin_user.partner_id.email:
-            return True
-            # return self.send_mail(mail_server, admin_user.partner_id, subject, body_html)
+            return self.send_mail(mail_server, admin_user.partner_id, subject, body_html)
         else:
             _logger.error(f'Admin email not found for admin: {admin_user.name}')
             return {'status': 'error', 'message': 'Admin email not found'}
@@ -817,17 +606,15 @@ class SaleCreditOrderMail(models.Model):
             'body_html': body_html,
             'state': 'outgoing',
         }
-        return True
+        mail_mail = self.env['mail.mail'].sudo().create(email_values)
+        try:
+            mail_mail.send()
+            return {'status': 'success', 'message': 'Mail envoyé avec succès'}
+        except Exception as e:
+            _logger.error(f'Error sending email: {str(e)}')
+            return {'status': 'error', 'message': str(e)}
 
-        # mail_mail = self.env['mail.mail'].sudo().create(email_values)
-        # try:
-        #     mail_mail.send()
-        #     return {'status': 'success', 'message': 'Mail envoyé avec succès'}
-        # except Exception as e:
-        #     _logger.error(f'Error sending email: {str(e)}')
-        #     return {'status': 'error', 'message': str(e)}
 
-    
     def send_sms_notification(self, notification_type):
         message_templates = {
             'validation': f"Bonjour {self.partner_id.name},\nVotre commande à crédit numéro {self.name} a été créée avec succès.",
@@ -849,9 +636,9 @@ class SaleCreditOrderMail(models.Model):
                     'recipient': recipient,
                     'message': message,
                 }).send_sms()
+                _logger.info(f'SMS sent: {sms_record}')
             else:
                 _logger.error(f'Partner phone not found for partner: {self.partner_id.name}')
-
 
     def _generate_email_body_html(self, partner, email_type, additional_content=""):
         email_content = {
@@ -983,6 +770,96 @@ class SaleCreditOrderMail(models.Model):
                     </table>
                 </td>
             </tr>
+            <tr style="background-color: #F1F1F1; font-size: 13px; color: #555555;">
+                            <td colspan="2" style="padding: 12px; text-align: center;">
+                                <p>📞 +221 33 849 65 49 / +221 70 922 17 75 | 📍 Ouest foire, après la fédération</p>
+                                <p> <a href="https://ccbmshop.sn" style="color: #875A7B;">www.ccbmshop.sn</a></p>
+                            </td>
+                        </tr>
+        </table>
+        """
+
+    def get_sale_order_credit_payment(self):
+        """
+        Récupère les lignes de paiement de crédit pour cette commande
+        """
+        payments = self.env['sale.order.credit.payment'].search([('order_id', '=', self.id)])
+        data = []
+        for payment in payments:
+            data.append({
+                'sequence': payment.sequence,
+                'due_date': payment.due_date.isoformat() if hasattr(payment.due_date, 'isoformat') else payment.due_date,
+                'amount': payment.amount,
+                'rate': payment.rate,
+                'state': payment.state,
+            })
+        return data
+
+
+
+    def send_credit_order_creation_notification_to_hr(self):
+        mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
+        if not mail_server:
+            return {'status': 'error', 'message': 'Mail server not configured'}
+
+        parent = self.partner_id.parent_id
+        rh_user = request.env['res.partner'].sudo().search([('role', '=', 'main_user'), ('parent_id', '=', parent.id)], limit=1)
+        if not rh_user:
+            return False
+        
+        subject = 'Nouvelle commande à valider'
+
+        body_html = f'''
+        <table border="0" cellpadding="0" cellspacing="0" style="padding-top: 16px; background-color: #FFFFFF; font-family:Verdana, Arial,sans-serif; color: #454748; width: 100%; border-collapse:separate;">
+            <tr>
+                <td align="center">
+                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="padding: 16px; background-color: #FFFFFF; color: #454748; border-collapse:separate;">
+                        <tbody>
+                            <tr>
+                                <td align="center" style="min-width: 590px;">
+                                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;">
+                                        <tr>
+                                            <td valign="middle">
+                                                <span style="font-size: 10px;">Commande à crédit</span><br/>
+                                                <span style="font-size: 20px; font-weight: bold;">
+                                                    {self.name}
+                                                </span>
+                                            </td>
+                                            <td valign="middle" align="right">
+                                                <img style="padding: 0px; margin: 0px; height: auto; width: 120px;" src="https://ccbmshop.sn/logo.png" alt="logo CCBM SHOP"/>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="2" style="text-align:center;">
+                                                <hr width="100%" style="background-color:rgb(204,204,204);border:medium none;clear:both;display:block;font-size:0px;min-height:1px;line-height:0; margin: 16px 0px 16px 0px;"/>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td align="center" style="min-width: 590px;">
+                                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;">
+                                        <tr>
+                                            <td>
+                                                <p>Bonjour,</p>
+                                                <p>Une nouvelle demande de commande à crédit a été créée et nécessite votre validation :</p>
+                                                <ul>
+                                                    <li>Numéro de commande : {self.name}</li>
+                                                    <li>Client : {self.partner_id.name}</li>
+                                                    <li>Montant total : {self.amount_total} {self.currency_id.name}</li>
+                                                </ul>
+                                                <p>Veuillez examiner cette demande et prendre les mesures appropriées.</p>
+                                                <p>Cordialement,<br/>Le système automatique</p>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
             <tr>
                 <td align="center" style="min-width: 590px;">
                     <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: #F1F1F1; color: #454748; padding: 8px; border-collapse:separate;">
@@ -995,18 +872,7 @@ class SaleCreditOrderMail(models.Model):
                 </td>
             </tr>
         </table>
-        """
+        '''
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+        self.send_mail(mail_server, rh_user, subject, body_html)
+        self.send_sms_notification('hr_notification')
