@@ -47,11 +47,11 @@ class SaleCreditOrderMail(models.Model):
                 self.send_credit_order_admin_rejected()
 
         return True
-    def create(self , vals):
-        res = super(SaleCreditOrderMail, self).create(vals)
-        res.send_credit_order_creation_notification_to_hr()
+    # def create(self , vals):
+        # res = super(SaleCreditOrderMail, self).create(vals)
+        # res.send_credit_order_creation_notification_to_hr()
         # res.send_credit_order_validation_mail()
-        return res
+        # return res
     
 
     def write(self, vals):
