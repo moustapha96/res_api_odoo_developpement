@@ -814,226 +814,226 @@ class SaleOrderMail(models.Model):
 
     
     # mail apres payment creditorder
-    def send_payment_status_mail_creditorder(self):
-        # Récupérer ou créer une instance de IrMailServer
-        mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
+    # def send_payment_status_mail_creditorder(self):
+    #     # Récupérer ou créer une instance de IrMailServer
+    #     mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
 
-        # Récupérer le partenaire associé à la commande
-        partner = self.partner_id
-        if not partner:
-            return {'status': 'error', 'message': 'Partner not found for the given order'}
+    #     # Récupérer le partenaire associé à la commande
+    #     partner = self.partner_id
+    #     if not partner:
+    #         return {'status': 'error', 'message': 'Partner not found for the given order'}
         
-        # Construire le contenu de l'e-mail
-        subject = 'Mise à jour de l\'état de votre commande à crédit'
+    #     # Construire le contenu de l'e-mail
+    #     subject = 'Mise à jour de l\'état de votre commande à crédit'
 
-        commitment_date_start = datetime.now() + timedelta(days=1)
-        commitment_date_end = datetime.now() + timedelta(days=3)
-        commitment_date_start_str = commitment_date_start.strftime('%Y-%m-%d')
-        commitment_date_end_str = commitment_date_end.strftime('%Y-%m-%d')
+    #     commitment_date_start = datetime.now() + timedelta(days=1)
+    #     commitment_date_end = datetime.now() + timedelta(days=3)
+    #     commitment_date_start_str = commitment_date_start.strftime('%Y-%m-%d')
+    #     commitment_date_end_str = commitment_date_end.strftime('%Y-%m-%d')
 
-        payment_info = ""
-        if self.first_payment_amount or self.second_payment_amount or self.third_payment_amount or self.fourth_payment_amount:
-            payment_info += "<h3>Échéancier de paiement</h3>"
-            payment_info += "<table border='1' cellpadding='5' cellspacing='0' width='590' style='min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:collapse;'>"
-            payment_info += "<tr><th>Échéance</th><th>Montant</th><th>Date d'échéance</th><th>État</th></tr>"
+    #     payment_info = ""
+    #     if self.first_payment_amount or self.second_payment_amount or self.third_payment_amount or self.fourth_payment_amount:
+    #         payment_info += "<h3>Échéancier de paiement</h3>"
+    #         payment_info += "<table border='1' cellpadding='5' cellspacing='0' width='590' style='min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:collapse;'>"
+    #         payment_info += "<tr><th>Échéance</th><th>Montant</th><th>Date d'échéance</th><th>État</th></tr>"
             
-            payments = [
-                ('1ère', self.first_payment_amount, self.first_payment_date, self.first_payment_state),
-                ('2ème', self.second_payment_amount, self.second_payment_date, self.second_payment_state),
-                ('3ème', self.third_payment_amount, self.third_payment_date, self.third_payment_state),
-                ('4ème', self.fourth_payment_amount, self.fourth_payment_date, self.fourth_payment_state)
-            ]
+    #         payments = [
+    #             ('1ère', self.first_payment_amount, self.first_payment_date, self.first_payment_state),
+    #             ('2ème', self.second_payment_amount, self.second_payment_date, self.second_payment_state),
+    #             ('3ème', self.third_payment_amount, self.third_payment_date, self.third_payment_state),
+    #             ('4ème', self.fourth_payment_amount, self.fourth_payment_date, self.fourth_payment_state)
+    #         ]
             
-            for echance, amount, date, state in payments:
-                if amount:
-                    payment_date = date.strftime('%Y-%m-%d') if date else "Non définie"
-                    payment_state = "Payé" if state == True else "Non payé"
-                    payment_info += f"<tr><td>{echance}</td><td>{amount}</td><td>{payment_date}</td><td>{payment_state}</td></tr>"
+    #         for echance, amount, date, state in payments:
+    #             if amount:
+    #                 payment_date = date.strftime('%Y-%m-%d') if date else "Non définie"
+    #                 payment_state = "Payé" if state == True else "Non payé"
+    #                 payment_info += f"<tr><td>{echance}</td><td>{amount}</td><td>{payment_date}</td><td>{payment_state}</td></tr>"
             
-            payment_info += "</table>"
+    #         payment_info += "</table>"
 
-        total_amount = self.amount_total
-        remaining_amount = self.amount_residual
+    #     total_amount = self.amount_total
+    #     remaining_amount = self.amount_residual
 
-        fully_paid_message = ""
-        if remaining_amount == 0:
-            fully_paid_message = "<p style='font-size: 16px; font-weight: bold; color: green;'>Votre commande à crédit est totalement payée.</p>"
+    #     fully_paid_message = ""
+    #     if remaining_amount == 0:
+    #         fully_paid_message = "<p style='font-size: 16px; font-weight: bold; color: green;'>Votre commande à crédit est totalement payée.</p>"
 
-        body_html = f'''
-        <table border="0" cellpadding="0" cellspacing="0" style="padding-top: 16px; background-color: #FFFFFF; font-family:Verdana, Arial,sans-serif; color: #454748; width: 100%; border-collapse:separate;">
-            <tr>
-                <td align="center">
-                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="padding: 16px; background-color: #FFFFFF; color: #454748; border-collapse:separate;">
-                        <tbody>
-                            <tr>
-                                <td align="center" style="min-width: 590px;">
-                                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;">
-                                        <tr>
-                                            <td valign="middle">
-                                                <span style="font-size: 10px;">Votre commande à crédit</span><br/>
-                                                <span style="font-size: 20px; font-weight: bold;">
-                                                    {self.name}
-                                                </span>
-                                            </td>
-                                            <td valign="middle" align="right">
-                                                <img style="padding: 0px; margin: 0px; height: auto; width: 120px;" src="https://ccbmshop.sn/logo.png" alt="logo CCBM SHOP"/>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td colspan="2" style="text-align:center;">
-                                                <hr width="100%" style="background-color:rgb(204,204,204);border:medium none;clear:both;display:block;font-size:0px;min-height:1px;line-height:0; margin: 16px 0px 16px 0px;"/>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td align="center" style="min-width: 590px;">
-                                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;">
-                                        <tr>
-                                            <td valign="middle" style="width: 50%;">
-                                                <span style="font-size: 15px; font-weight: bold;">
-                                                    Détails du client
-                                                </span>
-                                            </td>
-                                            <td valign="middle" align="right" style="width: 50%;">
-                                                {partner.name}<br/>
-                                                {partner.phone}
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td valign="middle" style="width: 50%;">
-                                                <span style="font-size: 15px; font-weight: bold;">
-                                                    Adresse
-                                                </span>
-                                            </td>
-                                            <td valign="middle" align="right" style="width: 50%;">
-                                                {partner.city}
-                                            </td>
-                                        </tr>
-                                        <br />
-                                        <tr>
-                                            <td valign="middle" style="width: 50%;">
-                                                <span style="font-size: 15px; font-weight: bold;">
-                                                    Date de livraison estimée
-                                                </span>
-                                            </td>
-                                            <td valign="middle" align="right" style="width: 50%;">
-                                                Entre le {commitment_date_start_str} et {commitment_date_end_str}
-                                            </td>
-                                        </tr>
-                                        <br />
-                                        <tr>
-                                            <td valign="middle" style="width: 50%;">
-                                                <span style="font-size: 15px; font-weight: bold;">
-                                                    Type de commande
-                                                </span>
-                                            </td>
-                                            <td valign="middle" align="right" style="width: 50%;">
-                                                Commande à crédit
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                            <br />
-                            <br />
-                            <tr>
-                                <td align="center" style="min-width: 590px;">
-                                    <table border="1" cellpadding="5" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:collapse;">
-                                        <tr>
-                                            <th>Produit</th>
-                                            <th>Quantité</th>
-                                            <th>Prix unitaire</th>
-                                            <th>Total</th>
-                                        </tr>
-                                        {"".join([f"<tr><td>{line.product_id.name}</td><td>{line.product_uom_qty}</td><td>{line.price_unit}</td><td>{line.price_total}</td></tr>" for line in self.order_line])}
-                                        <tr>
-                                            <td colspan="3" style="text-align:right; font-weight:bold;">Total du panier :</td>
-                                            <td style="font-weight:bold;">{total_amount}</td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                            <br />
-                            <br />
-                            <tr>
-                                <td align="center" style="min-width: 590px;">
-                                    {payment_info}
-                                </td>
-                            </tr>
-                            <br />
-                            <br />
-                            <tr>
-                                <td align="center" style="min-width: 590px;">
-                                        {fully_paid_message}
-                                    </td>
-                                </tr>
-                            <tr>
-                                <td align="center" style="min-width: 590px;">
-                                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;">
-                                        <tr>
-                                            <td valign="middle" style="width: 50%;">
-                                                <span style="font-size: 15px; font-weight: bold;">
-                                                    Prix total
-                                                </span>
-                                            </td>
-                                            <td valign="middle" align="right" style="width: 50%;">
-                                                {total_amount}
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td valign="middle" style="width: 50%;">
-                                                <span style="font-size: 15px; font-weight: bold;">
-                                                    Somme restante à payer
-                                                </span>
-                                            </td>
-                                            <td valign="middle" align="right" style="width: 50%;">
-                                                {remaining_amount}
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </td>
-            </tr>
-            <tr>
-                <td align="center" style="min-width: 590px;">
-                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: #F1F1F1; color: #454748; padding: 8px; border-collapse:separate;">
-                        <tr>
-                            <td style="text-align: center; font-size: 13px;">
-                                Généré par <a target="_blank" href="https://www.ccbmshop.sn" style="color: #875A7B;">CCBM SHOP</a>
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-        </table>
-        '''
+    #     body_html = f'''
+    #     <table border="0" cellpadding="0" cellspacing="0" style="padding-top: 16px; background-color: #FFFFFF; font-family:Verdana, Arial,sans-serif; color: #454748; width: 100%; border-collapse:separate;">
+    #         <tr>
+    #             <td align="center">
+    #                 <table border="0" cellpadding="0" cellspacing="0" width="590" style="padding: 16px; background-color: #FFFFFF; color: #454748; border-collapse:separate;">
+    #                     <tbody>
+    #                         <tr>
+    #                             <td align="center" style="min-width: 590px;">
+    #                                 <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;">
+    #                                     <tr>
+    #                                         <td valign="middle">
+    #                                             <span style="font-size: 10px;">Votre commande à crédit</span><br/>
+    #                                             <span style="font-size: 20px; font-weight: bold;">
+    #                                                 {self.name}
+    #                                             </span>
+    #                                         </td>
+    #                                         <td valign="middle" align="right">
+    #                                             <img style="padding: 0px; margin: 0px; height: auto; width: 120px;" src="https://ccbmshop.sn/logo.png" alt="logo CCBM SHOP"/>
+    #                                         </td>
+    #                                     </tr>
+    #                                     <tr>
+    #                                         <td colspan="2" style="text-align:center;">
+    #                                             <hr width="100%" style="background-color:rgb(204,204,204);border:medium none;clear:both;display:block;font-size:0px;min-height:1px;line-height:0; margin: 16px 0px 16px 0px;"/>
+    #                                         </td>
+    #                                     </tr>
+    #                                 </table>
+    #                             </td>
+    #                         </tr>
+    #                         <tr>
+    #                             <td align="center" style="min-width: 590px;">
+    #                                 <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;">
+    #                                     <tr>
+    #                                         <td valign="middle" style="width: 50%;">
+    #                                             <span style="font-size: 15px; font-weight: bold;">
+    #                                                 Détails du client
+    #                                             </span>
+    #                                         </td>
+    #                                         <td valign="middle" align="right" style="width: 50%;">
+    #                                             {partner.name}<br/>
+    #                                             {partner.phone}
+    #                                         </td>
+    #                                     </tr>
+    #                                     <tr>
+    #                                         <td valign="middle" style="width: 50%;">
+    #                                             <span style="font-size: 15px; font-weight: bold;">
+    #                                                 Adresse
+    #                                             </span>
+    #                                         </td>
+    #                                         <td valign="middle" align="right" style="width: 50%;">
+    #                                             {partner.city}
+    #                                         </td>
+    #                                     </tr>
+    #                                     <br />
+    #                                     <tr>
+    #                                         <td valign="middle" style="width: 50%;">
+    #                                             <span style="font-size: 15px; font-weight: bold;">
+    #                                                 Date de livraison estimée
+    #                                             </span>
+    #                                         </td>
+    #                                         <td valign="middle" align="right" style="width: 50%;">
+    #                                             Entre le {commitment_date_start_str} et {commitment_date_end_str}
+    #                                         </td>
+    #                                     </tr>
+    #                                     <br />
+    #                                     <tr>
+    #                                         <td valign="middle" style="width: 50%;">
+    #                                             <span style="font-size: 15px; font-weight: bold;">
+    #                                                 Type de commande
+    #                                             </span>
+    #                                         </td>
+    #                                         <td valign="middle" align="right" style="width: 50%;">
+    #                                             Commande à crédit
+    #                                         </td>
+    #                                     </tr>
+    #                                 </table>
+    #                             </td>
+    #                         </tr>
+    #                         <br />
+    #                         <br />
+    #                         <tr>
+    #                             <td align="center" style="min-width: 590px;">
+    #                                 <table border="1" cellpadding="5" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:collapse;">
+    #                                     <tr>
+    #                                         <th>Produit</th>
+    #                                         <th>Quantité</th>
+    #                                         <th>Prix unitaire</th>
+    #                                         <th>Total</th>
+    #                                     </tr>
+    #                                     {"".join([f"<tr><td>{line.product_id.name}</td><td>{line.product_uom_qty}</td><td>{line.price_unit}</td><td>{line.price_total}</td></tr>" for line in self.order_line])}
+    #                                     <tr>
+    #                                         <td colspan="3" style="text-align:right; font-weight:bold;">Total du panier :</td>
+    #                                         <td style="font-weight:bold;">{total_amount}</td>
+    #                                     </tr>
+    #                                 </table>
+    #                             </td>
+    #                         </tr>
+    #                         <br />
+    #                         <br />
+    #                         <tr>
+    #                             <td align="center" style="min-width: 590px;">
+    #                                 {payment_info}
+    #                             </td>
+    #                         </tr>
+    #                         <br />
+    #                         <br />
+    #                         <tr>
+    #                             <td align="center" style="min-width: 590px;">
+    #                                     {fully_paid_message}
+    #                                 </td>
+    #                             </tr>
+    #                         <tr>
+    #                             <td align="center" style="min-width: 590px;">
+    #                                 <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;">
+    #                                     <tr>
+    #                                         <td valign="middle" style="width: 50%;">
+    #                                             <span style="font-size: 15px; font-weight: bold;">
+    #                                                 Prix total
+    #                                             </span>
+    #                                         </td>
+    #                                         <td valign="middle" align="right" style="width: 50%;">
+    #                                             {total_amount}
+    #                                         </td>
+    #                                     </tr>
+    #                                     <tr>
+    #                                         <td valign="middle" style="width: 50%;">
+    #                                             <span style="font-size: 15px; font-weight: bold;">
+    #                                                 Somme restante à payer
+    #                                             </span>
+    #                                         </td>
+    #                                         <td valign="middle" align="right" style="width: 50%;">
+    #                                             {remaining_amount}
+    #                                         </td>
+    #                                     </tr>
+    #                                 </table>
+    #                             </td>
+    #                         </tr>
+    #                     </tbody>
+    #                 </table>
+    #             </td>
+    #         </tr>
+    #         <tr>
+    #             <td align="center" style="min-width: 590px;">
+    #                 <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: #F1F1F1; color: #454748; padding: 8px; border-collapse:separate;">
+    #                     <tr>
+    #                         <td style="text-align: center; font-size: 13px;">
+    #                             Généré par <a target="_blank" href="https://www.ccbmshop.sn" style="color: #875A7B;">CCBM SHOP</a>
+    #                         </td>
+    #                     </tr>
+    #                 </table>
+    #             </td>
+    #         </tr>
+    #     </table>
+    #     '''
 
-        email_from = mail_server.smtp_user
-        additional_email = 'shop@ccbm.sn'
-        email_to = f'{partner.email}, {additional_email}'
-        # email_to = f'{partner.email}'
+    #     email_from = mail_server.smtp_user
+    #     additional_email = 'shop@ccbm.sn'
+    #     email_to = f'{partner.email}, {additional_email}'
+    #     # email_to = f'{partner.email}'
 
-        # Définir les valeurs du message e-mail
-        email_values = {
-            'email_from': email_from,
-            'email_to': email_to,
-            'subject': subject,
-            'body_html': body_html,
-            'state': 'outgoing',
-        }
-        # Construire le message e-mail
-        mail_mail = request.env['mail.mail'].sudo().create(email_values)
-        try:
-            mail_mail.send()
-            return {'status': 'success', 'message': 'Mail envoyé avec succès'}
-        except Exception as e:
-            _logger.error(f'Error sending email: {str(e)}')
-            return {'status': 'error', 'message': str(e)}    
+    #     # Définir les valeurs du message e-mail
+    #     email_values = {
+    #         'email_from': email_from,
+    #         'email_to': email_to,
+    #         'subject': subject,
+    #         'body_html': body_html,
+    #         'state': 'outgoing',
+    #     }
+    #     # Construire le message e-mail
+    #     mail_mail = request.env['mail.mail'].sudo().create(email_values)
+    #     try:
+    #         mail_mail.send()
+    #         return {'status': 'success', 'message': 'Mail envoyé avec succès'}
+    #     except Exception as e:
+    #         _logger.error(f'Error sending email: {str(e)}')
+    #         return {'status': 'error', 'message': str(e)}    
 
     # @api.model
     def action_confirm(self):
@@ -1056,11 +1056,12 @@ class SaleOrderMail(models.Model):
         self.send_payment_status_mail()
         return res
 
-    @api.depends('amount_paid', 'amount_total')
-    def compute_amount_residual_tracked(self):
-        _logger.info("Mail envoyé pour la commande %s", self.name)
-        for order in self:
-            if order.type_sale == 'creditorder':
-                _logger.info("Mail envoyé pour la commande %s", order.name)
-                order.send_payment_status_mail_creditorder()
+
+    # @api.depends('amount_paid', 'amount_total')
+    # def compute_amount_residual_tracked(self):
+    #     _logger.info("Mail envoyé pour la commande %s", self.name)
+    #     for order in self:
+    #         if order.type_sale == 'creditorder':
+    #             _logger.info("Mail envoyé pour la commande %s", order.name)
+    #             order.send_payment_status_mail_creditorder()
             

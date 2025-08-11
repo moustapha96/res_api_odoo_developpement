@@ -207,7 +207,10 @@ class CreditCommandeREST(http.Controller):
                     'validation_admin_state': 'pending',
                     'state' : 'validation'
                 })
+                
                 order.send_credit_order_validation_mail()
+                order.send_credit_order_creation_notification_to_hr()
+
                 _logger.info("Commande validée : %s", order.state)
 
                 resp = werkzeug.wrappers.Response(

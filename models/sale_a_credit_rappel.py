@@ -173,8 +173,8 @@ class SaleCreditOrderMail(models.Model):
         return payments
 
 
-
     def send_mail(self, mail_server, partner, subject, body_html):
+        
         if not mail_server:
             _logger.error('Mail server not configured')
             return {'status': 'error', 'message': 'Mail server not configured'}
