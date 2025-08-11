@@ -1029,6 +1029,7 @@ class SaleCreditOrderMail(models.Model):
         '''
 
 
+    #  eliminer
 
 
 
