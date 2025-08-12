@@ -616,4 +616,3 @@ class SaleCreditOrderMail(models.Model):
         result = super(SaleCreditOrderMail, self).write(vals)
         return result
 
-    
