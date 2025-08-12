@@ -16,7 +16,7 @@
         </record>
 
 
-        <record id="ir_cron_check_overdue_payments" model="ir.cron">
+        <!-- <record id="ir_cron_check_overdue_payments" model="ir.cron">
             <field name="name">Notifications pour les paiements en retard : Commande à crédit</field>
             <field name="model_id" ref="model_sale_order" />
             <field name="state">code</field>
@@ -26,6 +26,6 @@
             <field name="numbercall">-1</field>
             <field name="doall" eval="False" />
             <field name="active" eval="True" />
-        </record>
+        </record> -->
     </data>
 </odoo>
