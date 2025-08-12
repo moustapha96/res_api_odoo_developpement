@@ -217,9 +217,13 @@ class SaleCreditOrderMail(models.Model):
         _logger.info(f"[CRON] Commandes à traiter : {len(orders)}")
 
         for order in orders:
-            if order.state != "draft" :
+            if order.state == "draft" or order.state == "cancel" :
+                _logger.info(f"[CRON] Traitement de la commande {order.name} pour {order.partner_id.name} annulée ou en brouliion ")
+
+            if order.state == "to_delivered" or order.state == "delivered" or order.state == "sale" :
                 _logger.info(f"[CRON] Traitement de la commande {order.name} pour {order.partner_id.name}")
                 order.send_payment_reminder()
+            
 
 
     def check_and_send_overdue_payments(self):
