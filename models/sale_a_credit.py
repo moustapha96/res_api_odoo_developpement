@@ -65,14 +65,7 @@ class SaleCreditOrderMail(models.Model):
             elif new_admin_state == 'rejected':
                 self.send_credit_order_admin_rejected()
         return True
-<<<<<<< HEAD
-    # def create(self , vals):
-        # res = super(SaleCreditOrderMail, self).create(vals)
-        # res.send_credit_order_creation_notification_to_hr()
-        # res.send_credit_order_validation_mail()
-        # return res
-=======
->>>>>>> 327f8c3c2d867bd62490600ccc2f9c969094edc3
+
     
 
     def write(self, vals):
