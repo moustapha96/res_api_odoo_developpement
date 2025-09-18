@@ -923,27 +923,101 @@ class ProductCategorieControllerREST(http.Controller):
     
 
 
+    # @http.route('/api/produits/update-list-price', methods=['GET'], type='http', auth='none', cors="*")
+    # def api_update_list_price(self, **kw):
+    #     """
+    #     Met à jour list_price et creditorder_price pour tous les produits NON en promo
+    #     avec : new_price = standard_price + (standard_price * percent/100)
+
+    #     Query:
+    #     - percent (float) : pourcentage de majoration (ex: 20 => +20%). Défaut = 20.
+    #     """
+    #     import math
+
+    #     # 1) lire le pourcentage (toujours interprété comme %)
+    #     try:
+    #         percent = float(kw.get('percent', 20))
+    #     except (TypeError, ValueError):
+    #         percent = 20.0
+
+    #     # 2) récupérer les produits vendables & non en promo
+    #     products = request.env['product.product'].sudo().search([
+    #         ('sale_ok', '=', True),
+    #         ('active', '=', True),
+    #         ('product_tmpl_id.en_promo', '=', False),
+    #     ])
+
+    #     updated = 0
+    #     details = []
+
+    #     for product in products:
+    #         tmpl = product.product_tmpl_id.sudo()
+    #         cost = float(product.standard_price or 0.0)
+
+    #         # montant du pourcentage sur le coût
+    #         markup_amount = round(cost * (percent / 100.0), 2)
+    #         new_price = round(cost + markup_amount, 2)
+
+    #         # MAJ list_price (variante)
+    #         if not math.isclose(float(product.list_price or 0.0), new_price, rel_tol=0, abs_tol=1e-6):
+    #             product.write({'list_price': new_price})
+
+    #         # MAJ creditorder_price (template) — même logique
+    #         if not math.isclose(float(tmpl.creditorder_price or 0.0), new_price, rel_tol=0, abs_tol=1e-6):
+    #             tmpl.write({'creditorder_price': new_price})
+
+    #         # Optionnel: stocker le pourcentage utilisé si le champ existe
+    #         if 'markup_percentage' in tmpl._fields:
+    #             if not math.isclose(float(getattr(tmpl, 'markup_percentage') or 0.0), percent, rel_tol=0, abs_tol=1e-6):
+    #                 tmpl.write({'markup_percentage': percent})
+
+    #         updated += 1
+    #         if len(details) < 100:
+    #             details.append({
+    #                 "id": product.id,
+    #                 "name": product.display_name,
+    #                 "standard_price": cost,
+    #                 "markup_amount": markup_amount,
+    #                 "new_price": new_price,
+    #                 "percent_used": percent
+    #             })
+
+    #     payload = {
+    #         "success": True,
+    #         "message": f"{updated} produits mis à jour.",
+    #         "percent": percent,
+    #         "updated": updated,
+    #         "details": details
+    #     }
+
+    #     return werkzeug.wrappers.Response(
+    #         status=200,
+    #         content_type='application/json; charset=utf-8',
+    #         headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+    #         response=json.dumps(payload)
+    #     )
+
     @http.route('/api/produits/update-list-price', methods=['GET'], type='http', auth='none', cors="*")
     def api_update_list_price(self, **kw):
         """
-        Met à jour list_price et creditorder_price pour tous les produits NON en promo
-        avec : new_price = standard_price + (standard_price * percent/100)
+        Met à jour list_price pour tous les produits NON en promo :
+        new_price = standard_price + (percentage * standard_price)
 
         Query:
-        - percent (float) : pourcentage de majoration (ex: 20 => +20%). Défaut = 20.
+        - percent (float) : pourcentage (ex: 20 => +20%). Défaut = 20.
         """
         import math
 
-        # 1) lire le pourcentage (toujours interprété comme %)
+        # 1) Lire le pourcentage et le convertir en ratio
         try:
             percent = float(kw.get('percent', 20))
         except (TypeError, ValueError):
             percent = 20.0
+        ratio = percent / 100.0  # 20 -> 0.20
 
-        # 2) récupérer les produits vendables & non en promo
+        # 2) Récupérer produits vendables, actifs, non en promo
         products = request.env['product.product'].sudo().search([
             ('sale_ok', '=', True),
-            ('active', '=', True),
             ('product_tmpl_id.en_promo', '=', False),
         ])
 
@@ -951,35 +1025,22 @@ class ProductCategorieControllerREST(http.Controller):
         details = []
 
         for product in products:
-            tmpl = product.product_tmpl_id.sudo()
             cost = float(product.standard_price or 0.0)
+            new_price = round(cost + (ratio * cost), 2)  # standard + (percent * standard)
 
-            # montant du pourcentage sur le coût
-            markup_amount = round(cost * (percent / 100.0), 2)
-            new_price = round(cost + markup_amount, 2)
-
-            # MAJ list_price (variante)
+            # MAJ uniquement si changement réel
             if not math.isclose(float(product.list_price or 0.0), new_price, rel_tol=0, abs_tol=1e-6):
-                product.write({'list_price': new_price})
+                product.sudo().write({'list_price': new_price , 'markup_percentage' : percent})
+                updated += 1
 
-            # MAJ creditorder_price (template) — même logique
-            if not math.isclose(float(tmpl.creditorder_price or 0.0), new_price, rel_tol=0, abs_tol=1e-6):
-                tmpl.write({'creditorder_price': new_price})
-
-            # Optionnel: stocker le pourcentage utilisé si le champ existe
-            if 'markup_percentage' in tmpl._fields:
-                if not math.isclose(float(getattr(tmpl, 'markup_percentage') or 0.0), percent, rel_tol=0, abs_tol=1e-6):
-                    tmpl.write({'markup_percentage': percent})
-
-            updated += 1
             if len(details) < 100:
                 details.append({
                     "id": product.id,
                     "name": product.display_name,
                     "standard_price": cost,
-                    "markup_amount": markup_amount,
-                    "new_price": new_price,
-                    "percent_used": percent
+                    "percent": percent,
+                    "added_amount": round(ratio * cost, 2),
+                    "new_list_price": new_price
                 })
 
         payload = {
@@ -996,6 +1057,5 @@ class ProductCategorieControllerREST(http.Controller):
             headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
             response=json.dumps(payload)
         )
-
 
 
