@@ -922,3 +922,100 @@ class ProductCategorieControllerREST(http.Controller):
         )
     
 
+
+    @http.route('/api/produits/update-list-price', methods=['GET'], type='http', auth='none', cors="*")
+    def api_update_list_price(self, **kw):
+        """
+        Met à jour les list_price (et optionnellement creditorder_price) des produits NON en promo,
+        en appliquant un pourcentage sur le coût (standard_price).
+
+        Query params:
+        - percent (float) : % pour list_price (par défaut 20)
+        - update_credit (bool) : activer MAJ de creditorder_price (par défaut false)
+        - credit_percent (float) : % pour creditorder_price (par défaut = percent)
+        - enforce_credit_below_list (bool) : forcer creditorder_price <= list_price (par défaut true)
+        """
+        # Récup des paramètres
+        try:
+            percent = float(kw.get('percent', 20))
+        except (TypeError, ValueError):
+            percent = 20.0
+
+        update_credit = str(kw.get('update_credit', '0')).lower() in ('1', 'true', 'yes')
+        try:
+            credit_percent = float(kw.get('credit_percent', percent))
+        except (TypeError, ValueError):
+            credit_percent = percent
+
+        enforce_cap = str(kw.get('enforce_credit_below_list', '1')).lower() in ('1', 'true', 'yes')
+
+        # Domaine: vendables, actifs, non en promo
+        products = request.env['product.product'].sudo().search([
+            ('sale_ok', '=', True),
+            ('product_tmpl_id.en_promo', '=', False),
+        ])
+
+        updated_list = 0
+        updated_credit = 0
+        skipped = 0
+        details = []
+
+        for product in products:
+            cost = product.standard_price or 0.0
+            if cost <= 0:
+                skipped += 1
+                continue
+
+            new_list = round(cost * (1.0 + percent / 100.0), 2)
+            old_list = product.list_price or 0.0
+
+            # MAJ list_price (sur variante; Odoo propage au template)
+            if abs(old_list - new_list) > 1e-6:
+                product.sudo().write({'list_price': new_list,'markup_percentage': percent})
+                updated_list += 1
+
+            new_credit = None
+            old_credit = None
+
+            if update_credit:
+                tmpl = product.product_tmpl_id.sudo()
+                old_credit = tmpl.creditorder_price or 0.0
+                new_credit = round(cost * (1.0 + credit_percent / 100.0), 2)
+
+                # Optionnel: garantir que le prix à crédit ne dépasse pas le prix de vente
+                if enforce_cap and new_credit > new_list:
+                    new_credit = new_list
+
+                if abs(old_credit - new_credit) > 1e-6:
+                    tmpl.write({'creditorder_price': new_credit})
+                    updated_credit += 1
+
+            details.append({
+                'id': product.id,
+                'name': product.display_name,
+                'cost': cost,
+                'old_list_price': old_list,
+                'new_list_price': new_list,
+                'old_creditorder_price': old_credit,
+                'new_creditorder_price': new_credit,
+            })
+
+        payload = {
+            "success": True,
+            "message": f"{updated_list} list_price MAJ, {updated_credit} creditorder_price MAJ, {skipped} ignorés (coût <= 0)",
+            "percent": percent,
+            "credit_percent": credit_percent if update_credit else None,
+            "updated_list": updated_list,
+            "updated_credit": updated_credit,
+            "skipped": skipped,
+            "details": details[:100]  # éviter un payload gigantesque
+        }
+
+        return werkzeug.wrappers.Response(
+            status=200,
+            content_type='application/json; charset=utf-8',
+            headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+            response=json.dumps(payload)
+        )
+
+
