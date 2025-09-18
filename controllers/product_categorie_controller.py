@@ -926,81 +926,68 @@ class ProductCategorieControllerREST(http.Controller):
     @http.route('/api/produits/update-list-price', methods=['GET'], type='http', auth='none', cors="*")
     def api_update_list_price(self, **kw):
         """
-        Met à jour list_price et creditorder_price pour tous les produits NON en promo,
-        en appliquant un pourcentage du coût (standard_price).
+        Met à jour list_price et creditorder_price pour tous les produits NON en promo
+        avec : new_price = standard_price + (standard_price * percent/100)
 
         Query:
-        - percent (float) : pourcentage appliqué (défaut 20)
+        - percent (float) : pourcentage de majoration (ex: 20 => +20%). Défaut = 20.
         """
         import math
 
-        # 1) lire le pourcentage
+        # 1) lire le pourcentage (toujours interprété comme %)
         try:
             percent = float(kw.get('percent', 20))
         except (TypeError, ValueError):
             percent = 20.0
 
-        # 2) récupérer les produits vendables et non en promo
+        # 2) récupérer les produits vendables & non en promo
         products = request.env['product.product'].sudo().search([
             ('sale_ok', '=', True),
+            ('active', '=', True),
             ('product_tmpl_id.en_promo', '=', False),
         ])
 
         updated = 0
-        skipped = 0
         details = []
 
         for product in products:
             tmpl = product.product_tmpl_id.sudo()
             cost = float(product.standard_price or 0.0)
 
-            # On saute si coût nul/négatif
-            if cost <= 0:
-                skipped += 1
-                continue
+            # montant du pourcentage sur le coût
+            markup_amount = round(cost * (percent / 100.0), 2)
+            new_price = round(cost + markup_amount, 2)
 
-            new_price = round(cost * (1.0 + percent / 100.0), 2)
-
-            # 3) MAJ prix de vente sur la variante
-            to_write_variant = {}
+            # MAJ list_price (variante)
             if not math.isclose(float(product.list_price or 0.0), new_price, rel_tol=0, abs_tol=1e-6):
-                to_write_variant['list_price'] = new_price
+                product.write({'list_price': new_price})
 
-            if to_write_variant:
-                product.write(to_write_variant)
-
-            # 4) MAJ prix à crédit sur le template
-            to_write_template = {}
+            # MAJ creditorder_price (template) — même logique
             if not math.isclose(float(tmpl.creditorder_price or 0.0), new_price, rel_tol=0, abs_tol=1e-6):
-                to_write_template['creditorder_price'] = new_price
+                tmpl.write({'creditorder_price': new_price})
 
-            # 5) Sauvegarder le pourcentage utilisé si le champ existe (sécurisé)
+            # Optionnel: stocker le pourcentage utilisé si le champ existe
             if 'markup_percentage' in tmpl._fields:
                 if not math.isclose(float(getattr(tmpl, 'markup_percentage') or 0.0), percent, rel_tol=0, abs_tol=1e-6):
-                    to_write_template['markup_percentage'] = percent
+                    tmpl.write({'markup_percentage': percent})
 
-            if to_write_template:
-                tmpl.write(to_write_template)
-
-            if to_write_variant or to_write_template:
-                updated += 1
-
-            details.append({
-                "id": product.id,
-                "name": product.display_name,
-                "cost": cost,
-                "new_list_price": new_price,
-                "new_creditorder_price": new_price,
-                "percent_used": percent
-            })
+            updated += 1
+            if len(details) < 100:
+                details.append({
+                    "id": product.id,
+                    "name": product.display_name,
+                    "standard_price": cost,
+                    "markup_amount": markup_amount,
+                    "new_price": new_price,
+                    "percent_used": percent
+                })
 
         payload = {
             "success": True,
-            "message": f"{updated} produits mis à jour, {skipped} ignorés (coût <= 0).",
+            "message": f"{updated} produits mis à jour.",
             "percent": percent,
             "updated": updated,
-            "skipped": skipped,
-            "details": details[:100]
+            "details": details
         }
 
         return werkzeug.wrappers.Response(
@@ -1009,4 +996,6 @@ class ProductCategorieControllerREST(http.Controller):
             headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
             response=json.dumps(payload)
         )
+
+
 
