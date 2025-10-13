@@ -461,7 +461,9 @@ class ProductCategorieControllerREST(http.Controller):
         if kw.get('search'):
             search_terms = kw.get('search').split()
             for term in search_terms:
-                domain.append(('name', 'ilike', term))
+                for i  in term.split():
+                    domain.append(('name', 'ilike', i))
+                # domain.append(('name', 'ilike', term))
 
         if kw.get('category') and kw.get('category') != 'All':
             domain.append(('categ_id.name', '=', kw.get('category')))
