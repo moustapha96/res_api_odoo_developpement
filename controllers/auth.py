@@ -332,7 +332,7 @@ class ControllerREST(http.Controller):
 
         # compte prod
         email_admin = 'ccbmtech@ccbm.sn'
-        password_admin = 'password'
+        password_admin = 'ccbmE@987'
         
         try:
             request.session.authenticate(self._get_db_name(), email_admin, password_admin)
