@@ -1,18 +1,16 @@
 <odoo>
     <data>
 
-        <record id="view_product_form_inherit_images" model="ir.ui.view">
+        <!-- <record id="view_product_form_inherit_images" model="ir.ui.view">
             <field name="name">product.template.form.inherit.all</field>
             <field name="model">product.template</field>
             <field name="inherit_id" ref="product.product_template_only_form_view" />
             <field name="arch" type="xml">
 
-
                 <xpath expr="//field[@name='default_code']" position="after">
                     <field name="department_code" />
                     <field name="reference_auto" readonly="1" />
                 </xpath>
-
 
                 <xpath expr="//page[@name='variants']" position="after">
                     <page name="images" string="Images du produit">
@@ -67,8 +65,37 @@
                 </xpath>
             </field>
         </record>
+ -->
 
-        <record id="ir_cron_regenerate_product_references" model="ir.cron">
+        <record id="view_product_template_form_credit_button" model="ir.ui.view">
+            <field name="name">product.template.form.credit.button</field>
+            <field name="model">product.template</field>
+            <field name="inherit_id" ref="product.product_template_only_form_view" />
+            <field name="arch" type="xml">
+                <xpath expr="//form/header" position="inside">
+                    <button
+                        name="action_recompute_creditorder_price"
+                        type="object"
+                        string="Recalculer prix crédit"
+                        class="btn-primary o_btn_recompute_credit_price"
+                        attrs="{'invisible': [('standard_price', '=', 0.0)]}"
+                        help="Forcer le recalcul du prix crédit à partir du coût (40% du standard_price)." />
+                </xpath>
+            </field>
+        </record>
+
+
+        <record id="server_action_recompute_credit_price_selection" model="ir.actions.server">
+            <field name="name">Recalculer prix crédit</field>
+            <field name="model_id" ref="product.model_product_template" />
+            <field name="binding_model_id" ref="product.model_product_template" />
+            <field name="binding_type">action</field> <!-- ajoute l'action dans le menu "Action" -->
+            <field name="state">code</field>
+            <field name="code">action = records.sudo().action_recompute_creditorder_price()</field>
+        </record>
+
+
+        <!-- <record id="ir_cron_regenerate_product_references" model="ir.cron">
             <field name="name">Regenerate Product References</field>
             <field name="model_id" ref="model_product_template" />
             <field name="state">code</field>
@@ -78,6 +105,28 @@
             <field name="numbercall">-1</field>
             <field name="doall">False</field>
             <field name="active">True</field>
+        </record> -->
+
+        <record id="view_product_template_form_credit_fields" model="ir.ui.view">
+            <field name="name">product.template.form.credit.fields</field>
+            <field name="model">product.template</field>
+            <field name="inherit_id" ref="product.product_template_only_form_view" />
+            <field name="arch" type="xml">
+                <!-- Insère un bloc après list_price -->
+                <xpath expr="//field[@name='list_price']" position="after">
+                    <group string="Prix à crédit">
+                        <!-- <field name="creditorder_price" /> -->
+                        <field name="creditorder_manual" />
+                       
+                        <button name="action_set_creditorder_auto"
+                            type="object"
+                            string="Prix automatique"
+                            class="oe_highlight"
+                            attrs="{'invisible': [('creditorder_manual', '=', False)]}" />
+                    </group>
+                </xpath>
+            </field>
         </record>
+
     </data>
 </odoo>

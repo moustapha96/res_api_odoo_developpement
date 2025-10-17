@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 {
-    'name': 'Odoo REST API DEV',
-    'version': '16.0.1.14.8',
+    'name': 'REST API orbit',
+    'version': '16.0.2',
     'category': 'Extra Tools',
-    'author': "Al hussein KHOUMA",
+    'author': "CCBM Technologies",
     'support': 'alhussein.khouma@ccbm.sn',
     'license': 'OPL-1',
     'website': 'https://app.swaggerhub.com/apis-docs/avs3/odoo_rest_api/1',
@@ -31,18 +31,15 @@
     ],
     'data': [
         'security/ir.model.access.csv',
-
-        'data/ir_configparameter_data.xml',
         'data/ir_cron_data.xml',
         
         'views/ir_model_view.xml',
-        'views/product_template_view.xml',
         'views/res_partner_view.xml',
+        'views/product_template_view.xml',
         
         'views/ir_cron_data.xml',
         'views/crm_lead_view.xml',
         'views/pack_views.xml',
-
         'views/sale_order_view.xml',
     ],
     'images': [
