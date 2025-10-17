@@ -35,7 +35,7 @@
         
         'views/ir_model_view.xml',
         'views/res_partner_view.xml',
-        'views/product_template_view.xml',
+        # 'views/product_template_view.xml',
         
         'views/ir_cron_data.xml',
         'views/crm_lead_view.xml',
