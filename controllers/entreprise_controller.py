@@ -1940,7 +1940,7 @@ class EntrepriseController(http.Controller):
                 response=json.dumps(user_data)
             )
 
-    @http.route('/api/companies/partner/<int:id>/password-modify',methods=['POST'], type='http', auth='none', cors="*")
+    @http.route('/api/companies/partner/<int:id>/password-modify',methods=['POST'], type='http', auth='none', cors="*", csrf=False )
     def api_companies_modify_password(self, id, **kw):
         data = json.loads(request.httprequest.data)
         if not data:
