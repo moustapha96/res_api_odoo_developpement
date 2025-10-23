@@ -1328,6 +1328,9 @@ class EntrepriseController(http.Controller):
             request.env = request.env(user=admin_user.id)
         
         partner = request.env['res.partner'].sudo().search([('id','=', id )], limit=1 )
+
+        parent_partner = partner.parent_id
+
         if not partner:
             return werkzeug.wrappers.Response(
                 status=400,
@@ -1353,7 +1356,7 @@ class EntrepriseController(http.Controller):
                 'adhesion': state  ,
                 'adhesion_submit': state_submit
             })
-            res = partner.action_confirm_demande_adhesion(state)
+            res = partner.action_confirm_demande_adhesion(state, parent_partner.name)
             _logger.info(res)
             return werkzeug.wrappers.Response(
                 status=200,
@@ -1936,6 +1939,40 @@ class EntrepriseController(http.Controller):
                 headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
                 response=json.dumps(user_data)
             )
+
+    @http.route('/api/companies/partner/<int:id>/password-modify', methods=['POST'], type='http', auth='none', cors="*")
+    def api_companies_modify_password(self, id, **kw):
+        data = json.loads(request.httprequest.data)
+        if not data:
+            return werkzeug.wrappers.Response(
+                status=400,
+                content_type='application/json; charset=utf-8',
+                headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                response=json.dumps("Données invalides")
+            )
+
+        # old_password = data.get('old_password')
+        new_password = data.get('new_password')
+
+        partner = request.env['res.partner'].sudo().search([('id', '=', id)], limit=1)
+        if not partner:
+            return werkzeug.wrappers.Response(
+                status=400,
+                content_type='application/json; charset=utf-8',
+                headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+                response=json.dumps("Utilisateur non trouvé")
+            )
+
+        partner.write({'password': self.hash_password(new_password)})
+
+        return werkzeug.wrappers.Response(
+            status=200,
+            content_type='application/json; charset=utf-8',
+            headers=[('Cache-Control', 'no-store'), ('Pragma', 'no-cache')],
+            response=json.dumps("Mot de passe mis à jour")
+        )
+
+
 
     @http.route('/api/companies/new-password', methods=['POST'], type='http', auth='none', cors="*", csrf=False )
     def api_companies_new_password(self, **kw):
