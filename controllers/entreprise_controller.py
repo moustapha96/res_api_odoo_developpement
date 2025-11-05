@@ -1353,15 +1353,15 @@ class EntrepriseController(http.Controller):
 
 
             partner.write({
-                'adhesion': state  ,
+                'adhesion': state,
                 'adhesion_submit': state_submit
             })
             try:
                 res = partner.action_confirm_demande_adhesion(state, parent_partner.name)
+                _logger.info(res)
             except:
                 _logger.info("error")
 
-            _logger.info(res)
             return werkzeug.wrappers.Response(
                 status=200,
                 content_type='application/json; charset=utf-8',
