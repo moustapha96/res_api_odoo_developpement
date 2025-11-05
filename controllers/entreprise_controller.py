@@ -62,7 +62,7 @@ class EntrepriseController(http.Controller):
             'adhesion': 'pending' ,
             'adhesion_submit': True
         })
-        partner.action_confirm_demande_adhesion('pending')
+        partner.action_confirm_demande_adhesion('pending',parent_partner.name) 
         resultat =  {
             'id': partner.id,
             'uid': partner.id,
@@ -1951,7 +1951,6 @@ class EntrepriseController(http.Controller):
                 response=json.dumps("Données invalides")
             )
 
-        # old_password = data.get('old_password')
         new_password = data.get('new_password')
 
         partner = request.env['res.partner'].sudo().search([('id', '=', id)], limit=1)
