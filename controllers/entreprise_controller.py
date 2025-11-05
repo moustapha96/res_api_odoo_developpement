@@ -62,7 +62,7 @@ class EntrepriseController(http.Controller):
             'adhesion': 'pending' ,
             'adhesion_submit': True
         })
-        partner.action_confirm_demande_adhesion('pending',parent_partner.name) 
+        partner.action_confirm_demande_adhesion('pending', parent_partner.name) 
         resultat =  {
             'id': partner.id,
             'uid': partner.id,
@@ -1356,7 +1356,11 @@ class EntrepriseController(http.Controller):
                 'adhesion': state  ,
                 'adhesion_submit': state_submit
             })
-            res = partner.action_confirm_demande_adhesion(state, parent_partner.name)
+            try:
+                res = partner.action_confirm_demande_adhesion(state, parent_partner.name)
+            except:
+                _logger.info("error")
+
             _logger.info(res)
             return werkzeug.wrappers.Response(
                 status=200,
