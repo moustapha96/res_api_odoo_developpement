@@ -167,3 +167,4 @@ class ProductTemplate(models.Model):
             'tag': 'display_notification',
             'params': {'title': _('Mode automatique'), 'message': _('Prix recalculé.'), 'type': 'success'}
         }
+    
