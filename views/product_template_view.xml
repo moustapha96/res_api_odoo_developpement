@@ -1,7 +1,7 @@
 <odoo>
     <data>
 
-        <!-- <record id="view_product_form_inherit_images" model="ir.ui.view">
+        <record id="view_product_form_inherit_images" model="ir.ui.view">
             <field name="name">product.template.form.inherit.all</field>
             <field name="model">product.template</field>
             <field name="inherit_id" ref="product.product_template_only_form_view" />
@@ -65,7 +65,7 @@
                 </xpath>
             </field>
         </record>
- -->
+
 
         <record id="view_product_template_form_credit_button" model="ir.ui.view">
             <field name="name">product.template.form.credit.button</field>
@@ -118,11 +118,11 @@
                         <!-- <field name="creditorder_price" /> -->
                         <field name="creditorder_manual" />
                        
-                        <button name="action_set_creditorder_auto"
+                        <!-- <button name="action_set_creditorder_auto"
                             type="object"
                             string="Prix automatique"
                             class="oe_highlight"
-                            attrs="{'invisible': [('creditorder_manual', '=', False)]}" />
+                            attrs="{'invisible': [('creditorder_manual', '=', False)]}" /> -->
                     </group>
                 </xpath>
             </field>
