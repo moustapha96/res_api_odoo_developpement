@@ -118,11 +118,11 @@
                         <!-- <field name="creditorder_price" /> -->
                         <field name="creditorder_manual" />
                        
-                        <button name="action_set_creditorder_auto"
+                        <!-- <button name="action_set_creditorder_auto"
                             type="object"
                             string="Prix automatique"
                             class="oe_highlight"
-                            attrs="{'invisible': [('creditorder_manual', '=', False)]}" />
+                            attrs="{'invisible': [('creditorder_manual', '=', False)]}" /> -->
                     </group>
                 </xpath>
             </field>
