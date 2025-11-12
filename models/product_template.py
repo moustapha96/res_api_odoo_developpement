@@ -14,7 +14,7 @@ class ProductTemplate(models.Model):
 
     # ➕ indicateur "manuel"
     creditorder_manual = fields.Boolean(
-        string="Prix à crédit manuellement",
+        string="Prix à crédit saisi manuellement",
         default=False,
         help="Si coché, la valeur saisie ne sera pas écrasée par le calcul automatique."
     )
@@ -23,13 +23,41 @@ class ProductTemplate(models.Model):
         'Prix commande à crédit',
         digits='Product Price',
         compute='_compute_creditorder_price',
-        # inverse='_inverse_creditorder_price',
+        inverse='_inverse_creditorder_price',   # ⬅️ rend le champ éditable
         store=True,
         readonly=False,                         # ⬅️ autorise la saisie dans l'UI
         help="Par défaut: standard_price × 1.40 (coût + 40%). "
              "Si vous modifiez la valeur, elle sera conservée (mode manuel)."
     )
 
+    # @api.depends('standard_price', 'creditorder_manual')
+    # def _compute_creditorder_price(self):
+    #     for prod in self:
+    #         # NE recalculer que si pas manuel
+    #         if not prod.creditorder_manual:
+    #             cost = prod.standard_price or 0.0
+    #             prod.creditorder_price = cost * 1.40
+    
+    # @api.depends('standard_price', 'creditorder_manual')
+    # def _compute_creditorder_price(self):
+    #     for prod in self:
+    #         # NE recalculer que si pas manuel
+    #         if not prod.creditorder_manual:
+    #             cost = prod.standard_price or 0.0
+    #             prod.creditorder_price = cost * 1.20  # 20% au lieu de 40%
+
+    # @api.depends('standard_price', 'list_price', 'creditorder_manual')
+    # def _compute_creditorder_price(self):
+    #     for prod in self:
+    #         if not prod.creditorder_manual:
+    #             if prod.list_price < 100000:
+    #                 # Prix à crédit = 50% du prix de vente
+    #                 cost = prod.standard_price or 0.0
+    #                 prod.creditorder_price = cost * 1.50
+    #             else:
+    #                 # Prix à crédit = 20% du coût (standard_price)
+    #                 cost = prod.standard_price or 0.0
+    #                 prod.creditorder_price = cost * 1.20
     @api.depends('standard_price', 'list_price', 'creditorder_manual')
     def _compute_creditorder_price(self):
         """
@@ -117,8 +145,7 @@ class ProductTemplate(models.Model):
         """
         Variante : recalcul global (ne touche pas aux valeurs manuelles).
         """
-        # products = self.search([('creditorder_manual', '=', False)])
-        products = self.search([])
+        products = self.search([('creditorder_manual', '=', False)])
         products._compute_creditorder_price()
         return {
             'type': 'ir.actions.client',
@@ -132,8 +159,8 @@ class ProductTemplate(models.Model):
         }
 
     def action_set_creditorder_auto(self):
-        # for p in self:
-        #     p.creditorder_manual = False
+        for p in self:
+            p.creditorder_manual = False
         self._compute_creditorder_price()
         return {
             'type': 'ir.actions.client',
