@@ -272,12 +272,17 @@ class CreditCommandeREST(http.Controller):
             nombreMois = _to_int(data.get('nombreMois') or 4)
             bank_dossier = data.get('bank_dossier', {})
 
+            # Normalisation du type de crédit
+            # 'finance' et variantes sont normalisés en 'banque' pour la cohérence
             if type_credit in ('banque', 'bank', 'finance', 'financé', 'financer'):
                 type_credit = 'banque'
             elif type_credit == 'direct':
                 type_credit = 'direct'
+            elif type_credit == 'particulier':
+                # Type particulier accepté mais pas de notification RH
+                type_credit = 'particulier'
             else:
-                return _json_error(400, "type_credit invalide : 'direct' ou 'banque' attendu")
+                return _json_error(400, "type_credit invalide : 'direct', 'banque' ou 'particulier' attendu")
 
             if not partner_id or not order_lines:
                 return _json_error(400, "Données de commande crédit invalides")
@@ -357,34 +362,44 @@ class CreditCommandeREST(http.Controller):
                     'invoice_status': 'to invoice',
                 })
 
-            if type_credit == 'direct':
-                for fn in (
-                    'send_credit_order_created_direct',
-                    'send_credit_order_created_parent_notice',
-                    'send_credit_order_validation_mail',
-                ):
-                    if hasattr(order, fn):
-                        try:
-                            getattr(order, fn)()
-                        except Exception:
-                            _logger.warning("Mailer %s KO pour %s", fn, order.name, exc_info=True)
-            else:
-                for fn in (
-                    'send_credit_order_created_bank',
-                    'send_credit_order_created_parent_notice',
-                    'send_bank_credit_internal_review_notification',
-                ):
-                    if hasattr(order, fn):
-                        try:
-                            getattr(order, fn)()
-                        except Exception:
-                            _logger.warning("Mailer %s KO pour %s", fn, order.name, exc_info=True)
+            # Envoi des mails selon le type de crédit (utilise les nouvelles méthodes unifiées de sale_a_credit.py)
+            # Les mails sont automatiquement personnalisés selon le type de crédit :
+            # - direct : mail client + notification RH normale (employeur)
+            # - banque/finance : mail client + notification RH en tant qu'entité bancaire
+            # - particulier : mail client uniquement (pas de notification RH)
+            try:
+                # 1. Notification au client de la création de la commande
+                # Le contenu est automatiquement personnalisé selon le type de crédit
+                if hasattr(order, 'send_credit_order_creation_notification_to_client'):
+                    try:
+                        order.send_credit_order_creation_notification_to_client()
+                        _logger.info("Mail de création envoyé au client pour %s (type: %s)", order.name, type_credit)
+                    except Exception as e:
+                        _logger.warning("Erreur envoi mail création client %s: %s", order.name, e, exc_info=True)
+                
+                # 2. Notification à la RH selon le type de crédit
+                # La méthode send_credit_order_creation_notification_to_hr() gère automatiquement :
+                # - direct, banque, finance -> envoie notification RH (avec mention "entité bancaire" pour banque/finance)
+                # - particulier -> retourne success avec message "No HR notification needed"
+                if hasattr(order, 'send_credit_order_creation_notification_to_hr'):
+                    try:
+                        result = order.send_credit_order_creation_notification_to_hr()
+                        if result.get('status') == 'success':
+                            _logger.info("Mail de notification RH envoyé pour %s (type: %s)", order.name, type_credit)
+                        else:
+                            _logger.info("Pas de notification RH nécessaire pour %s (type: %s): %s", 
+                                       order.name, type_credit, result.get('message', ''))
+                    except Exception as e:
+                        _logger.warning("Erreur envoi mail notification RH %s: %s", order.name, e, exc_info=True)
+            except Exception as e:
+                _logger.error("Erreur globale lors de l'envoi des mails pour %s: %s", order.name, e, exc_info=True)
 
             resp = self._serialize_order(order, include_lines=True, include_payments=True, include_partner_blocks=True)
             return _json(201, resp)
         except Exception as e:
             _logger.error("Erreur lors de la création de la commande à crédit: %s", e, exc_info=True)
             return _json_error(500, "Erreur interne du serveur")
+
 
 
     def _update_partner_from_payload(self, partner, bank_dossier=None):
@@ -640,12 +655,17 @@ class CreditCommandeREST(http.Controller):
             nombreMois = _to_int(data.get('nombreMois') or 4)
             bank_dossier = data.get('bank_dossier', {})
 
+            # Normalisation du type de crédit
+            # 'finance' et variantes sont normalisés en 'banque' pour la cohérence
             if type_credit in ('banque', 'bank', 'finance', 'financé', 'financer'):
                 type_credit = 'banque'
             elif type_credit == 'direct':
                 type_credit = 'direct'
+            elif type_credit == 'particulier':
+                # Type particulier accepté mais pas de notification RH
+                type_credit = 'particulier'
             else:
-                return _json_error(400, "type_credit invalide : 'direct' ou 'banque' attendu")
+                return _json_error(400, "type_credit invalide : 'direct', 'banque' ou 'particulier' attendu")
 
             if not partner_id or not order_lines:
                 return _json_error(400, "Données de commande crédit invalides")
@@ -724,28 +744,37 @@ class CreditCommandeREST(http.Controller):
                     'invoice_status': 'to invoice',
                 })
 
-            if type_credit == 'direct':
-                for fn in (
-                    'send_credit_order_created_direct',
-                    'send_credit_order_created_parent_notice',
-                    'send_credit_order_validation_mail',
-                ):
-                    if hasattr(order, fn):
-                        try:
-                            getattr(order, fn)()
-                        except Exception:
-                            _logger.warning("Mailer %s KO pour %s", fn, order.name, exc_info=True)
-            else:
-                for fn in (
-                    'send_credit_order_created_bank',
-                    'send_credit_order_created_parent_notice',
-                    'send_bank_credit_internal_review_notification',
-                ):
-                    if hasattr(order, fn):
-                        try:
-                            getattr(order, fn)()
-                        except Exception:
-                            _logger.warning("Mailer %s KO pour %s", fn, order.name, exc_info=True)
+            # Envoi des mails selon le type de crédit (utilise les nouvelles méthodes unifiées de sale_a_credit.py)
+            # Les mails sont automatiquement personnalisés selon le type de crédit :
+            # - direct : mail client + notification RH normale (employeur)
+            # - banque/finance : mail client + notification RH en tant qu'entité bancaire
+            # - particulier : mail client uniquement (pas de notification RH)
+            try:
+                # 1. Notification au client de la création de la commande
+                # Le contenu est automatiquement personnalisé selon le type de crédit
+                if hasattr(order, 'send_credit_order_creation_notification_to_client'):
+                    try:
+                        order.send_credit_order_creation_notification_to_client()
+                        _logger.info("Mail de création envoyé au client pour %s (type: %s)", order.name, type_credit)
+                    except Exception as e:
+                        _logger.warning("Erreur envoi mail création client %s: %s", order.name, e, exc_info=True)
+                
+                # 2. Notification à la RH selon le type de crédit
+                # La méthode send_credit_order_creation_notification_to_hr() gère automatiquement :
+                # - direct, banque, finance -> envoie notification RH (avec mention "entité bancaire" pour banque/finance)
+                # - particulier -> retourne success avec message "No HR notification needed"
+                if hasattr(order, 'send_credit_order_creation_notification_to_hr'):
+                    try:
+                        result = order.send_credit_order_creation_notification_to_hr()
+                        if result.get('status') == 'success':
+                            _logger.info("Mail de notification RH envoyé pour %s (type: %s)", order.name, type_credit)
+                        else:
+                            _logger.info("Pas de notification RH nécessaire pour %s (type: %s): %s", 
+                                       order.name, type_credit, result.get('message', ''))
+                    except Exception as e:
+                        _logger.warning("Erreur envoi mail notification RH %s: %s", order.name, e, exc_info=True)
+            except Exception as e:
+                _logger.error("Erreur globale lors de l'envoi des mails pour %s: %s", order.name, e, exc_info=True)
 
             resp = self._serialize_order(order, include_lines=True, include_payments=True, include_partner_blocks=True)
             return _json(201, resp)

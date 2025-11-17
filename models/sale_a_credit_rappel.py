@@ -291,10 +291,13 @@ class SaleCreditOrderMail(models.Model):
         return ""
 
     def _fmt_money(self, amount):
-        f = getattr(self, "_fmt_money", None)
-        if callable(f):
-            return f(amount)
-        cur = self.currency_id.name or ""
+        """
+        Formate un montant avec la devise.
+        Implémentation directe pour éviter toute récursion.
+        Si une méthode parente existe (dans sale_a_credit.py), elle sera utilisée via l'ordre d'héritage.
+        """
+        # Implémentation directe pour éviter toute récursion
+        cur = getattr(self, 'currency_id', None) and self.currency_id.name or ""
         try:
             return f"{float(amount or 0.0):,.0f} {cur}"
         except Exception:

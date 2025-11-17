@@ -19,7 +19,6 @@ from . import account_payment_preorder
 
 from . import sale_a_credit
 
-# from . import sale_credit_order_mail
 
 from .import commentaire
 from .import crm_model

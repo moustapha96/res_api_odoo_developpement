@@ -616,7 +616,6 @@ class SaleOrderMail(models.Model):
         res = super(SaleOrderMail, self).action_confirm()
         if self.type_sale == 'order':
             self.send_order_confirmation_mail()
-       
         return res
 
 
