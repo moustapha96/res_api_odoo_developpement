@@ -41,6 +41,8 @@
         'views/crm_lead_view.xml',
         'views/pack_views.xml',
         'views/sale_order_view.xml',
+
+        'views/res_partner_bank_model.xml'
     ],
     'images': [
         'static/description/banner.png',

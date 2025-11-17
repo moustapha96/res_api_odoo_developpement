@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <!-- Étend la vue formulaire partenaire pour ajouter un onglet "Dossier CCBM" -->
+    <record id="view_partner_form_ccbm_dossier" model="ir.ui.view">
+        <field name="name">res.partner.form.ccbm.dossier</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form" />
+        <field name="arch" type="xml">
+            <notebook position="inside">
+                <page string="Dossier CCBM">
+            
+                    <group>
+                        <group string="Informations Personnelles">
+                            <field name="nom" string="Nom" />
+                            <field name="prenom" string="Prénom" />
+                            <field name="profession" string="Profession" />
+                            <field name="adresse" string="Adresse" />
+                            <field name="telephone" string="Telephone" />
+                        </group>
+                        <!-- Bloc Emploi / Entreprise -->
+                        <group string="Emploi / Entreprise">
+                            <field name="employer_partner_id" options="{'no_open': False}" />
+                        </group>
+                    </group>
+                    <!-- Bloc Adhésion et Compte -->
+                    <group>
+                        <group string="Adhésion et Compte">
+                            <field name="adhesion" />
+                            <field name="adhesion_submit" string="Demande d'adhésion soumise" />
+                            <field name="is_verified" string="Compte vérifié" />
+                            <field name="password" string="Mot de passe web" />
+                            <field name="role" />
+                        </group>
+                      
+                        <group string="Financier">
+                            <field name="rib" string="RIB" />
+                        </group>
+                    </group>
+                </page>
+            </notebook>
+        </field>
+    </record>
+</odoo>

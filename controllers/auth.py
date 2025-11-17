@@ -279,15 +279,17 @@ class ControllerREST(http.Controller):
         resp.set_cookie = lambda *args, **kwargs: None
         return resp
     
+    
     def _get_user_data(self, user_partner, uid):
+        # Convertir les dates en chaînes de caractères
+        date_naissance = user_partner.date_naissance.strftime('%Y-%m-%d') if user_partner.date_naissance else ""
+
         return {
             'id': user_partner.id,
             'uid': uid,
             'name': user_partner.name,
             'email': user_partner.email,
             'partner_id': user_partner.id,
-            # 'company_name': user_partner.company_id.name  or None,
-            # 'company_id': user_partner.company_id.id or None,
             'partner_city': user_partner.city,
             'partner_phone': user_partner.phone,
             'country_id': user_partner.country_id.id,
@@ -298,11 +300,20 @@ class ControllerREST(http.Controller):
             'avatar': user_partner.avatar,
             'role': user_partner.role,
             'adhesion': user_partner.adhesion,
-            'adhesion_submit' : user_partner.adhesion_submit,
+            'adhesion_submit': user_partner.adhesion_submit,
             'parent_id': user_partner.parent_id.id,
             'function': user_partner.function or "",
+            'prenom': user_partner.prenom or "",
+            'nom': user_partner.nom or "",
+            'date_naissance': date_naissance,  # Chaîne de caractères au format 'YYYY-MM-DD'
+            'lieu_naissance': user_partner.lieu_naissance or "",
+            'cni_number': user_partner.cni_number or "",
+            'profession': user_partner.profession or "",
+            'rib': user_partner.rib or "",
+            'adresse': user_partner.adresse or "",
+            'telephone': user_partner.telephone or "",
         }
-    
+
     def _generate_and_save_tokens(self, uid):
         access_token = generate_token()
         refresh_token = generate_token()
@@ -327,12 +338,13 @@ class ControllerREST(http.Controller):
     
 
     def _authenticate_odoo_user(self):
-        # email_admin = 'dev-odoo-16'
-        # password_admin = 'password'
-
+        
         # compte prod
+        # email_admin = 'ccbmtech@ccbm.sn'
+        # password_admin = 'ccbmE@987'
+
         email_admin = 'ccbmtech@ccbm.sn'
-        password_admin = 'ccbmE@987'
+        password_admin = 'password'
         
         try:
             request.session.authenticate(self._get_db_name(), email_admin, password_admin)

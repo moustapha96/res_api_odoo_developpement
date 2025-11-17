@@ -1,0 +1,15 @@
+<odoo>
+    <!-- CRON: relance quotidienne -->
+    <record id="ir_cron_credit_reminder" model="ir.cron">
+        <field name="name">CCBM: Relances échéances crédit</field>
+        <field name="model_id" ref="sale.model_sale_order" />
+        <field name="state">code</field>
+        <field name="code">model.check_overdue_payments_cron()</field>
+        <!-- 08:00 Africa/Dakar -->
+        <field name="interval_type">days</field>
+        <field name="interval_number">1</field>
+        <field name="numbercall">-1</field>
+        <field name="doall">False</field>
+        <field name="active">True</field>
+    </record>
+</odoo>

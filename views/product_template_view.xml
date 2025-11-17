@@ -1,16 +1,18 @@
 <odoo>
     <data>
 
-        <record id="view_product_form_inherit_images" model="ir.ui.view">
+          <record id="view_product_form_inherit_images" model="ir.ui.view">
             <field name="name">product.template.form.inherit.all</field>
             <field name="model">product.template</field>
             <field name="inherit_id" ref="product.product_template_only_form_view" />
             <field name="arch" type="xml">
 
+
                 <xpath expr="//field[@name='default_code']" position="after">
                     <field name="department_code" />
                     <field name="reference_auto" readonly="1" />
                 </xpath>
+
 
                 <xpath expr="//page[@name='variants']" position="after">
                     <page name="images" string="Images du produit">
@@ -34,7 +36,7 @@
                 <xpath expr="//page[@name='rang']" position="after">
                     <page name="comments" string="Commentaires">
                         <group string="Commentaires">
-                            <field name="comment_ids" widget="one2many_list">
+                            <field name="comment_ids">
                                 <tree string="Commentaires">
                                     <field name="author" />
                                     <field name="text" />
@@ -49,24 +51,7 @@
             </field>
         </record>
 
-
-        <record id="product_category_form_view_inherit_code" model="ir.ui.view">
-            <field name="name">product.category.form.inherit.code</field>
-            <field name="model">product.category</field>
-            <field name="inherit_id" ref="product.product_category_form_view" />
-            <field name="arch" type="xml">
-                <xpath expr="//field[@name='parent_id']" position="after">
-                    <field name="code" readonly="1" />
-
-                    <group>
-                        <field name="image" widget="image" class="oe_avatar"
-                            string="Image Catégorie" />
-                    </group>
-                </xpath>
-            </field>
-        </record>
-
-
+        
         <record id="view_product_template_form_credit_button" model="ir.ui.view">
             <field name="name">product.template.form.credit.button</field>
             <field name="model">product.template</field>
@@ -94,19 +79,6 @@
             <field name="code">action = records.sudo().action_recompute_creditorder_price()</field>
         </record>
 
-
-        <!-- <record id="ir_cron_regenerate_product_references" model="ir.cron">
-            <field name="name">Regenerate Product References</field>
-            <field name="model_id" ref="model_product_template" />
-            <field name="state">code</field>
-            <field name="code">model.regenerate_all_references()</field>
-            <field name="interval_number">1</field>
-            <field name="interval_type">days</field>
-            <field name="numbercall">-1</field>
-            <field name="doall">False</field>
-            <field name="active">True</field>
-        </record> -->
-
         <record id="view_product_template_form_credit_fields" model="ir.ui.view">
             <field name="name">product.template.form.credit.fields</field>
             <field name="model">product.template</field>
@@ -117,14 +89,34 @@
                     <group string="Prix à crédit">
                         <!-- <field name="creditorder_price" /> -->
                         <field name="creditorder_manual" />
-                       
-                        <!-- <button name="action_set_creditorder_auto"
+
+                        <button name="action_set_creditorder_auto"
                             type="object"
                             string="Prix automatique"
                             class="oe_highlight"
-                            attrs="{'invisible': [('creditorder_manual', '=', False)]}" /> -->
+                            attrs="{'invisible': [('creditorder_manual', '=', False)]}" />
                     </group>
                 </xpath>
+            </field>
+        </record>
+
+
+        <record id="view_product_template_form_inherit" model="ir.ui.view">
+            <field name="name">product.template.form.inherit</field>
+            <field name="model">product.template</field>
+            <field name="inherit_id" ref="product.product_template_form_view" />
+            <field name="arch" type="xml">
+                <!-- On cible directement le header -->
+                <xpath expr="//header" position="inside">
+                    <button
+                        name="regenerate_all_references"
+                        string="Recalculer toutes les références"
+                        type="object"
+                        class="btn-primary"
+                        context="{'active_model': 'product.template', 'active_ids': active_ids}"
+                        help="Recalcule les références pour tous les produits." />
+                </xpath>
+
             </field>
         </record>
 

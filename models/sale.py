@@ -20,6 +20,12 @@ class SaleOrder(models.Model):
         ('echelonne', 'Échelonné')
     ], string='Mode de Payment', required=False)
 
+    credit_type = fields.Selection([
+        ('particulier', 'Particulier'),
+        ('direct', 'Crédit Direct'),
+        ('banque', 'Crédit bancaire'),
+        ('finance', 'Crédit financier'),
+    ], string='Type de Crédit', tracking=True)
 
 
     def send_mail(self, mail_server, partner, subject, body_html):
@@ -60,7 +66,6 @@ class SaleOrder(models.Model):
         message = message_templates.get(notification_type, "")
         if message:
             recipient = self.partner_id.phone
-            # result = self.env['send.sms'].sudo().send_sms(recipient, message)
             result = self.env['send.sms'].create({
                 'recipient': recipient,
                 'message': message,

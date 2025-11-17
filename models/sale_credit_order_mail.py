@@ -1,618 +1,890 @@
-from odoo import models, fields, api
-from odoo.http import request
+# # -*- coding: utf-8 -*-
+# from odoo import models, fields, api, _
+# from odoo.exceptions import UserError
+# import logging
+# from datetime import datetime, timedelta, date
+
+# _logger = logging.getLogger(__name__)
+
+
+# class SaleCreditOrderMail(models.Model):
+#     _inherit = 'sale.order'
+
+#     # -------------- Helpers communs (cohérents avec ton autre classe) --------------
+#     def _mail_server_or_raise(self):
+#         mail_server = self.env['ir.mail_server'].sudo().search([], limit=1)
+#         if not mail_server:
+#             raise UserError(_("Veuillez configurer un serveur de messagerie."))
+#         return mail_server
+
+#     def _has_partner_email(self, partner):
+#         return bool(getattr(partner, 'email', False))
+
+#     def _fmt_money(self, amount):
+#         cur = self.currency_id.name or ''
+#         try:
+#             # Format simple “1 234” sans décimales
+#             return f"{float(amount or 0.0):,.0f} {cur}"
+#         except Exception:
+#             return f"{amount} {cur}"
+
+#     def _create_account_section_if_needed(self, partner):
+#         """
+#         Affiche un bloc 'Créer un compte' si le partenaire n’a pas (encore) de mot de passe portail,
+#         en respectant ton modèle res.partner (champ 'password').
+#         """
+#         if not partner or not partner.email:
+#             return ""
+#         if getattr(partner, 'password', False):
+#             return ""
+#         base_url = "https://www.ccbmshop.com"
+#         link = f"{base_url}/create-compte?mail={partner.email}"
+#         return f"""
+#         <tr>
+#           <td align="center" style="min-width:590px;padding-top:20px;">
+#             <span style="font-size:14px;">Créez un compte pour suivre votre commande à crédit :</span><br/>
+#             <a href="{link}" style="font-size:16px;font-weight:bold;color:#875A7B;">Créer un compte</a>
+#           </td>
+#         </tr>
+#         """
+
+#     def _send_mail_common(self, partner, subject, body_html, sms_type=None, extra_recipients=None):
+#         """
+#         Envoi d'email standardisé + SMS optionnel.
+#         - partner : res.partner destinataire principal (utilise partner.email)
+#         - extra_recipients : liste d'adresses supplémentaires (e.g. ['shop@ccbm.sn'])
+#         """
+#         try:
+#             mail_server = self._mail_server_or_raise()
+
+#             if not partner or not self._has_partner_email(partner):
+#                 _logger.warning("Destinataire invalide: partner/email manquant — envoi annulé.")
+#                 return {'status': 'error', 'message': 'Partner email not found'}
+
+#             email_from = mail_server.smtp_user or 'noreply@ccbmshop.sn'
+#             recipients = [partner.email]
+#             if extra_recipients:
+#                 recipients.extend([r for r in extra_recipients if r])
+
+#             email_values = {
+#                 'email_from': email_from,
+#                 'email_to': ', '.join(recipients),
+#                 'subject': subject,
+#                 'body_html': body_html,
+#                 'state': 'outgoing',
+#                 'auto_delete': False,
+#             }
+#             mail = self.env['mail.mail'].sudo().create(email_values)
+#             mail.send()
+#             _logger.info("Mail '%s' envoyé à %s pour %s", subject, email_values['email_to'], self.name)
+
+#             # SMS optionnel si module présent et numéro dispo
+#             if sms_type and getattr(partner, 'phone', False):
+#                 Sms = self.env.get('send.sms')
+#                 if Sms:
+#                     sms_body = self._sms_message(sms_type)
+#                     rec = Sms.create({'recipient': partner.phone, 'message': sms_body})
+#                     rec.send_sms()
+#                 else:
+#                     _logger.warning("Module send.sms indisponible — SMS non envoyé")
+#             return {'status': 'success'}
+#         except Exception as e:
+#             _logger.error("Erreur envoi mail %s: %s", self.name, e, exc_info=True)
+#             return {'status': 'error', 'message': str(e)}
+
+#     def _sms_message(self, kind):
+#         partner_name = self.partner_id.name or ''
+#         m = {
+#             'validation': f"Bonjour {partner_name}, votre commande à crédit {self.name} a été créée.",
+#             'rejection': f"Bonjour {partner_name}, votre commande à crédit {self.name} a été rejetée.",
+#             'rh_rejection': f"Bonjour {partner_name}, votre commande {self.name} a été rejetée par le service RH.",
+#             'admin_rejection': f"Bonjour {partner_name}, votre commande {self.name} a été rejetée par l'administration.",
+#             'admin_validation': f"Bonjour {partner_name}, votre commande {self.name} a été validée par l'administration.",
+#             'rh_validation': f"Bonjour {partner_name}, votre commande {self.name} a été validée par le service RH.",
+#             'request': f"Bonjour {partner_name}, votre demande de commande à crédit {self.name} est en cours.",
+#             'creation': f"Bonjour {partner_name}, votre commande à crédit {self.name} a été créée (en attente de validation RH).",
+#             'hr_notification': f"Bonjour, la commande {self.name} nécessite une validation RH.",
+#         }
+#         return m.get(kind, f"Notification commande {self.name}")
+
+#     # ------------------ Rendu mails : titres + contenus ------------------
+#     def _email_header_block(self, title):
+#         # Logo/branding unifiés
+#         return f"""
+#         <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width:590px;background:#FFF;padding:0 8px;border-collapse:separate;">
+#           <tr>
+#             <td valign="middle">
+#               <span style="font-size:10px;">{title}</span><br/>
+#               <span style="font-size:20px;font-weight:bold;">{self.name}</span>
+#             </td>
+#             <td valign="middle" align="right">
+#               <img src="https://ccbmshop.com/logo.png" alt="Logo CCBM SHOP" style="width:120px;height:auto;display:block;border:0;outline:none;text-decoration:none;"/>
+#             </td>
+#           </tr>
+#           <tr>
+#             <td colspan="2" style="text-align:center;">
+#               <hr width="100%" style="background:#ccc;border:none;display:block;height:1px;margin:16px 0;"/>
+#             </td>
+#           </tr>
+#         </table>
+#         """
+
+#     def _email_footer_block(self):
+#         return """
+#         <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="590"
+#                style="background:#F1F1F1;color:#555;border-collapse:separate;margin-top:8px;">
+#           <tr>
+#             <td style="padding:12px;text-align:center;font-size:13px;line-height:1.6;">
+#               <div>📞 +221 33 849 65 49 / +221 70 922 17 75 &nbsp; | &nbsp; 📍 Ouest foire, après la fédération</div>
+#               <div>🛍️ <a href="https://www.ccbmshop.com" target="_blank" rel="noopener" style="color:#875A7B;text-decoration:none;">www.ccbmshop.sn</a></div>
+#             </td>
+#           </tr>
+#         </table>
+#         """
+
+#     def _wrap_email(self, inner_html, title):
+#         return f"""
+#         <table border="0" cellpadding="0" cellspacing="0"
+#                style="padding-top:16px;background:#FFFFFF;font-family:Verdana,Arial,sans-serif;color:#454748;width:100%;border-collapse:separate;">
+#           <tr><td align="center">
+#             <table border="0" cellpadding="0" cellspacing="0" width="590"
+#                    style="padding:16px;background:#FFFFFF;color:#454748;border-collapse:separate;">
+#               <tbody>
+#                 <tr><td align="center" style="min-width:590px;">{self._email_header_block(title)}</td></tr>
+#                 <tr>
+#                   <td align="center" style="min-width:590px;">
+#                     <table border="0" cellpadding="0" cellspacing="0" width="590"
+#                            style="min-width:590px;background:#FFF;padding:0 8px;border-collapse:separate;">
+#                       <tr><td>{inner_html}</td></tr>
+#                     </table>
+#                   </td>
+#                 </tr>
+#               </tbody>
+#             </table>
+#             {self._email_footer_block()}
+#           </td></tr>
+#         </table>
+#         """
+
+#     # ------------------ Échéancier (réel si dispo, sinon fallback) ------------------
+#     def _coerce_date(self, v):
+#         if not v:
+#             return None
+#         if isinstance(v, datetime):
+#             return v.date()
+#         if isinstance(v, date):
+#             return v
+#         try:
+#             return datetime.fromisoformat(str(v)).date()
+#         except Exception:
+#             return None
+
+#     def _payment_rows_from_plan(self):
+#         """Utilise sale.order.credit.payment s'il existe; sinon génère un fallback 50/20/15/15."""
+#         rows = []
+#         plan = self.mapped('credit_payment_ids')
+#         if plan:
+#             for l in plan.sorted(lambda r: r.sequence):
+#                 label = "Premier Paiement (Acompte)" if l.sequence == 1 else f"Échéance {l.sequence}"
+#                 due = self._coerce_date(l.due_date)
+#                 rows.append((label, float(l.amount or 0.0), f"{l.rate}", due))
+#             return rows
+
+#         # Fallback — 50/20/15/15 à partir d’aujourd’hui
+#         today = datetime.now().date()
+#         total = float(self.amount_total or 0.0)
+#         fallback = [
+#             ("Paiement initial", total * 0.50, "50%", today + timedelta(days=3)),
+#             ("Deuxième paiement", total * 0.20, "20%", today + timedelta(days=30)),
+#             ("Troisième paiement", total * 0.15, "15%", today + timedelta(days=60)),
+#             ("Quatrième paiement", total * 0.15, "15%", today + timedelta(days=90)),
+#         ]
+#         return fallback
+
+#     def _payment_table_html(self):
+#         rows = []
+#         for label, amount, rate, due in self._payment_rows_from_plan():
+#             due_str = due.strftime('%d/%m/%Y') if isinstance(due, (date, datetime)) and due else '—'
+#             rows.append(f"""
+#             <tr>
+#               <td style="padding:8px;border:1px solid #ddd;">{label}</td>
+#               <td style="padding:8px;border:1px solid #ddd;text-align:right;">{self._fmt_money(amount)}</td>
+#               <td style="padding:8px;border:1px solid #ddd;text-align:center;">{rate}</td>
+#               <td style="padding:8px;border:1px solid #ddd;text-align:center;">{due_str}</td>
+#             </tr>
+#             """)
+
+#         return f"""
+#         <h3 style="color:#333;border-bottom:2px solid #875A7B;padding-bottom:5px;margin-top:16px;">Informations de paiement</h3>
+#         <p>Le paiement initial (acompte) après validation RH et validation CCBM déclenchera la mise en exécution de la commande.</p>
+#         <table border="1" cellpadding="5" cellspacing="0" width="100%" style="border-collapse:collapse;margin-top:10px;">
+#           <thead>
+#             <tr style="background:#f8f9fa;">
+#               <th style="padding:10px;border:1px solid #ddd;text-align:left;">Échéance</th>
+#               <th style="padding:10px;border:1px solid #ddd;text-align:center;">Montant</th>
+#               <th style="padding:10px;border:1px solid #ddd;text-align:center;">Pourcentage</th>
+#               <th style="padding:10px;border:1px solid #ddd;text-align:center;">Date d'échéance</th>
+#             </tr>
+#           </thead>
+#           <tbody>{''.join(rows)}</tbody>
+#         </table>
+#         """
+
+#     # ------------------ Corps dynamiques par "type" ------------------
+#     def _email_body_for(self, partner, email_type):
+#         name = partner.name or ''
+#         mm_rate = getattr(self, 'credit_month_rate', 0)
+#         content_map = {
+#             'validation': f"""
+#                 <p>Félicitations {name},</p>
+#                 <p>Votre commande à crédit numéro <strong>{self.name}</strong> a été créée avec succès.</p>
+#                 <p>Détails des échéances :</p>
+#                 {self._payment_table_html()}
+#             """,
+#             'rejection': f"""
+#                 <p>Cher(e) {name},</p>
+#                 <p>Nous regrettons de vous informer que votre commande à crédit numéro <strong>{self.name}</strong> a été rejetée.</p>
+#                 <p>Pour toute question, contactez notre service client.</p>
+#             """,
+#             'rh_rejection': f"""
+#                 <p>Cher(e) {name},</p>
+#                 <p>Votre commande à crédit numéro <strong>{self.name}</strong> a été rejetée par votre service RH.</p>
+#             """,
+#             'admin_rejection': f"""
+#                 <p>Cher(e) {name},</p>
+#                 <p>Votre commande à crédit numéro <strong>{self.name}</strong> a été rejetée par notre administration.</p>
+#             """,
+#             'admin_validation': f"""
+#                 <p>Cher(e) {name},</p>
+#                 <p>Nous vous informons que votre commande à crédit numéro <strong>{self.name}</strong> a été validée par notre administration.</p>
+#                 <p>Veuillez vous connecter à la plateforme pour effectuer le paiement de <strong>{mm_rate}%</strong> (acompte) du montant de la commande.</p>
+#             """,
+#             'rh_validation': f"""
+#                 <p>Cher(e) {name},</p>
+#                 <p>Votre commande à crédit numéro <strong>{self.name}</strong> a été validée par votre service RH.</p>
+#                 <p>En attente de la validation finale de CCBM Shop.</p>
+#             """,
+#             'request': f"""
+#                 <p>Bonjour {name},</p>
+#                 <p>Nous avons bien reçu votre demande de commande à crédit <strong>{self.name}</strong>.</p>
+#                 <p>Elle est actuellement en cours de validation par nos services.</p>
+#             """,
+#             'creation': f"""
+#                 <p>Bonjour {name},</p>
+#                 <p>Votre commande à crédit <strong>{self.name}</strong> a été créée avec succès.</p>
+#                 <p>Elle est en attente de validation par votre service des Ressources Humaines.</p>
+#             """,
+#             'hr_notification': f"""
+#                 <p>Bonjour,</p>
+#                 <p>Une nouvelle commande à crédit nécessite votre validation :</p>
+#                 <ul>
+#                     <li>Numéro : {self.name}</li>
+#                     <li>Client : {self.partner_id.name}</li>
+#                     <li>Montant total : {self._fmt_money(self.amount_total)}</li>
+#                 </ul>
+#             """,
+#         }
+#         title_map = {
+#             'validation': 'Validation de votre commande à crédit',
+#             'rejection': 'Rejet de votre commande à crédit',
+#             'rh_rejection': 'Rejet de votre commande à crédit par le service RH',
+#             'admin_rejection': "Rejet de votre commande à crédit par l'administration",
+#             'admin_validation': "Validation administrative de votre commande à crédit",
+#             'rh_validation': "Validation RH de votre commande à crédit",
+#             'request': "Votre demande de commande à crédit",
+#             'creation': "Votre commande à crédit a été créée",
+#             'hr_notification': "Nouvelle commande à valider",
+#         }
+#         return self._wrap_email(content_map[email_type], title_map[email_type])
+
+#     # ------------------ API d’envoi (adaptées au partner model) ------------------
+#     def _send_type(self, email_type, to_partner=None, sms_type=None, include_create_account=False, extra_recipients=None):
+#         self.ensure_one()
+#         partner = to_partner or self.partner_id
+#         if not partner:
+#             return {'status': 'error', 'message': 'Partner not found for the given order'}
+
+#         body_html = self._email_body_for(partner, email_type)
+#         if include_create_account:
+#             body_html = body_html.replace(
+#                 "</tbody></table>",  # pas fiable universellement, mais OK ici (wrap structure)
+#                 "</tbody></table>" + self._create_account_section_if_needed(partner)
+#             )
+
+#         subject_map = {
+#             'validation': 'Validation de votre commande à crédit',
+#             'rejection': 'Rejet de votre commande à crédit',
+#             'rh_rejection': 'Rejet de votre commande à crédit par le service RH',
+#             'admin_rejection': "Rejet de votre commande à crédit par l'administration",
+#             'admin_validation': "Validation administrative de votre commande à crédit",
+#             'rh_validation': "Validation RH de votre commande à crédit",
+#             'request': "Demande de commande à crédit en cours",
+#             'creation': "Votre commande à crédit a été créée",
+#             'hr_notification': "Nouvelle commande à valider",
+#         }
+#         subject = subject_map[email_type]
+#         return self._send_mail_common(
+#             partner=partner,
+#             subject=subject,
+#             body_html=body_html,
+#             sms_type=sms_type or email_type,
+#             extra_recipients=extra_recipients or ['shop@ccbm.sn'],
+#         )
+
+#     # ---- Méthodes publiques (1:1 avec ton ancien snippet, mais corrigées) ----
+#     def send_credit_order_validation_mail(self):
+#         # Client : validation “création OK” + échéancier
+#         return self._send_type('validation', include_create_account=True)
+
+#     def send_credit_order_rejection_mail(self):
+#         return self._send_type('rejection')
+
+#     def send_credit_order_rh_rejected(self):
+#         return self._send_type('rh_rejection')
+
+#     def send_credit_order_admin_rejected(self):
+#         return self._send_type('admin_rejection')
+
+#     def send_credit_order_admin_validation(self):
+#         return self._send_type('admin_validation')
+
+#     def send_credit_order_rh_validation(self):
+#         return self._send_type('rh_validation')
+
+#     def send_credit_order_request_mail(self):
+#         # Demande en cours + propose “Créer un compte” si pas de password
+#         return self._send_type('request', include_create_account=True)
+
+#     def send_credit_order_creation_notification_to_client(self):
+#         # Notifie le client à la création (en attente RH) + bloc création compte si besoin
+#         return self._send_type('creation', include_create_account=True)
+
+#     def send_credit_order_creation_notification_to_hr(self):
+#         # Envoie à l’utilisateur RH principal de la société (role=main_user sur le parent du client)
+#         self.ensure_one()
+#         parent = self.partner_id.parent_id
+#         if not parent:
+#             return {'status': 'error', 'message': 'No parent company found'}
+#         rh_user = self.env['res.partner'].sudo().search([
+#             ('role', '=', 'main_user'),
+#             ('parent_id', '=', parent.id),
+#         ], limit=1)
+#         if not rh_user:
+#             return {'status': 'error', 'message': 'HR user not found'}
+#         return self._send_type('hr_notification', to_partner=rh_user, sms_type='hr_notification')
+
+#     def send_credit_order_to_admin_for_validation(self):
+#         # Envoie à un admin système (group_system) ; fallback si aucun
+#         admin_group = self.env.ref('base.group_system')
+#         admin_user = self.env['res.users'].sudo().search([('groups_id', 'in', admin_group.id)], limit=1)
+#         if not admin_user:
+#             _logger.error('No admin user found to send the confirmation email')
+#             return {'status': 'error', 'message': 'No admin user found'}
+#         return self._send_type('hr_notification', to_partner=admin_user.partner_id, sms_type=None)
+
+#     # ------------------ Hooks d’état (corrigés) ------------------
+#     def handle_state_change(self, vals):
+#         """
+#         Appelée depuis write() pour détecter transitions et expédier les bonnes notifications.
+#         """
+#         # RH
+#         if 'validation_rh_state' in vals:
+#             st = vals.get('validation_rh_state')
+#             if st == 'validated':
+#                 self.send_credit_order_rh_validation()
+#                 self.send_credit_order_to_admin_for_validation()
+#             elif st == 'rejected':
+#                 self.send_credit_order_rh_rejected()
+
+#         # Admin
+#         if 'validation_admin_state' in vals:
+#             st = vals.get('validation_admin_state')
+#             if st == 'validated':
+#                 self.send_credit_order_admin_validation()
+#             elif st == 'rejected':
+#                 self.send_credit_order_admin_rejected()
+
+#         return True
+
+#     def write(self, vals):
+#         """
+#         Redéfinition write : applique handle_state_change pour les notifications.
+#         (Pas d’usage de request.env, tout passe par self.env)
+#         """
+#         self.handle_state_change(vals)
+#         return super(SaleCreditOrderMail, self).write(vals)
+
+# -*- coding: utf-8 -*-
+from odoo import models, fields, api, _
+from odoo.exceptions import UserError
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 
 _logger = logging.getLogger(__name__)
+
+# Branding (uniformiser avec le 1er fichier)
+SITE_URL = "https://ccbmshop.sn"
+LOGO_URL = "https://ccbmshop.sn/logo.png"
+
 
 class SaleCreditOrderMail(models.Model):
     _inherit = 'sale.order'
 
-    @api.model
-    def send_credit_order_validation_mail(self):
-        mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
-        
-        partner = self.partner_id
-        if not partner:
-            return {'status': 'error', 'message': 'Partner not found for the given order'}
-        
-        subject = 'Validation de votre commande à crédit'
-        
-        today = datetime.now().date()
-        premier_paiement = today + timedelta(days=3)
-        dexieme_paiement = today + timedelta(days=30)
-        troisieme_paiement = today + timedelta(days=60)
-        quatrieme_paiement = today + timedelta(days=90)
-        
-        total_amount = self.amount_total
-        payments = [
-            ('Paiement initial', total_amount * 0.5, '50%', premier_paiement),
-            ('Deuxième paiement', total_amount * 0.20, '20%', dexieme_paiement),
-            ('Troisième paiement', total_amount * 0.15, '15%', troisieme_paiement),
-            ('Quatrième paiement', total_amount * 0.15, '15%', quatrieme_paiement)
-        ]
+    # ------------------------------------------------------------------
+    # =====================  HELPERS COMMUNS  ===========================
+    # ------------------------------------------------------------------
+    def _mail_server_or_raise(self):
+        mail_server = self.env['ir.mail_server'].sudo().search([], limit=1)
+        if not mail_server:
+            raise UserError(_("Veuillez configurer un serveur de messagerie."))
+        return mail_server
 
-        payment_info = self._generate_payment_info_html(payments)
-        body_html = self._generate_email_body_html(partner, 'validation', payment_info)
+    # ---- Partner helpers (alignés avec tes champs custom) ----
+    def _partner_display_name(self, p):
+        """Privilégie 'prenom nom' (custom), sinon name."""
+        if not p:
+            return ""
+        prenom = (getattr(p, 'prenom', '') or '').strip()
+        nom = (getattr(p, 'nom', '') or '').strip()
+        if prenom or nom:
+            return (prenom + " " + nom).strip()
+        return (p.name or '').strip()
 
-        self.send_mail(mail_server, partner, subject, body_html)
-        self.send_sms_notification('validation')
+    def _has_partner_email(self, partner):
+        return bool((getattr(partner, 'email', '') or '').strip())
 
-    def send_credit_order_rejection_mail(self):
-        mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
-        
-        partner = self.partner_id
-        if not partner:
-            return {'status': 'error', 'message': 'Partner not found for the given order'}
-        
-        subject = 'Rejet de votre commande à crédit'
-        body_html = self._generate_email_body_html(partner, 'rejection')
+    def _partner_email(self, partner):
+        return (getattr(partner, 'email', '') or '').strip()
 
-        self.send_mail(mail_server, partner, subject, body_html)
-        self.send_sms_notification('rejection')
-
-    def send_credit_order_rh_rejected(self):
-        mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
-        
-        partner = self.partner_id
-        if not partner:
-            return {'status': 'error', 'message': 'Partner not found for the given order'}
-        
-        subject = 'Rejet de votre commande à crédit par le service RH'
-        body_html = self._generate_email_body_html(partner, 'rh_rejection')
-
-        self.send_mail(mail_server, partner, subject, body_html)
-        self.send_sms_notification('rh_rejection')
-
-    def send_credit_order_admin_rejected(self):
-        mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
-        
-        partner = self.partner_id
-        if not partner:
-            return {'status': 'error', 'message': 'Partner not found for the given order'}
-        
-        subject = 'Rejet de votre commande à crédit par l\'administration'
-        body_html = self._generate_email_body_html(partner, 'admin_rejection')
-
-        self.send_mail(mail_server, partner, subject, body_html)
-        self.send_sms_notification('admin_rejection')
-
-    def send_credit_order_admin_validation(self):
-        mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
-        
-        partner = self.partner_id
-        if not partner:
-            return {'status': 'error', 'message': 'Partner not found for the given order'}
-        
-        subject = 'Validation administrative de votre commande à crédit'
-        body_html = self._generate_email_body_html(partner, 'admin_validation')
-
-        self.send_mail(mail_server, partner, subject, body_html)
-        self.send_sms_notification('admin_validation')
-
-    def send_credit_order_rh_validation(self):
-        mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
-        partner = self.partner_id
-        if not partner:
-            return {'status': 'error', 'message': 'Partner not found for the given order'}
-        
-        subject = 'Validation RH de votre commande à crédit'
-        body_html = self._generate_email_body_html(partner, 'rh_validation')
-
-        self.send_mail(mail_server, partner, subject, body_html)
-        self.send_sms_notification('rh_validation')
-
-    def send_credit_order_request_mail(self):
-        mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
-        
-        partner = self.partner_id
-        if not partner:
-            return {'status': 'error', 'message': 'Partner not found for the given order'}
-        
-        subject = 'Demande de commande à crédit en cours'
-        
-        create_account_section = ""
-        if not partner.password:
-            create_account_link = f"https://ccbmshop.sn/create-compte?mail={partner.email}"
-            create_account_section = self._generate_create_account_section(create_account_link)
-        
-        body_html = self._generate_email_body_html(partner, 'request', create_account_section)
-
-        self.send_mail(mail_server, partner, subject, body_html)
-        self.send_sms_notification('request')
-
-    def _generate_payment_info_html(self, payments):
-        payment_rows = "".join([
-            f"""
-            <tr>
-                <td>{payment[0]}</td>
-                <td>{payment[1]:.2f}</td>
-                <td>{payment[2]}</td>
-                <td>{payment[3].strftime('%d/%m/%Y')}</td>
-            </tr>
-            """ for payment in payments
-        ])
-
-        return f"""
-        <h3>Informations de paiement</h3>
-        <p>Veuillez noter que le paiement initial de 50%  apres validation par votre RH et de notre service validera complètement votre commande à crédit.</p>
-        <table border='1' cellpadding='5' cellspacing='0' width='590' style='min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:collapse;'>
-            <tr>
-                <th>Échéance</th>
-                <th>Montant</th>
-                <th>Pourcentage</th>
-                <th>Date d'échéance</th>
-            </tr>
-            {payment_rows}
-        </table>
+    def _partner_phone(self, partner):
         """
+        Priorité à ton champ custom 'telephone', puis phone, puis mobile.
+        """
+        for attr in ('telephone', 'phone', 'mobile'):
+            v = getattr(partner, attr, False)
+            if v:
+                return v
+        return ""
 
-    def _generate_create_account_section(self, create_account_link):
+    def _fmt_money(self, amount):
+        cur = self.currency_id.name or ''
+        try:
+            return f"{float(amount or 0.0):,.0f} {cur}"
+        except Exception:
+            return f"{amount} {cur}"
+
+    def _create_account_section_if_needed(self, partner):
+        """
+        Affiche 'Créer un compte' si le partenaire a un email mais pas de password (champ custom).
+        """
+        if not partner or not self._has_partner_email(partner):
+            return ""
+        if getattr(partner, 'password', False):
+            return ""
+        base_url = SITE_URL.rstrip('/')
+        link = f"{base_url}/create-compte?mail={self._partner_email(partner)}"
         return f"""
         <tr>
-            <td align="center" style="min-width: 590px; padding-top: 20px;">
-                <span style="font-size: 14px;">Cliquez sur le lien suivant pour créer un compte et suivre votre commande à crédit :</span><br/>
-                <a href="{create_account_link}" style="font-size: 16px; font-weight: bold;">Créer un compte</a>
-            </td>
+          <td align="center" style="min-width:590px;padding-top:20px;">
+            <span style="font-size:14px;">{_('Créez un compte pour suivre votre commande à crédit')} :</span><br/>
+            <a href="{link}" style="font-size:16px;font-weight:bold;color:#875A7B;">{_('Créer un compte')}</a>
+          </td>
         </tr>
         """
 
-    def _generate_email_body_html(self, partner, email_type, additional_content=""):
-        email_content = {
-            'validation': {
-                'title': 'Validation de votre commande à crédit',
-                'content': f"""
-                    <p>Félicitations {partner.name},</p>
-                    <p>Votre commande à crédit numéro {self.name} a été créée avec succès.</p>
-                    <p>Détails des échéances :</p>
-                """
-            },
-            'rejection': {
-                'title': 'Rejet de votre commande à crédit',
-                'content': f"""
-                    <p>Cher(e) {partner.name},</p>
-                    <p>Nous regrettons de vous informer que votre commande à crédit numéro {self.name} a été rejetée.</p>
-                    <p>Si vous avez des questions concernant cette décision, n'hésitez pas à nous contacter pour plus d'informations.</p>
-                """
-            },
-            'rh_rejection': {
-                'title': 'Rejet de votre commande à crédit par le service RH',
-                'content': f"""
-                    <p>Cher(e) {partner.name},</p>
-                    <p>Nous regrettons de vous informer que votre commande à crédit numéro {self.name} a été rejetée par votre service des Ressources Humaines.</p>
-                    <p>Si vous avez des questions concernant cette décision, n'hésitez pas à contacter notre service client pour plus d'informations.</p>
-                """
-            },
-            'admin_rejection': {
-                'title': 'Rejet de votre commande à crédit par l\'administration',
-                'content': f"""
-                    <p>Cher(e) {partner.name},</p>
-                    <p>Nous regrettons de vous informer que votre commande à crédit numéro {self.name} a été rejetée par notre administration.</p>
-                    <p>Si vous avez des questions concernant cette décision, n'hésitez pas à contacter notre service client pour plus d'informations.</p>
-                """
-            },
-            'admin_validation': {
-                'title': 'Validation administrative de votre commande à crédit',
-                'content': f"""
-                    <p>Cher(e) {partner.name},</p>
-                    <p>Nous avons le plaisir de vous informer que votre commande à crédit numéro {self.name} a été validée par notre administration.</p>
-                    <p>Nous vous invitons à vous connecter dès maintenant à la plateforme afin d’effectuer le paiement de 50% du montant de la commande.</p>
-                    <p>Nous vous tiendrons informé des prochaines étapes.</p>
-                """
-            },
-            'rh_validation': {
-                'title': 'Validation RH de votre commande à crédit',
-                'content': f"""
-                    <p>Cher(e) {partner.name},</p>
-                    <p>Nous avons le plaisir de vous informer que votre commande à crédit numéro {self.name} a été validée par votre service des Ressources Humaines.</p>
-                    <p>Vous pouvez à présent attendre la validation finale de CCBM Shop avant de procéder au paiement.</p>
-                    <p>Nous vous tiendrons informé des prochaines étapes.</p>
-                """
-            },
-            'request': {
-                'title': 'Votre demande de commande à crédit',
-                'content': f"""
-                    <p>Bonjour {partner.name},</p>
-                    <p>Nous avons bien reçu votre demande de commande à crédit numéro {self.name}.</p>
-                    <p>Elle est actuellement en cours de validation par nos services.</p>
-                    <p>Nous vous tiendrons informé de l'avancement de votre demande.</p>
-                """
-            }
-        }
-
+    # ------------------------------------------------------------------
+    # ==================  EMAIL HEADER/FOOTER  ==========================
+    # ------------------------------------------------------------------
+    def _email_header_block(self, title):
         return f"""
-        <table border="0" cellpadding="0" cellspacing="0" style="padding-top: 16px; background-color: #FFFFFF; font-family:Verdana, Arial,sans-serif; color: #454748; width: 100%; border-collapse:separate;">
-            <tr>
-                <td align="center">
-                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="padding: 16px; background-color: #FFFFFF; color: #454748; border-collapse:separate;">
-                        <tbody>
-                            <tr>
-                                <td align="center" style="min-width: 590px;">
-                                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;">
-                                        <tr>
-                                            <td valign="middle">
-                                                <span style="font-size: 10px;">{email_content[email_type]['title']}</span><br/>
-                                                <span style="font-size: 20px; font-weight: bold;">
-                                                    {self.name}
-                                                </span>
-                                            </td>
-                                            <td valign="middle" align="right">
-                                                <img style="padding: 0px; margin: 0px; height: auto; width: 120px;" src="https://ccbmshop.sn/logo.png" alt="logo CCBM SHOP"/>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td colspan="2" style="text-align:center;">
-                                                <hr width="100%" style="background-color:rgb(204,204,204);border:medium none;clear:both;display:block;font-size:0px;min-height:1px;line-height:0; margin: 16px 0px 16px 0px;"/>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td align="center" style="min-width: 590px;">
-                                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;">
-                                        <tr>
-                                            <td>
-                                                {email_content[email_type]['content']}
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                            {additional_content}
-                        </tbody>
-                    </table>
-                </td>
-            </tr>
-            <tr>
-                <td align="center" style="min-width: 590px;">
-                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: #F1F1F1; color: #454748; padding: 8px; border-collapse:separate;">
-                        <tr>
-                            <td style="text-align: center; font-size: 13px;">
-                                Généré par <a target="_blank" href="https://www.ccbmshop.sn" style="color: #875A7B;">CCBM SHOP</a>
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
+        <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width:590px;background:#FFF;padding:0 8px;border-collapse:separate;">
+          <tr>
+            <td valign="middle">
+              <span style="font-size:10px;">{title}</span><br/>
+              <span style="font-size:20px;font-weight:bold;">{self.name}</span>
+            </td>
+            <td valign="middle" align="right">
+              <img src="{LOGO_URL}" alt="Logo CCBM SHOP" style="width:120px;height:auto;display:block;border:0;outline:none;text-decoration:none;"/>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="2" style="text-align:center;">
+              <hr width="100%" style="background:#ccc;border:none;display:block;height:1px;margin:16px 0;"/>
+            </td>
+          </tr>
         </table>
         """
 
-    def send_credit_order_creation_notification_to_client(self):
-        mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
-        if not mail_server:
-            return {'status': 'error', 'message': 'Mail server not configured'}
+    def _email_footer_block(self):
+        return f"""
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="590"
+               style="background:#F1F1F1;color:#555;border-collapse:separate;margin-top:8px;">
+          <tr>
+            <td style="padding:12px;text-align:center;font-size:13px;line-height:1.6;">
+              <div>📞 +221 33 849 65 49 / +221 70 922 17 75 &nbsp; | &nbsp; 📍 Ouest foire, après la fédération</div>
+              <div>🛍️ <a href="{SITE_URL}" target="_blank" rel="noopener" style="color:#875A7B;text-decoration:none;">www.ccbmshop.sn</a></div>
+            </td>
+          </tr>
+        </table>
+        """
 
-        partner = self.partner_id
+    def _wrap_email(self, inner_html, title):
+        return f"""
+        <table border="0" cellpadding="0" cellspacing="0"
+               style="padding-top:16px;background:#FFFFFF;font-family:Verdana,Arial,sans-serif;color:#454748;width:100%;border-collapse:separate;">
+          <tr><td align="center">
+            <table border="0" cellpadding="0" cellspacing="0" width="590"
+                   style="padding:16px;background:#FFFFFF;color:#454748;border-collapse:separate;">
+              <tbody>
+                <tr><td align="center" style="min-width:590px;">{self._email_header_block(title)}</td></tr>
+                <tr>
+                  <td align="center" style="min-width:590px;">
+                    <table border="0" cellpadding="0" cellspacing="0" width="590"
+                           style="min-width:590px;background:#FFF;padding:0 8px;border-collapse:separate;">
+                      <tr><td>{inner_html}</td></tr>
+                    </table>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            {self._email_footer_block()}
+          </td></tr>
+        </table>
+        """
+
+    # ------------------------------------------------------------------
+    # ==================  ÉCHÉANCIER / TABLES  ==========================
+    # ------------------------------------------------------------------
+    def _coerce_date(self, v):
+        if not v:
+            return None
+        if isinstance(v, datetime):
+            return v.date()
+        if isinstance(v, date):
+            return v
+        try:
+            return datetime.fromisoformat(str(v)).date()
+        except Exception:
+            return None
+
+    def _payment_rows_from_plan(self):
+        """
+        Utilise sale.order.credit.payment si dispo; sinon fallback 50/20/15/15.
+        """
+        rows = []
+        plan = self.mapped('credit_payment_ids')
+        if plan:
+            for l in plan.sorted(lambda r: r.sequence):
+                label = _("Premier Paiement (Acompte)") if l.sequence == 1 else _("Échéance %(n)s", n=l.sequence)
+                due = self._coerce_date(l.due_date)
+                rows.append((label, float(l.amount or 0.0), f"{l.rate}", due))
+            return rows
+
+        # Fallback
+        today = datetime.now().date()
+        total = float(self.amount_total or 0.0)
+        fallback = [
+            (_("Paiement initial"), total * 0.50, "50%", today + timedelta(days=3)),
+            (_("Deuxième paiement"), total * 0.20, "20%", today + timedelta(days=30)),
+            (_("Troisième paiement"), total * 0.15, "15%", today + timedelta(days=60)),
+            (_("Quatrième paiement"), total * 0.15, "15%", today + timedelta(days=90)),
+        ]
+        return fallback
+
+    def _payment_table_html(self):
+        rows = []
+        for label, amount, rate, due in self._payment_rows_from_plan():
+            due_str = due.strftime('%d/%m/%Y') if isinstance(due, (date, datetime)) and due else '—'
+            rows.append(f"""
+            <tr>
+              <td style="padding:8px;border:1px solid #ddd;">{label}</td>
+              <td style="padding:8px;border:1px solid #ddd;text-align:right;">{self._fmt_money(amount)}</td>
+              <td style="padding:8px;border:1px solid #ddd;text-align:center;">{rate}</td>
+              <td style="padding:8px;border:1px solid #ddd;text-align:center;">{due_str}</td>
+            </tr>
+            """)
+
+        return f"""
+        <h3 style="color:#333;border-bottom:2px solid #875A7B;padding-bottom:5px;margin-top:16px;">{_('Informations de paiement')}</h3>
+        <p>{_('Le paiement initial (acompte) après validation RH et validation CCBM déclenchera la mise en exécution de la commande.')}</p>
+        <table border="1" cellpadding="5" cellspacing="0" width="100%" style="border-collapse:collapse;margin-top:10px;">
+          <thead>
+            <tr style="background:#f8f9fa;">
+              <th style="padding:10px;border:1px solid #ddd;text-align:left;">{_('Échéance')}</th>
+              <th style="padding:10px;border:1px solid #ddd;text-align:center;">{_('Montant')}</th>
+              <th style="padding:10px;border:1px solid #ddd;text-align:center;">{_('Pourcentage')}</th>
+              <th style="padding:10px;border:1px solid #ddd;text-align:center;">{_("Date d'échéance")}</th>
+            </tr>
+          </thead>
+          <tbody>{''.join(rows)}</tbody>
+        </table>
+        """
+
+    # ------------------------------------------------------------------
+    # ==================  CORPS EMAILS / TYPES  ==========================
+    # ------------------------------------------------------------------
+    def _email_body_for(self, partner, email_type):
+        pname = self._partner_display_name(partner)
+        mm_rate = getattr(self, 'credit_month_rate', 0)
+        content_map = {
+            'validation': f"""
+                <p>{_('Félicitations')} {pname},</p>
+                <p>{_('Votre commande à crédit numéro')} <strong>{self.name}</strong> {_('a été créée avec succès')}.</p>
+                <p>{_('Détails des échéances')} :</p>
+                {self._payment_table_html()}
+            """,
+            'rejection': f"""
+                <p>{_('Cher(e)')} {pname},</p>
+                <p>{_('Nous regrettons de vous informer que votre commande à crédit numéro')} <strong>{self.name}</strong> {_('a été rejetée')}.</p>
+                <p>{_('Pour toute question, contactez notre service client.')}</p>
+            """,
+            'rh_rejection': f"""
+                <p>{_('Cher(e)')} {pname},</p>
+                <p>{_('Votre commande à crédit numéro')} <strong>{self.name}</strong> {_('a été rejetée par votre service RH')}.</p>
+            """,
+            'admin_rejection': f"""
+                <p>{_('Cher(e)')} {pname},</p>
+                <p>{_('Votre commande à crédit numéro')} <strong>{self.name}</strong> {_('a été rejetée par notre administration')}.</p>
+            """,
+            'admin_validation': f"""
+                <p>{_('Cher(e)')} {pname},</p>
+                <p>{_('Nous vous informons que votre commande à crédit numéro')} <strong>{self.name}</strong> {_('a été validée par notre administration')}.</p>
+                <p>{_('Veuillez vous connecter à la plateforme pour effectuer le paiement de')} <strong>{mm_rate}%</strong> {_('(acompte) du montant de la commande.')}</p>
+            """,
+            'rh_validation': f"""
+                <p>{_('Cher(e)')} {pname},</p>
+                <p>{_('Votre commande à crédit numéro')} <strong>{self.name}</strong> {_('a été validée par votre service RH')}.</p>
+                <p>{_('En attente de la validation finale de CCBM Shop.')}</p>
+            """,
+            'request': f"""
+                <p>{_('Bonjour')} {pname},</p>
+                <p>{_('Nous avons bien reçu votre demande de commande à crédit')} <strong>{self.name}</strong>.</p>
+                <p>{_('Elle est actuellement en cours de validation par nos services.')}</p>
+            """,
+            'creation': f"""
+                <p>{_('Bonjour')} {pname},</p>
+                <p>{_('Votre commande à crédit')} <strong>{self.name}</strong> {_('a été créée avec succès')}.</p>
+                <p>{_('Elle est en attente de validation par votre service des Ressources Humaines.')}</p>
+            """,
+            'hr_notification': f"""
+                <p>{_('Bonjour')},</p>
+                <p>{_('Une nouvelle commande à crédit nécessite votre validation')} :</p>
+                <ul>
+                    <li>{_('Numéro')} : {self.name}</li>
+                    <li>{_('Client')} : {self._partner_display_name(self.partner_id)}</li>
+                    <li>{_('Montant total')} : {self._fmt_money(self.amount_total)}</li>
+                </ul>
+            """,
+        }
+        title_map = {
+            'validation': _('Validation de votre commande à crédit'),
+            'rejection': _('Rejet de votre commande à crédit'),
+            'rh_rejection': _('Rejet de votre commande à crédit par le service RH'),
+            'admin_rejection': _("Rejet de votre commande à crédit par l'administration"),
+            'admin_validation': _("Validation administrative de votre commande à crédit"),
+            'rh_validation': _("Validation RH de votre commande à crédit"),
+            'request': _("Votre demande de commande à crédit"),
+            'creation': _("Votre commande à crédit a été créée"),
+            'hr_notification': _("Nouvelle commande à valider"),
+        }
+        return self._wrap_email(content_map[email_type], title_map[email_type])
+
+    # ------------------------------------------------------------------
+    # ==================  ENVOI EMAIL + SMS =============================
+    # ------------------------------------------------------------------
+    def _sms_message(self, kind):
+        partner_name = self._partner_display_name(self.partner_id)
+        m = {
+            'validation': _("Bonjour %(name)s, votre commande à crédit %(order)s a été créée.", name=partner_name, order=self.name),
+            'rejection':  _("Bonjour %(name)s, votre commande à crédit %(order)s a été rejetée.", name=partner_name, order=self.name),
+            'rh_rejection': _("Bonjour %(name)s, votre commande %(order)s a été rejetée par le service RH.", name=partner_name, order=self.name),
+            'admin_rejection': _("Bonjour %(name)s, votre commande %(order)s a été rejetée par l'administration.", name=partner_name, order=self.name),
+            'admin_validation': _("Bonjour %(name)s, votre commande %(order)s a été validée par l'administration.", name=partner_name, order=self.name),
+            'rh_validation': _("Bonjour %(name)s, votre commande %(order)s a été validée par le service RH.", name=partner_name, order=self.name),
+            'request': _("Bonjour %(name)s, votre demande de commande à crédit %(order)s est en cours.", name=partner_name, order=self.name),
+            'creation': _("Bonjour %(name)s, votre commande à crédit %(order)s a été créée (en attente de validation RH).", name=partner_name, order=self.name),
+            'hr_notification': _("Bonjour, la commande %(order)s nécessite une validation RH.", order=self.name),
+        }
+        return m.get(kind, _("Notification commande %(order)s", order=self.name))
+
+    def _send_mail_common(self, partner, subject, body_html, sms_type=None, extra_recipients=None):
+        """
+        Envoi d'email standardisé + SMS optionnel.
+        """
+        try:
+            mail_server = self._mail_server_or_raise()
+
+            if not partner or not self._has_partner_email(partner):
+                _logger.warning("Destinataire invalide: partner/email manquant — envoi annulé.")
+                return {'status': 'error', 'message': 'Partner email not found'}
+
+            email_from = mail_server.smtp_user or 'noreply@ccbmshop.sn'
+            recipients = [self._partner_email(partner)]
+            if extra_recipients:
+                recipients.extend([r for r in extra_recipients if r])
+
+            email_values = {
+                'email_from': email_from,
+                'email_to': ', '.join(recipients),
+                'subject': subject,
+                'body_html': body_html,
+                'state': 'outgoing',
+                'auto_delete': False,
+            }
+            mail = self.env['mail.mail'].sudo().create(email_values)
+            mail.send()
+            _logger.info("Mail '%s' envoyé à %s pour %s", subject, email_values['email_to'], self.name)
+
+            # SMS si demandé et si un numéro exploitable existe
+            if sms_type:
+                phone = self._partner_phone(partner)
+                if phone:
+                    Sms = self.env.get('send.sms')
+                    if Sms:
+                        sms_body = self._sms_message(sms_type)
+                        rec = Sms.create({'recipient': phone, 'message': sms_body})
+                        try:
+                            rec.send_sms()
+                            _logger.info("SMS '%s' envoyé à %s pour %s", sms_type, phone, self.name)
+                        except Exception as se:
+                            _logger.error("Échec envoi SMS (%s) à %s: %s", sms_type, phone, se, exc_info=True)
+                    else:
+                        _logger.warning("Module send.sms indisponible — SMS non envoyé")
+            return {'status': 'success'}
+        except Exception as e:
+            _logger.error("Erreur envoi mail %s: %s", self.name, e, exc_info=True)
+            return {'status': 'error', 'message': str(e)}
+
+    # ------------------------------------------------------------------
+    # ==================  API ENVELOPPES PUBLIQUES  =====================
+    # ------------------------------------------------------------------
+    def _send_type(self, email_type, to_partner=None, sms_type=None, include_create_account=False, extra_recipients=None):
+        self.ensure_one()
+        partner = to_partner or self.partner_id
         if not partner:
             return {'status': 'error', 'message': 'Partner not found for the given order'}
 
-        subject = 'Votre commande à crédit a été créée'
+        body_html = self._email_body_for(partner, email_type)
+        if include_create_account:
+            # Ajoute la section "Créer un compte" à la fin du bloc principal
+            body_html = body_html.replace(
+                "</tbody></table>",  # ancre interne de _wrap_email (suffisant ici)
+                "</tbody></table>" + self._create_account_section_if_needed(partner)
+            )
 
-        create_account_section = ""
-        if not partner.password:
-            create_account_link = f"https://ccbmshop.sn/create-compte?mail={partner.email}"
-            create_account_section = f'''
-                <tr>
-                    <td align="center" style="min-width: 590px; padding-top: 20px;">
-                        <span style="font-size: 14px;">Cliquez sur le lien suivant pour créer un compte et suivre votre commande à crédit :</span><br/>
-                        <a href="{create_account_link}" style="font-size: 16px; font-weight: bold;">Créer un compte</a>
-                    </td>
-                </tr>
-            '''
+        subject_map = {
+            'validation': _('Validation de votre commande à crédit'),
+            'rejection':  _('Rejet de votre commande à crédit'),
+            'rh_rejection': _('Rejet de votre commande à crédit par le service RH'),
+            'admin_rejection': _("Rejet de votre commande à crédit par l'administration"),
+            'admin_validation': _("Validation administrative de votre commande à crédit"),
+            'rh_validation': _("Validation RH de votre commande à crédit"),
+            'request': _("Demande de commande à crédit en cours"),
+            'creation': _("Votre commande à crédit a été créée"),
+            'hr_notification': _("Nouvelle commande à valider"),
+        }
+        subject = subject_map[email_type]
+        return self._send_mail_common(
+            partner=partner,
+            subject=subject,
+            body_html=body_html,
+            sms_type=sms_type or email_type,
+            extra_recipients=extra_recipients or ['shop@ccbm.sn'],
+        )
 
-        body_html = f'''
-        <table border="0" cellpadding="0" cellspacing="0" style="padding-top: 16px; background-color: #FFFFFF; font-family:Verdana, Arial,sans-serif; color: #454748; width: 100%; border-collapse:separate;">
-            <tr>
-                <td align="center">
-                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="padding: 16px; background-color: #FFFFFF; color: #454748; border-collapse:separate;">
-                        <tbody>
-                            <tr>
-                                <td align="center" style="min-width: 590px;">
-                                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;">
-                                        <tr>
-                                            <td valign="middle">
-                                                <span style="font-size: 10px;">Votre commande à crédit</span><br/>
-                                                <span style="font-size: 20px; font-weight: bold;">
-                                                    {self.name}
-                                                </span>
-                                            </td>
-                                            <td valign="middle" align="right">
-                                                <img style="padding: 0px; margin: 0px; height: auto; width: 120px;" src="https://ccbmshop.sn/logo.png" alt="logo CCBM SHOP"/>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td colspan="2" style="text-align:center;">
-                                                <hr width="100%" style="background-color:rgb(204,204,204);border:medium none;clear:both;display:block;font-size:0px;min-height:1px;line-height:0; margin: 16px 0px 16px 0px;"/>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td align="center" style="min-width: 590px;">
-                                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;">
-                                        <tr>
-                                            <td>
-                                                <p>Cher/Chère {partner.name},</p>
-                                                <p>Nous vous informons que votre commande à crédit ({self.name}) a été créée avec succès.</p>
-                                                <p>Votre demande est actuellement en attente de validation par votre service des ressources humaines. Nous vous tiendrons informé de l'avancement de votre demande.</p>
-                                                <p>Merci pour votre confiance.</p>
-                                                <p>Cordialement,<br/>L'équipe {self.company_id.name}</p>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                            {create_account_section}
-                        </tbody>
-                    </table>
-                </td>
-            </tr>
-            <tr>
-                <td align="center" style="min-width: 590px;">
-                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: #F1F1F1; color: #454748; padding: 8px; border-collapse:separate;">
-                        <tr>
-                            <td style="text-align: center; font-size: 13px;">
-                                Généré par <a target="_blank" href="https://www.ccbmshop.sn" style="color: #875A7B;">CCBM SHOP</a>
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-        </table>
-        '''
+    # ---- Expositions 1:1 (compat) ----
+    def send_credit_order_validation_mail(self):
+        return self._send_type('validation', include_create_account=True)
 
-        self.send_mail(mail_server, partner.email, subject, body_html)
-        self.send_sms_notification('creation')
+    def send_credit_order_rejection_mail(self):
+        return self._send_type('rejection')
+
+    def send_credit_order_rh_rejected(self):
+        return self._send_type('rh_rejection')
+
+    def send_credit_order_admin_rejected(self):
+        return self._send_type('admin_rejection')
+
+    def send_credit_order_admin_validation(self):
+        return self._send_type('admin_validation')
+
+    def send_credit_order_rh_validation(self):
+        return self._send_type('rh_validation')
+
+    def send_credit_order_request_mail(self):
+        return self._send_type('request', include_create_account=True)
+
+    def send_credit_order_creation_notification_to_client(self):
+        return self._send_type('creation', include_create_account=True)
 
     def send_credit_order_creation_notification_to_hr(self):
-        mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
-        if not mail_server:
-            return {'status': 'error', 'message': 'Mail server not configured'}
-
-        subject = 'Nouvelle commande à valider'
-
-        body_html = f'''
-        <table border="0" cellpadding="0" cellspacing="0" style="padding-top: 16px; background-color: #FFFFFF; font-family:Verdana, Arial,sans-serif; color: #454748; width: 100%; border-collapse:separate;">
-            <tr>
-                <td align="center">
-                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="padding: 16px; background-color: #FFFFFF; color: #454748; border-collapse:separate;">
-                        <tbody>
-                            <tr>
-                                <td align="center" style="min-width: 590px;">
-                                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;">
-                                        <tr>
-                                            <td valign="middle">
-                                                <span style="font-size: 10px;">Commande à crédit</span><br/>
-                                                <span style="font-size: 20px; font-weight: bold;">
-                                                    {self.name}
-                                                </span>
-                                            </td>
-                                            <td valign="middle" align="right">
-                                                <img style="padding: 0px; margin: 0px; height: auto; width: 120px;" src="https://ccbmshop.sn/logo.png" alt="logo CCBM SHOP"/>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td colspan="2" style="text-align:center;">
-                                                <hr width="100%" style="background-color:rgb(204,204,204);border:medium none;clear:both;display:block;font-size:0px;min-height:1px;line-height:0; margin: 16px 0px 16px 0px;"/>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td align="center" style="min-width: 590px;">
-                                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;">
-                                        <tr>
-                                            <td>
-                                                <p>Bonjour,</p>
-                                                <p>Une nouvelle demande de commande à crédit a été créée et nécessite votre validation :</p>
-                                                <ul>
-                                                    <li>Numéro de commande : {self.name}</li>
-                                                    <li>Client : {self.partner_id.name}</li>
-                                                    <li>Montant total : {self.amount_total} {self.currency_id.name}</li>
-                                                </ul>
-                                                <p>Veuillez examiner cette demande et prendre les mesures appropriées.</p>
-                                                <p>Cordialement,<br/>Le système automatique</p>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </td>
-            </tr>
-            <tr>
-                <td align="center" style="min-width: 590px;">
-                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: #F1F1F1; color: #454748; padding: 8px; border-collapse:separate;">
-                        <tr>
-                            <td style="text-align: center; font-size: 13px;">
-                                Généré par <a target="_blank" href="https://www.ccbmshop.sn" style="color: #875A7B;">CCBM SHOP</a>
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-        </table>
-        '''
-
-        self.send_mail(mail_server, self.company_id.email, subject, body_html)
-        self.send_sms_notification('hr_notification')
+        """
+        RH = partenaire enfant de la société (parent du client) avec role='main_user'.
+        """
+        self.ensure_one()
+        company = getattr(self.partner_id, 'employer_partner_id', False) or self.partner_id.parent_id
+        if not company:
+            return {'status': 'error', 'message': 'No company (employer/parent) found'}
+        rh_user = self.env['res.partner'].sudo().search([
+            ('role', '=', 'main_user'),
+            ('parent_id', '=', company.id),
+        ], limit=1)
+        if not rh_user:
+            return {'status': 'error', 'message': 'HR user not found'}
+        return self._send_type('hr_notification', to_partner=rh_user, sms_type='hr_notification')
 
     def send_credit_order_to_admin_for_validation(self):
-        # Envoie un mail à l'administrateur pour lui informer qu'une commande à crédit a été confirmée et nécessite sa validation
-        mail_server = self.env['ir.mail_server'].sudo().search([], limit=1)
-        admin_user = self.env['res.users'].sudo().search(
-            [('groups_id', '=', self.env.ref('base.group_system').id)], limit=1
-        )
-        if not admin_user:
-            admin_user = self.env['res.users'].sudo().search(('email', '=', 'alhussein.khouma@ccbm.sn'), limit=1)
-        
+        """
+        Notifie un administrateur (group_system). Sujet/texte = hr_notification (clair et court).
+        """
+        admin_group = self.env.ref('base.group_system')
+        admin_user = self.env['res.users'].sudo().search([('groups_id', 'in', admin_group.id)], limit=1)
         if not admin_user:
             _logger.error('No admin user found to send the confirmation email')
             return {'status': 'error', 'message': 'No admin user found'}
+        return self._send_type('hr_notification', to_partner=admin_user.partner_id, sms_type=None)
 
-        subject = f'Confirmation requise pour la commande à crédit - {self.name}'
-        body_html = f'''
-        <table border="0" cellpadding="0" cellspacing="0" style="padding-top: 16px; background-color: #FFFFFF; font-family:Verdana, Arial,sans-serif; color: #454748; width: 100%; border-collapse:separate;">
-            <tr>
-                <td align="center">
-                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="padding: 16px; background-color: #FFFFFF; color: #454748; border-collapse:separate;">
-                        <tbody>
-                            <tr>
-                                <td align="center" style="min-width: 590px;">
-                                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;">
-                                        <tr>
-                                            <td valign="middle">
-                                                <span style="font-size: 10px;">Commande à crédit</span><br/>
-                                                <span style="font-size: 20px; font-weight: bold;">
-                                                    {self.name}
-                                                </span>
-                                            </td>
-                                            <td valign="middle" align="right">
-                                                <img style="padding: 0px; margin: 0px; height: auto; width: 120px;" src="https://ccbmshop.sn/logo.png" alt="logo CCBM SHOP"/>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td colspan="2" style="text-align:center;">
-                                                <hr width="100%" style="background-color:rgb(204,204,204);border:medium none;clear:both;display:block;font-size:0px;min-height:1px;line-height:0; margin: 16px 0px 16px 0px;"/>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td align="center" style="min-width: 590px;">
-                                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;">
-                                        <tr>
-                                            <td>
-                                                <p>Bonjour Administrateur,</p>
-                                                <p>Le service RH a confirmé la commande à crédit suivante :</p>
-                                                <ul>
-                                                    <li>Numéro de commande : {self.name}</li>
-                                                    <li>Client : {self.partner_id.name}</li>
-                                                    <li>Montant total : {self.amount_total} {self.currency_id.name}</li>
-                                                </ul>
-                                                <p>Votre confirmation est maintenant requise pour finaliser cette commande.</p>
-                                                <p>Veuillez vous connecter au système pour examiner et valider cette commande.</p>
-                                                <p>Cordialement,<br/>Le système automatique</p>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </td>
-            </tr>
-            <tr>
-                <td align="center" style="min-width: 590px;">
-                    <table border="0" cellpadding="0" cellspacing="0" width="590" style="min-width: 590px; background-color: #F1F1F1; color: #454748; padding: 8px; border-collapse:separate;">
-                        <tr>
-                            <td style="text-align: center; font-size: 13px;">
-                                Généré par <a target="_blank" href="https://www.ccbmshop.sn" style="color: #875A7B;">CCBM SHOP</a>
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-        </table>
-        '''
-        return self.send_mail(mail_server, admin_user.partner_id, subject, body_html)
-       
-
-    def send_mail(self, mail_server, partner, subject, body_html):
-        email_from = mail_server.smtp_user
-        additional_email = 'shop@ccbm.sn'
-        email_to = f'{partner.email}, {additional_email}'
-        # email_to = f'{partner.email}'
-
-        email_values = {
-            'email_from': email_from,
-            'email_to': email_to,
-            'subject': subject,
-            'body_html': body_html,
-            'state': 'outgoing',
+    # ------------------------------------------------------------------
+    # ==================  DETECTEUR D’ÉTATS / WRITE  ====================
+    # ------------------------------------------------------------------
+    def _snapshot_states(self):
+        return {
+            'rh': self.validation_rh_state,
+            'admin': self.validation_admin_state,
         }
 
-        mail_mail = self.env['mail.mail'].sudo().create(email_values)
-        try:
-            mail_mail.send()
-            return {'status': 'success', 'message': 'Mail envoyé avec succès'}
-        except Exception as e:
-            _logger.error(f'Error sending email: {str(e)}')
-            return {'status': 'error', 'message': str(e)}
-
-    def send_sms_notification(self, notification_type):
-        message_templates = {
-            'validation': f"Bonjour {self.partner_id.name},\nVotre commande à crédit numéro {self.name} a été créée avec succès.",
-            'rejection': f"Bonjour {self.partner_id.name},\nNous regrettons de vous informer que votre commande à crédit numéro {self.name} a été rejetée.",
-            'rh_rejection': f"Bonjour {self.partner_id.name},\nNous regrettons de vous informer que votre commande à crédit numéro {self.name} a été rejetée par votre service des Ressources Humaines.",
-            'admin_rejection': f"Bonjour {self.partner_id.name},\nNous regrettons de vous informer que votre commande à crédit numéro {self.name} a été rejetée par notre administration.",
-            'admin_validation': f"Bonjour {self.partner_id.name},\nNous avons le plaisir de vous informer que votre commande à crédit numéro {self.name} a été validée par notre administration.",
-            'rh_validation': f"Bonjour {self.partner_id.name},\nNous avons le plaisir de vous informer que votre commande à crédit numéro {self.name} a été validée par votre service des Ressources Humaines.",
-            'request': f"Bonjour {self.partner_id.name},\nNous avons bien reçu votre demande de commande à crédit numéro {self.name} .Elle est actuellement en cours de validation par nos services.",
-            'creation': f"Bonjour {self.partner_id.name},\nVotre commande à crédit numéro {self.name} a été créée avec succès. Elle est actuellement en attente de validation par votre service des ressources humaines.",
-            'hr_notification': f"Bonjour,\nUne nouvelle demande de validation de commande à crédit numéro {self.name} nécessite votre validation."
-        }
-
-        message = message_templates.get(notification_type, "")
-        if message:
-            recipient = self.partner_id.phone
-            # result = self.env['send.sms'].sudo().send_sms(recipient, message)
-            # self.env['send.sms'].create({
-            #     'recipient': recipient,
-            #     'message': message,
-            # }).send_sms()
-            self.env['send.sms'].create({
-                'recipient': recipient,
-                'message': message,
-            }).send_sms()
-
-    @api.model
-    def action_validation_rh_state(self):
-        _logger.debug('action_validation_rh_state()...')
-        if self.validation_rh_state == 'validated':
-            self.send_credit_order_rh_validation()
-        elif self.validation_rh_state == 'rejected':
-            self.send_credit_order_rh_rejected()
-        return True
-
-
-    @api.model
-    def handle_state_change(self, vals):
+    def _handle_state_transitions(self, before_states):
         """
-        Cette méthode vérifie les changements d'état RH et Admin
-        et envoie les notifications appropriées.
+        Compare l’état avant/après et envoie les notifications adaptées.
         """
-        
-        # Vérifie les changements d'état RH
-        if 'validation_rh_state' in vals:
-            new_rh_state = vals.get('validation_rh_state')
-            if new_rh_state == 'validated':
+        after_states = self._snapshot_states()
+        # RH
+        if before_states.get('rh') != after_states.get('rh'):
+            if after_states['rh'] == 'validated':
                 self.send_credit_order_rh_validation()
                 self.send_credit_order_to_admin_for_validation()
-            elif new_rh_state == 'rejected':
+            elif after_states['rh'] == 'rejected':
                 self.send_credit_order_rh_rejected()
-
-        # Vérifie les changements d'état Admin
-        if 'validation_admin_state' in vals:
-            new_admin_state = vals.get('validation_admin_state')
-            if new_admin_state == 'validated':
+        # Admin
+        if before_states.get('admin') != after_states.get('admin'):
+            if after_states['admin'] == 'validated':
                 self.send_credit_order_admin_validation()
-            elif new_admin_state == 'rejected':
+            elif after_states['admin'] == 'rejected':
                 self.send_credit_order_admin_rejected()
-        return True
-    
 
     def write(self, vals):
         """
-        Redéfinition de la méthode `write` pour gérer les notifications
-        lors de changements d'état.
+        Redéfinition write :
+        - on prend un snapshot des états,
+        - on écrit,
+        - on notifie si transitions (plus fiable que d’appeler avant).
         """
-        notifications = self.handle_state_change(vals)
-        result = super(SaleCreditOrderMail, self).write(vals)
-        return result
-
+        befores = {rec.id: rec._snapshot_states() for rec in self}
+        res = super().write(vals)
+        for rec in self:
+            try:
+                if getattr(rec, 'type_sale', '') == 'creditorder':
+                    rec._handle_state_transitions(befores.get(rec.id, {}))
+            except Exception as e:
+                _logger.error("Erreur post-write (notifications) sur %s: %s", rec.name, e, exc_info=True)
+        return res

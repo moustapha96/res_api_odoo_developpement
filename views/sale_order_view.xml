@@ -8,6 +8,8 @@
             <xpath expr="//field[@name='date_order']" position="after">
                 <field name="type_order" readonly="1" />
                 <field name="payment_mode" />
+                <field name="type_sale"  />
+                <field name="credit_type" />
             </xpath>
         </field>
     </record>
@@ -37,6 +39,10 @@
             </xpath>
         </field>
     </record>
+
+
+    
+
 </odoo>
 
 
