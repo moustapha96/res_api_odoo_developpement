@@ -11,10 +11,16 @@ class SaleCreditOrderMail(models.Model):
     def send_payment_reminder(self):
         """
         Parcourt les paiements échus et envoie les notifications (e-mail + SMS).
+        Ne traite que les paiements réellement échus (non payés, date passée, montant > 0).
         """
         today = datetime.now().date()
         overdue_payments = self._get_overdue_payments(today)
 
+        if not overdue_payments:
+            _logger.debug(f"[AUCUN PAIEMENT ÉCHU] Commande {self.name} - Aucun paiement échu à notifier")
+            return
+
+        _logger.info(f"[NOTIFICATION] Commande {self.name} - {len(overdue_payments)} paiement(s) échu(s) à notifier")
         for payment in overdue_payments:
             self._notify_overdue_payment(payment)
 
@@ -29,23 +35,53 @@ class SaleCreditOrderMail(models.Model):
 
         for payment in payments:
             label, amount, state, rate, due_date = payment
+            
+            # Vérifier que le paiement est échu : non payé (not state), date passée, montant > 0
             if not state and due_date < today and amount > 0:
-                _logger.info(f"[ÉCHU] {label} | Montant: {amount} | Date: {due_date}")
+                _logger.info(f"[ÉCHU] {label} | Montant: {amount} | Date: {due_date} | État: Non payé")
                 overdue.append({
                     'label': label,
                     'amount': amount,
                     'due_date': due_date,
                 })
+            else:
+                if state:
+                    _logger.debug(f"[IGNORÉ] {label} | État: Payé")
+                elif due_date >= today:
+                    _logger.debug(f"[IGNORÉ] {label} | Date: {due_date} (pas encore échu)")
+                elif amount <= 0:
+                    _logger.debug(f"[IGNORÉ] {label} | Montant: {amount} (montant nul ou négatif)")
         return overdue
 
     def _notify_overdue_payment(self, payment):
         """
         Envoie une notification (e-mail + SMS) pour un paiement échu donné.
         """
+        # Vérification supplémentaire : s'assurer que le paiement est toujours échu
+        today = datetime.now().date()
+        due_date = payment.get('due_date')
+        
+        # Convertir due_date en date si c'est une string
+        if isinstance(due_date, str):
+            due_date = datetime.fromisoformat(due_date).date()
+        
+        # Ne pas envoyer si l'échéance n'est pas encore passée
+        if due_date >= today:
+            _logger.info(f"[IGNORÉ] Paiement {payment.get('label')} pas encore échu (échéance: {due_date})")
+            return
+        
+        # Vérifier que le montant est supérieur à 0
+        if payment.get('amount', 0) <= 0:
+            _logger.info(f"[IGNORÉ] Paiement {payment.get('label')} avec montant nul ou négatif")
+            return
+        
         partner = self.partner_id
         if not partner:
             _logger.warning(f"[ERREUR] Aucun partenaire trouvé pour la commande {self.name}")
             return
+
+        # Formater la date d'échéance pour l'affichage
+        due_date_str = due_date.strftime('%d/%m/%Y') if hasattr(due_date, 'strftime') else str(due_date)
 
         subject = f'🔔 Rappel : Paiement en retard - {payment["label"]}'
       
@@ -89,7 +125,7 @@ class SaleCreditOrderMail(models.Model):
                             <tr>
                                 <td style="font-size: 15px; color: #333333; line-height: 1.6; padding-bottom: 15px;">
                                     Nous vous informons que le paiement de <strong>{payment['amount']} {self.currency_id.name}</strong>,
-                                    prévu le <strong>{payment['due_date']}</strong>, est <span style="color: red; font-weight: bold;">en retard</span>.
+                                    prévu le <strong>{due_date_str}</strong>, est <span style="color: red; font-weight: bold;">en retard</span>.
                                 </td>
                             </tr>
                             <tr>
@@ -131,21 +167,30 @@ class SaleCreditOrderMail(models.Model):
 
 
         mail_server = self.env['ir.mail_server'].sudo().search([], limit=1)
-        self.send_mail(mail_server, partner, subject, body_html)
+        mail_result = self.send_mail(mail_server, partner, subject, body_html)
+        
+        if mail_result.get('status') == 'success':
+            _logger.info(f"[MAIL ENVOYÉ] Commande {self.name} - Paiement {payment['label']} échu notifié à {partner.email}")
+        else:
+            _logger.error(f"[MAIL ÉCHOUÉ] Commande {self.name} - Erreur: {mail_result.get('message', 'Unknown error')}")
 
         if partner.phone:
             sms_msg = (
                 f"Bonjour {partner.name}, votre paiement de {payment['amount']} {self.currency_id.name} "
-                f"(commande {self.name}, échéance {payment['due_date']}) est en retard. "
+                f"(commande {self.name}, échéance {due_date_str}) est en retard. "
                 f"Merci de régulariser au plus vite.\n{self.company_id.name}"
             )
 
-            self.env['send.sms'].create({
-                'recipient': partner.phone,
-                'message': sms_msg,
-            }).send_sms()
+            try:
+                self.env['send.sms'].create({
+                    'recipient': partner.phone,
+                    'message': sms_msg,
+                }).send_sms()
+                _logger.info(f"[SMS ENVOYÉ] Commande {self.name} - Paiement {payment['label']} échu notifié au {partner.phone}")
+            except Exception as e:
+                _logger.error(f"[SMS ÉCHOUÉ] Commande {self.name} - Erreur: {str(e)}")
         else:
-            _logger.warning(f"[SMS NON ENVOYÉ] Numéro manquant pour {partner.name}")
+            _logger.warning(f"[SMS NON ENVOYÉ] Numéro manquant pour {partner.name} (commande {self.name})")
 
     def _generate_payments(self, today):
         """
@@ -210,25 +255,49 @@ class SaleCreditOrderMail(models.Model):
     def check_overdue_payments_cron(self):
         """
         Méthode appelée par la tâche cron pour vérifier les paiements échus.
+        Ne traite que les commandes valides (confirmées, livrées ou en cours de livraison).
         """
         _logger.info("[CRON] Démarrage du cron de notifications pour commandes à crédit")
 
         orders = self.search([('type_sale', '=', 'creditorder')])
-        _logger.info(f"[CRON] Commandes à traiter : {len(orders)}")
+        _logger.info(f"[CRON] Commandes trouvées : {len(orders)}")
 
+        processed_count = 0
+        skipped_count = 0
+        
         for order in orders:
-            if order.state == "draft" or order.state == "cancel" :
-                _logger.info(f"[CRON] Traitement de la commande {order.name} pour {order.partner_id.name} annulée ou en brouliion ")
+            # Ignorer les commandes en brouillon ou annulées
+            if order.state == "draft" or order.state == "cancel":
+                _logger.debug(f"[CRON] Commande {order.name} ignorée (état: {order.state})")
+                skipped_count += 1
+                continue
 
-            if order.state == "to_delivered" or order.state == "delivered" or order.state == "sale" :
-                _logger.info(f"[CRON] Traitement de la commande {order.name} pour {order.partner_id.name}")
+            # Traiter uniquement les commandes confirmées, livrées ou en cours de livraison
+            if order.state in ("to_delivered", "delivered", "sale"):
+                _logger.info(f"[CRON] Traitement de la commande {order.name} pour {order.partner_id.name} (état: {order.state})")
                 order.send_payment_reminder()
+                processed_count += 1
+            else:
+                _logger.debug(f"[CRON] Commande {order.name} ignorée (état non traité: {order.state})")
+                skipped_count += 1
+        
+        _logger.info(f"[CRON] Terminé - Traitées: {processed_count}, Ignorées: {skipped_count}")
             
 
 
     def check_and_send_overdue_payments(self):
         """
         Vérifie et envoie les notifications de paiements échus pour toutes les commandes.
+        Ne traite que les commandes à crédit valides avec des paiements réellement échus.
         """
-        for order in self.search([]):
-            order.send_payment_reminder()
+        orders = self.search([('type_sale', '=', 'creditorder')])
+        _logger.info(f"[MANUEL] Vérification de {len(orders)} commande(s) à crédit")
+        
+        for order in orders:
+            # Ignorer les commandes en brouillon ou annulées
+            if order.state in ("draft", "cancel"):
+                continue
+            
+            # Traiter uniquement les commandes valides
+            if order.state in ("to_delivered", "delivered", "sale"):
+                order.send_payment_reminder()
