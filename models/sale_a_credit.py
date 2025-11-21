@@ -275,8 +275,16 @@ class SaleCreditOrderMail(models.Model):
                 'state': _('payé') if bool(line.state) else _('non payé'),
             })
         return payments
+<<<<<<< Updated upstream
 
     def _payment_schedule_table(self, payments):
+=======
+    
+    def generate_payment_schedule_html(self, payments): 
+        """
+        Génère le HTML pour afficher l'échéancier de paiement
+        """
+>>>>>>> Stashed changes
         if not payments:
             return ""
         rows = []
