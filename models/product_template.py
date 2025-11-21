@@ -269,6 +269,7 @@ class ProductTemplate(models.Model):
         # Ne recalculer que ceux NON manuels
         # to_auto = self.filtered(lambda p: not p.creditorder_manual)
         to_auto = self
+        to_auto.write({'creditorder_manual': False})
         to_auto._compute_creditorder_price()
         return {
             'type': 'ir.actions.client',
@@ -286,7 +287,10 @@ class ProductTemplate(models.Model):
         """
         Variante : recalcul global (ne touche pas aux valeurs manuelles).
         """
-        products = self.search([('creditorder_manual', '=', False)])
+        # products = self.search([('creditorder_manual', '=', False)])
+        products = self
+        products.write({'creditorder_manual': False})
+
         products._compute_creditorder_price()
         return {
             'type': 'ir.actions.client',
