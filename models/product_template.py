@@ -23,62 +23,37 @@ class ProductTemplate(models.Model):
         'Prix commande à crédit',
         digits='Product Price',
         compute='_compute_creditorder_price',
-        inverse='_inverse_creditorder_price',   # ⬅️ rend le champ éditable
         store=True,
         readonly=False,                         # ⬅️ autorise la saisie dans l'UI
         help="Par défaut: standard_price × 1.40 (coût + 40%). "
+             "Si standard_price < 100000: standard_price × 1.50 (coût + 50%). "
              "Si vous modifiez la valeur, elle sera conservée (mode manuel)."
     )
 
-    # @api.depends('standard_price', 'creditorder_manual')
-    # def _compute_creditorder_price(self):
-    #     for prod in self:
-    #         # NE recalculer que si pas manuel
-    #         if not prod.creditorder_manual:
-    #             cost = prod.standard_price or 0.0
-    #             prod.creditorder_price = cost * 1.40
-    
-    # @api.depends('standard_price', 'creditorder_manual')
-    # def _compute_creditorder_price(self):
-    #     for prod in self:
-    #         # NE recalculer que si pas manuel
-    #         if not prod.creditorder_manual:
-    #             cost = prod.standard_price or 0.0
-    #             prod.creditorder_price = cost * 1.20  # 20% au lieu de 40%
-
-    # @api.depends('standard_price', 'list_price', 'creditorder_manual')
-    # def _compute_creditorder_price(self):
-    #     for prod in self:
-    #         if not prod.creditorder_manual:
-    #             if prod.list_price < 100000:
-    #                 # Prix à crédit = 50% du prix de vente
-    #                 cost = prod.standard_price or 0.0
-    #                 prod.creditorder_price = cost * 1.50
-    #             else:
-    #                 # Prix à crédit = 20% du coût (standard_price)
-    #                 cost = prod.standard_price or 0.0
-    #                 prod.creditorder_price = cost * 1.20
-    @api.depends('standard_price', 'list_price', 'creditorder_manual')
+    @api.depends('standard_price', 'creditorder_manual')
     def _compute_creditorder_price(self):
         """
         Méthode de calcul automatique du prix à crédit pour un produit.
         Cette méthode est appelée automatiquement par Odoo lorsque l'un des champs
-        'standard_price', 'list_price' ou 'creditorder_manual' est modifié.
+        'standard_price' ou 'creditorder_manual' est modifié.
+        
+        Règles de calcul :
+        - Par défaut : standard_price × 1.40 (coût + 40% de marge)
+        - Si standard_price < 100000 : standard_price × 1.50 (coût + 50% de marge)
         """
         for prod in self:
             # Vérifie si le prix à crédit n'est pas en mode manuel
             if not prod.creditorder_manual:
-                # Si le prix de vente (list_price) est inférieur à 100 000
-                if prod.list_price < 100000:
-                    # Récupère le coût du produit (standard_price), ou 0.0 si non défini
-                    cost = prod.standard_price or 0.0
+                # Récupère le coût du produit (standard_price), ou 0.0 si non défini
+                cost = prod.standard_price or 0.0
+                
+                # Si le coût (standard_price) est inférieur à 100 000
+                if cost < 100000:
                     # Calcule le prix à crédit comme 150% du coût (50% de marge)
                     prod.creditorder_price = cost * 1.50
                 else:
-                    # Récupère le coût du produit (standard_price), ou 0.0 si non défini
-                    cost = prod.standard_price or 0.0
-                    # Calcule le prix à crédit comme 120% du coût (20% de marge)
-                    prod.creditorder_price = cost * 1.20
+                    # Calcule le prix à crédit comme 140% du coût (40% de marge)
+                    prod.creditorder_price = cost * 1.40
 
 
 
@@ -108,12 +83,6 @@ class ProductTemplate(models.Model):
         return res
 
 
-    def _inverse_creditorder_price(self):
-        """Quand l'utilisateur modifie la valeur dans l'UI, on bascule en mode manuel."""
-        for prod in self:
-            if not prod.creditorder_manual:
-                prod.creditorder_manual = True
-
     @api.model
     def cron_force_recompute_creditorder_price(self):
         recs = self.search([])
@@ -127,7 +96,8 @@ class ProductTemplate(models.Model):
         if not self:
             raise UserError(_("Aucun produit sélectionné."))
         # Ne recalculer que ceux NON manuels
-        to_auto = self.filtered(lambda p: not p.creditorder_manual)
+        # to_auto = self.filtered(lambda p: not p.creditorder_manual)
+        to_auto = self
         to_auto._compute_creditorder_price()
         return {
             'type': 'ir.actions.client',
@@ -159,12 +129,35 @@ class ProductTemplate(models.Model):
         }
 
     def action_set_creditorder_auto(self):
+        """Active le mode automatique et affiche le nouveau montant calculé."""
+        if not self:
+            raise UserError(_("Aucun produit sélectionné."))
+        
+        # Désactiver le mode manuel pour tous les produits
         for p in self:
             p.creditorder_manual = False
+        
+        # Recalculer le prix à crédit
         self._compute_creditorder_price()
+        
+        # Si un seul produit, afficher le montant détaillé
+        if len(self) == 1:
+            currency = self.currency_id or self.env.company.currency_id
+            new_amount = self.creditorder_price or 0.0
+            amount_formatted = f"{new_amount:,.0f} {currency.name}"
+            message = _('Prix recalculé. Nouveau montant : %s') % amount_formatted
+        else:
+            # Si plusieurs produits, afficher le nombre
+            message = _('Prix recalculé pour %s produit(s).') % len(self)
+        
         return {
             'type': 'ir.actions.client',
             'tag': 'display_notification',
-            'params': {'title': _('Mode automatique'), 'message': _('Prix recalculé.'), 'type': 'success'}
+            'params': {
+                'title': _('Mode automatique'),
+                'message': message,
+                'type': 'success',
+                'sticky': False
+            }
         }
     
